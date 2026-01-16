@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "justtheplayer-website",
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "compatibility_date": "2025-12-31",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "justtheplayer.jeffersongreco.com",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".svelte-kit/cloudflare"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "build": {
+    "command": "bun x turbo build"
+  },
+  "vars": {
+    "BUN_VERSION": "1.3.5",
+    "SKIP_DEPENDENCY_INSTALL": "true"
+  }
+}
