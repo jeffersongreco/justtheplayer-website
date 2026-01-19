@@ -83,7 +83,11 @@ export class DragModel {
 
   target = (node: HTMLElement) => {
     this.targetNode = node;
-    return { destroy: () => (this.targetNode = null) };
+    return {
+      destroy: () => {
+        this.targetNode = null;
+      },
+    };
   };
 
   // --- Lógica de Input (Controller) ---

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { DragModel } from "$lib/Sensor/DragModel.svelte";
   import Draggable from "$lib/Sensor/Draggable.svelte";
+  import { DragModel } from "$lib/Sensor/DragModel.svelte";
 
   const model = new DragModel("50%", "50%");
 </script>
@@ -8,8 +8,12 @@
 <div class="demo-stage">
   <h1>Tutorial Interativo</h1>
   <p>
-    Status:
-    {model.hint === 'none' ? 'Tutorial Completo!' : 'Aguardando ação...'}
+    Tutorial status:
+    {model.isTutorialFinished ? 'Tutorial Completo!' : 'Aguardando ação...'}
+  </p>
+  <p>
+    Position status:
+    {model.isIntersecting ? 'Sobre o sensor' : 'Fora do sensor'}
   </p>
 
   <div class="boundary">

@@ -18,6 +18,9 @@
         "language_server": {
           "name": "biome"
         }
+      },
+      "code_actions_on_format": {
+        "source.organizeImports.biome": true
       }
     }
   },
