@@ -16,4 +16,23 @@ export const Physics = {
       r1.y + r1.h > r2.top
     );
   },
+
+  toPixels(value: number | string, containerSize: number): number {
+    if (typeof value === "number") {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      if (value.endsWith("%")) {
+        const percentage = Number.parseFloat(value) / 100;
+        return containerSize * percentage;
+      }
+      if (value.endsWith("px")) {
+        return Number.parseFloat(value);
+      }
+      // Fallback for strings like "50"
+      return Number.parseFloat(value);
+    }
+    return 0;
+  },
 };

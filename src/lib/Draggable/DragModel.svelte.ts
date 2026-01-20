@@ -1,36 +1,35 @@
-// DragModel.svelte.ts
 import { Physics } from "./Physics";
 
 export class DragModel {
-  // Observable State
-  x = $state(0);
-  y = $state(0);
-  isDragging = $state(false);
+  // State
+  activeDraggableId = $state<string | null>(null);
   hoveredTargetId = $state<string | null>(null);
 
-  // Snapshot Cache (The "frozen" world state on drag start)
+  // Coordinate state (shared by all components in this context)
+  pointerPos = $state({ x: 0, y: 0 });
+
+  // Internal Physics State
   #limits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
   #dragStart = { x: 0, y: 0, mouseX: 0, mouseY: 0 };
   #dims = { w: 0, h: 0, offsetX: 0, offsetY: 0 };
 
-  // Registry of Target Rects (for Box-on-Box collision)
+  // Registry
   #targets = new Map<string, DOMRect>();
 
-  // --- Actions called by Manager ---
+  // --- Physics Logic ---
 
-  start(e: PointerEvent, node: HTMLElement) {
+  startDrag(e: PointerEvent, node: HTMLElement, id: string) {
     const parent = node.offsetParent as HTMLElement;
     if (!parent) {
       return;
     }
 
-    this.isDragging = true;
+    this.activeDraggableId = id;
 
-    // Measure the world ONCE (The "Snapshot" fix)
+    // Snapshot World
     const nodeRect = node.getBoundingClientRect();
     const parentRect = parent.getBoundingClientRect();
 
-    // 1. Store dimensions and offsets
     this.#dims = {
       w: nodeRect.width,
       h: nodeRect.height,
@@ -38,51 +37,85 @@ export class DragModel {
       offsetY: nodeRect.top - e.clientY,
     };
 
-    // 2. Calculate Limits relative to current translation
-    // This fixes the "Positioning Context" error
+    // Calculate Clamps based on current translation
+    // Assumes 'x' and 'y' are stored in the Manager, but Limits are calculated here relative to parent
+    const currentTransform = new WebKitCSSMatrix(
+      window.getComputedStyle(node).transform
+    );
+    const currentX = currentTransform.m41;
+    const currentY = currentTransform.m42;
+
     this.#limits = {
-      minX: this.x - (nodeRect.left - parentRect.left),
-      maxX: this.x + (parentRect.right - nodeRect.right),
-      minY: this.y - (nodeRect.top - parentRect.top),
-      maxY: this.y + (parentRect.bottom - nodeRect.bottom),
+      minX: currentX - (nodeRect.left - parentRect.left),
+      maxX: currentX + (parentRect.right - nodeRect.right),
+      minY: currentY - (nodeRect.top - parentRect.top),
+      maxY: currentY + (parentRect.bottom - nodeRect.bottom),
     };
 
-    // 3. Store Start Positions (The "Drift" fix)
     this.#dragStart = {
-      x: this.x,
-      y: this.y,
+      x: currentX,
+      y: currentY,
       mouseX: e.clientX,
       mouseY: e.clientY,
     };
   }
 
-  move(e: PointerEvent) {
-    // 1. Calculate Absolute Delta (No drift)
+  calculateMove(e: PointerEvent) {
     const deltaX = e.clientX - this.#dragStart.mouseX;
     const deltaY = e.clientY - this.#dragStart.mouseY;
 
-    // 2. Apply Clamping logic
-    this.x = Physics.clamp(
+    const x = Physics.clamp(
       this.#dragStart.x + deltaX,
       this.#limits.minX,
       this.#limits.maxX
     );
-    this.y = Physics.clamp(
+    const y = Physics.clamp(
       this.#dragStart.y + deltaY,
       this.#limits.minY,
       this.#limits.maxY
     );
 
-    // 3. Check Collisions
-    this.checkCollisions();
+    // Update global pointer for targets
+    this.pointerPos = { x: e.clientX, y: e.clientY };
+
+    this.checkCollisions(x, y);
+
+    return { x, y };
   }
 
-  stop() {
-    this.isDragging = false;
-    // Optional: Snap to center of target, etc.
+  stopDrag() {
+    this.activeDraggableId = null;
+    this.hoveredTargetId = null;
   }
 
-  // --- Registry Logic ---
+  // --- Collision Logic ---
+
+  private checkCollisions(currentX: number, currentY: number) {
+    // Project Phantom Rect
+    const projectedRect = {
+      x:
+        this.#dragStart.mouseX +
+        (currentX - this.#dragStart.x) +
+        this.#dims.offsetX,
+      y:
+        this.#dragStart.mouseY +
+        (currentY - this.#dragStart.y) +
+        this.#dims.offsetY,
+      w: this.#dims.w,
+      h: this.#dims.h,
+    };
+
+    let hitId: string | null = null;
+    for (const [id, rect] of this.#targets) {
+      if (Physics.checkIntersection(projectedRect, rect)) {
+        hitId = id;
+        break;
+      }
+    }
+    this.hoveredTargetId = hitId;
+  }
+
+  // --- Registry ---
 
   registerTarget(id: string, rect: DOMRect) {
     this.#targets.set(id, rect);
@@ -91,36 +124,4 @@ export class DragModel {
   unregisterTarget(id: string) {
     this.#targets.delete(id);
   }
-
-  // --- Internal Logic ---
-
-  private checkCollisions() {
-    // Project the element's "Phantom" rect based on current calculation
-    // This is the "Cursor vs Object" fix
-    const projectedRect = {
-      x:
-        this.#dragStart.mouseX +
-        (this.x - this.#dragStart.x) +
-        this.#dims.offsetX,
-      y:
-        this.#dragStart.mouseY +
-        (this.y - this.#dragStart.y) +
-        this.#dims.offsetY,
-      w: this.#dims.w,
-      h: this.#dims.h,
-    };
-
-    // Find the first target intersecting
-    let foundId: string | null = null;
-    for (const [id, targetRect] of this.#targets) {
-      if (Physics.checkIntersection(projectedRect, targetRect)) {
-        foundId = id;
-        break; // Stop at first hit
-      }
-    }
-    this.hoveredTargetId = foundId;
-  }
 }
-
-// Singleton for this context
-export const dragModel = new DragModel();

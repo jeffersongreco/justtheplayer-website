@@ -1,112 +1,96 @@
-<!-- +page.svelte -->
-<script lang="ts">
-  import { dragManager } from "$lib/Draggable/DragManager";
-  import { dragModel } from "$lib/Draggable/DragModel.svelte";
+<script>
+  import Draggable from "$lib/Draggable/Draggable.svelte";
+  import DragRoot from "$lib/Draggable/DragRoot.svelte";
   import DropTarget from "$lib/Draggable/DropTarget.svelte";
-
-  let status = $state("Idle");
 </script>
 
-<div class="demo-stage">
-  <h1>Robust Drag Free (MV Architecture)</h1>
-  <p>Status: {status}</p>
-  <p>Coordinates: {Math.round(dragModel.x)}, {Math.round(dragModel.y)}</p>
+<div class="app-container">
+  <!-- AREA 1: ISOLATED -->
+  <div class="panel">
+    <h2>Left Brain</h2>
+    <DragRoot>
+      <div class="boundary">
+        <Draggable id="item-1" x="50%" y="50%">
+          {#snippet children({ dragAction, isDragging })}
+            <div use:dragAction class="box" class:dragging={isDragging}>
+              Item 1
+            </div>
+          {/snippet}
+        </Draggable>
 
-  <div class="boundary">
-    <!-- Draggable Element -->
-    <div use:dragManager class="draggable-box">Drag Me</div>
+        <DropTarget id="zone-1" onDrop={() => console.log('Dropped in 1')}>
+          {#snippet children({ targetAction, isOver })}
+            <div use:targetAction class="target" class:active={isOver}>
+              Zone 1
+            </div>
+          {/snippet}
+        </DropTarget>
+      </div>
+    </DragRoot>
+  </div>
 
-    <!-- Targets -->
-    <div class="targets-container">
-      <DropTarget id="zone-1" onDrop={() => status = "Dropped in Zone 1"}>
-        {#snippet children({ isOver, targetAction })}
-          <div use:targetAction class="target" class:active={isOver}>
-            {isOver ? "Release!" : "Zone 1"}
-          </div>
-        {/snippet}
-      </DropTarget>
+  <!-- AREA 2: ISOLATED -->
+  <div class="panel">
+    <h2>Right Brain</h2>
+    <DragRoot>
+      <div class="boundary">
+        <Draggable id="item-2" x={20} y={20}>
+          {#snippet children({ dragAction, isDragging })}
+            <div use:dragAction class="box blue" class:dragging={isDragging}>
+              Item 2
+            </div>
+          {/snippet}
+        </Draggable>
 
-      <DropTarget id="zone-2" onDrop={() => status = "Dropped in Zone 2"}>
-        {#snippet children({ isOver, targetAction })}
-          <div use:targetAction class="target" class:active={isOver}>
-            {isOver ? "Release!" : "Zone 2"}
-          </div>
-        {/snippet}
-      </DropTarget>
-    </div>
+        <DropTarget id="zone-2" onDrop={() => console.log('Dropped in 2')}>
+          {#snippet children({ targetAction, isOver })}
+            <div use:targetAction class="target" class:active={isOver}>
+              Zone 2
+            </div>
+          {/snippet}
+        </DropTarget>
+      </div>
+    </DragRoot>
   </div>
 </div>
 
 <style>
-  :global(body) {
-    font-family: system-ui, -apple-system, sans-serif;
-    background: #222;
-    color: #eee;
-    height: 100vh;
-    margin: 0;
+  .app-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
   }
-
-  .demo-stage {
-    text-align: center;
-    width: 100%;
-    max-width: 800px;
+  .panel {
+    flex: 1;
   }
-
   .boundary {
-    position: relative; /* Essential for Model's offset calculations */
-    width: 100%;
-    height: 500px;
-    background: #333;
-    border-radius: 12px;
-    margin-top: 20px;
+    position: relative;
+    height: 300px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
     overflow: hidden;
-    border: 1px solid #444;
   }
-
-  .draggable-box {
+  .box {
+    width: 60px;
+    height: 60px;
+    background: tomato;
+    display: grid;
+    place-items: center;
+    position: absolute; /* Manager handles this, but good practice to set defaults */
+  }
+  .box.blue {
+    background: royalblue;
+  }
+  .target {
     width: 100px;
     height: 100px;
-    background: linear-gradient(135deg, #ff6b6b, #ee5253);
-    color: white;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    /* Note: Manager handles position:absolute and z-index */
+    border: 2px dashed #999;
+    margin: 100px auto;
+    display: grid;
+    place-items: center;
   }
-
-  .targets-container {
-    position: absolute;
-    bottom: 50px;
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-    pointer-events: none; /* Let clicks pass through empty space */
-  }
-
-  .target {
-    width: 150px;
-    height: 150px;
-    border: 2px dashed #666;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #888;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    pointer-events: auto; /* Re-enable pointer events for the box */
-  }
-
-  .target.active {
-    background: rgba(46, 204, 113, 0.2);
-    border-color: #2ecc71;
-    color: #2ecc71;
-    transform: scale(1.05);
+  .active {
+    background: rgba(0, 255, 0, 0.2);
+    border-color: green;
   }
 </style>
