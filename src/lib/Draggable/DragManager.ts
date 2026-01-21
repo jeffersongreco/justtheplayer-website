@@ -20,7 +20,6 @@ export function createDragManager(
     touchAction: "none",
     userSelect: "none",
     position: "absolute",
-    willChange: "transform",
     cursor: "grab",
     zIndex: "999",
   });
@@ -73,14 +72,27 @@ export function createDragManager(
     node.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
   };
 
+  const prepareLayer = () => {
+    // Promote to GPU Layer just before interaction
+    node.style.willChange = "transform";
+  };
+
+  const cleanupLayer = () => {
+    // Demote if we are NOT currently dragging
+    if (model.activeDraggableId !== id) {
+      node.style.willChange = "auto";
+    }
+  };
+
   const onStart = (e: PointerEvent) => {
     if (e.button !== 0) {
       return;
     }
 
     node.setPointerCapture(e.pointerId);
+    node.style.willChange = "transform";
     node.style.cursor = "grabbing";
-    node.style.zIndex = "50";
+    node.style.zIndex = "999";
 
     // Pass the CURRENT transform position to the model to start calculation
     model.startDrag(e, node, id);
@@ -93,6 +105,7 @@ export function createDragManager(
   const onEnd = (e: PointerEvent) => {
     model.stopDrag();
 
+    node.style.willChange = "auto";
     node.style.cursor = "grab";
     node.style.zIndex = "999";
     node.releasePointerCapture(e.pointerId);
@@ -103,10 +116,14 @@ export function createDragManager(
   };
 
   node.addEventListener("pointerdown", onStart);
+  node.addEventListener("pointerenter", prepareLayer);
+  node.addEventListener("pointerleave", cleanupLayer);
 
   return {
     destroy() {
       node.removeEventListener("pointerdown", onStart);
+      node.removeEventListener("pointerenter", prepareLayer);
+      node.removeEventListener("pointerleave", cleanupLayer);
       resizeObserver.disconnect();
     },
   };

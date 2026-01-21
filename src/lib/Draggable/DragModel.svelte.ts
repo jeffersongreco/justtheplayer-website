@@ -1,22 +1,20 @@
 import { Physics } from "./Physics";
 
 export class DragModel {
-  // State
+  // Logic State
   activeDraggableId = $state<string | null>(null);
   hoveredTargetId = $state<string | null>(null);
-
-  // Coordinate state (shared by all components in this context)
   pointerPos = $state({ x: 0, y: 0 });
 
   // Internal Physics State
   #limits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
   #dragStart = { x: 0, y: 0, mouseX: 0, mouseY: 0 };
   #dims = { w: 0, h: 0, offsetX: 0, offsetY: 0 };
-
-  // Registry
   #targets = new Map<string, DOMRect>();
 
-  // --- Physics Logic ---
+  get targetCount() {
+    return this.#targets.size;
+  }
 
   startDrag(e: PointerEvent, node: HTMLElement, id: string) {
     const parent = node.offsetParent as HTMLElement;
@@ -24,9 +22,9 @@ export class DragModel {
       return;
     }
 
+    this.hoveredTargetId = null;
     this.activeDraggableId = id;
 
-    // Snapshot World
     const nodeRect = node.getBoundingClientRect();
     const parentRect = parent.getBoundingClientRect();
 
@@ -37,8 +35,6 @@ export class DragModel {
       offsetY: nodeRect.top - e.clientY,
     };
 
-    // Calculate Clamps based on current translation
-    // Assumes 'x' and 'y' are stored in the Manager, but Limits are calculated here relative to parent
     const currentTransform = new WebKitCSSMatrix(
       window.getComputedStyle(node).transform
     );
@@ -75,9 +71,7 @@ export class DragModel {
       this.#limits.maxY
     );
 
-    // Update global pointer for targets
     this.pointerPos = { x: e.clientX, y: e.clientY };
-
     this.checkCollisions(x, y);
 
     return { x, y };
@@ -85,13 +79,9 @@ export class DragModel {
 
   stopDrag() {
     this.activeDraggableId = null;
-    this.hoveredTargetId = null;
   }
 
-  // --- Collision Logic ---
-
   private checkCollisions(currentX: number, currentY: number) {
-    // Project Phantom Rect
     const projectedRect = {
       x:
         this.#dragStart.mouseX +
@@ -114,8 +104,6 @@ export class DragModel {
     }
     this.hoveredTargetId = hitId;
   }
-
-  // --- Registry ---
 
   registerTarget(id: string, rect: DOMRect) {
     this.#targets.set(id, rect);

@@ -1,96 +1,108 @@
-<script>
+<script lang="ts">
   import Draggable from "$lib/Draggable/Draggable.svelte";
   import DragRoot from "$lib/Draggable/DragRoot.svelte";
   import DropTarget from "$lib/Draggable/DropTarget.svelte";
 </script>
 
-<div class="app-container">
-  <!-- AREA 1: ISOLATED -->
-  <div class="panel">
-    <h2>Left Brain</h2>
-    <DragRoot>
-      <div class="boundary">
-        <Draggable id="item-1" x="50%" y="50%">
-          {#snippet children({ dragAction, isDragging })}
-            <div use:dragAction class="box" class:dragging={isDragging}>
-              Item 1
-            </div>
-          {/snippet}
-        </Draggable>
+<main>
+  <h1>Drag Free</h1>
 
-        <DropTarget id="zone-1" onDrop={() => console.log('Dropped in 1')}>
-          {#snippet children({ targetAction, isOver })}
-            <div use:targetAction class="target" class:active={isOver}>
-              Zone 1
-            </div>
-          {/snippet}
-        </DropTarget>
-      </div>
+  <!-- The boundary for the drag context -->
+  <div class="canvas">
+    <DragRoot>
+      <!-- Drop Zone -->
+      <DropTarget id="zone-1">
+        {#snippet children({ targetAction, isOver })}
+          <div
+            use:targetAction
+            class="zone"
+            style:background={isOver ? '#d1fae5' : '#f3f4f6'}
+            style:border-color={isOver ? '#059669' : '#d1d5db'}
+          >
+            {isOver ? 'Release now' : 'Drop here'}
+          </div>
+        {/snippet}
+      </DropTarget>
+
+      <!-- Item: Percentage Position -->
+      <Draggable x="10%" y="10%">
+        {#snippet children({ dragAction, isDragging })}
+          <button use:dragAction class="item" class:dragging={isDragging}>
+            Item B
+          </button>
+        {/snippet}
+      </Draggable>
     </DragRoot>
   </div>
-
-  <!-- AREA 2: ISOLATED -->
-  <div class="panel">
-    <h2>Right Brain</h2>
-    <DragRoot>
-      <div class="boundary">
-        <Draggable id="item-2" x={20} y={20}>
-          {#snippet children({ dragAction, isDragging })}
-            <div use:dragAction class="box blue" class:dragging={isDragging}>
-              Item 2
-            </div>
-          {/snippet}
-        </Draggable>
-
-        <DropTarget id="zone-2" onDrop={() => console.log('Dropped in 2')}>
-          {#snippet children({ targetAction, isOver })}
-            <div use:targetAction class="target" class:active={isOver}>
-              Zone 2
-            </div>
-          {/snippet}
-        </DropTarget>
-      </div>
-    </DragRoot>
-  </div>
-</div>
+</main>
 
 <style>
-  .app-container {
-    display: flex;
-    gap: 2rem;
+  :global(body) {
+    font-family: system-ui, sans-serif;
     padding: 2rem;
+    background: #fff;
+    color: #111;
   }
-  .panel {
-    flex: 1;
-  }
-  .boundary {
+
+  .canvas {
+    /* Essential: Defines the boundary for clamping and positioning */
     position: relative;
-    height: 300px;
-    background: #f0f0f0;
+    width: 100%;
+    max-width: 600px;
+    height: 400px;
     border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-top: 1rem;
     overflow: hidden;
   }
-  .box {
-    width: 60px;
-    height: 60px;
-    background: tomato;
-    display: grid;
-    place-items: center;
-    position: absolute; /* Manager handles this, but good practice to set defaults */
+
+  .zone {
+    /* Centered for demo purposes */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    width: 150px;
+    height: 150px;
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.2s;
   }
-  .box.blue {
-    background: royalblue;
+
+  .item {
+    width: 80px;
+    height: 80px;
+    background: #93c5fd;
+    border-color: #3b82f6;
+    color: #1e3a8a;
+    border-radius: 8px;
+    cursor: grab;
+    font-weight: bold;
+
+    /* Flex to center text */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Smooth visual transition for hover/active states */
+    transition:
+      transform 0.1s,
+      box-shadow 0.1s;
   }
-  .target {
-    width: 100px;
-    height: 100px;
-    border: 2px dashed #999;
-    margin: 100px auto;
-    display: grid;
-    place-items: center;
+
+  .item:active {
+    cursor: grabbing;
   }
-  .active {
-    background: rgba(0, 255, 0, 0.2);
-    border-color: green;
+
+  .dragging {
+    opacity: 0.9;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 50; /* Bring to front */
   }
 </style>
