@@ -19,9 +19,11 @@ export function createDragManager(
   Object.assign(node.style, {
     touchAction: "none",
     userSelect: "none",
+    webkitUserSelect: "none",
     position: "absolute",
     cursor: "grab",
     zIndex: "999",
+    isolation: "isolate",
   });
 
   // NEW: Resolve Initial Position
@@ -78,7 +80,6 @@ export function createDragManager(
   };
 
   const cleanupLayer = () => {
-    // Demote if we are NOT currently dragging
     if (model.activeDraggableId !== id) {
       node.style.willChange = "auto";
     }
@@ -92,7 +93,6 @@ export function createDragManager(
     node.setPointerCapture(e.pointerId);
     node.style.willChange = "transform";
     node.style.cursor = "grabbing";
-    node.style.zIndex = "999";
 
     // Pass the CURRENT transform position to the model to start calculation
     model.startDrag(e, node, id);
@@ -107,7 +107,6 @@ export function createDragManager(
 
     node.style.willChange = "auto";
     node.style.cursor = "grab";
-    node.style.zIndex = "999";
     node.releasePointerCapture(e.pointerId);
 
     window.removeEventListener("pointermove", onMove);

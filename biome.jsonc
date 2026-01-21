@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": ["ultracite/core", "ultracite/svelte"],
+  "extends": [
+    "ultracite/core",
+    "ultracite/svelte"
+  ],
   "html": {
     "experimentalFullSupportEnabled": true,
     "formatter": {
@@ -9,7 +12,9 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.svelte"],
+      "includes": [
+        "**/*.svelte"
+      ],
       "linter": {
         "rules": {
           "style": {
@@ -18,7 +23,8 @@
           },
           "correctness": {
             "noUnusedVariables": "off",
-            "noUnusedImports": "off"
+            "noUnusedImports": "off",
+            "noUnknownPseudoClass": "off"
           }
         }
       }

@@ -26,10 +26,21 @@
 
       <!-- Item: Percentage Position -->
       <Draggable x="10%" y="10%">
-        {#snippet children({ dragAction, isDragging })}
-          <button use:dragAction class="item" class:dragging={isDragging}>
-            Item B
-          </button>
+        {#snippet children({ isDragging, isFocused })}
+          <div
+            class="item"
+            class:dragging={isDragging}
+            class:focused={isFocused}
+          >
+            Item
+          </div>
+        {/snippet}
+      </Draggable>
+
+      <!-- EXAMPLE: The Floating Ghost -->
+      <Draggable x="80%" y="80%">
+        {#snippet children()}
+          <div class="ghost">👻</div>
         {/snippet}
       </Draggable>
     </DragRoot>
@@ -45,7 +56,6 @@
   }
 
   .canvas {
-    /* Essential: Defines the boundary for clamping and positioning */
     position: relative;
     width: 100%;
     max-width: 600px;
@@ -57,7 +67,6 @@
   }
 
   .zone {
-    /* Centered for demo purposes */
     position: absolute;
     top: 50%;
     left: 50%;
@@ -85,24 +94,38 @@
     cursor: grab;
     font-weight: bold;
 
-    /* Flex to center text */
     display: flex;
     align-items: center;
     justify-content: center;
 
-    /* Smooth visual transition for hover/active states */
     transition:
       transform 0.1s,
       box-shadow 0.1s;
   }
 
-  .item:active {
-    cursor: grabbing;
+  .item.focused {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
   }
 
   .dragging {
     opacity: 0.9;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    z-index: 50; /* Bring to front */
+    z-index: 50;
+  }
+
+  .ghost {
+    font-size: 80px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px) rotate(5deg);
+    }
+    50% {
+      transform: translateY(-30px) rotate(-5deg);
+    }
   }
 </style>
