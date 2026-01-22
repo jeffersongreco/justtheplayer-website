@@ -3,33 +3,29 @@
 </script>
 
 <main>
-  <h1>Drag Free</h1>
+  <h1>Movable</h1>
 
-  <!-- The boundary for the drag context -->
+  <!-- The boundary for the movable context -->
   <div class="canvas">
     <Movable.Context>
-      <!-- Drop Zone -->
-      <Movable.Sensor id="zone-1">
+      <!-- Sensor -->
+      <Movable.Sensor id="sensor-1">
         {#snippet children({ sensor, isOver })}
           <div
             use:sensor
-            class="zone"
+            class="sensor"
             style:background={isOver ? '#d1fae5' : '#f3f4f6'}
             style:border-color={isOver ? '#059669' : '#d1d5db'}
           >
-            {isOver ? 'Release now' : 'Drop here'}
+            Sensor
           </div>
         {/snippet}
       </Movable.Sensor>
 
       <!-- Item: Percentage Position -->
       <Movable.Item initialX="10%" initialY="10%">
-        {#snippet children({ isDragging, isFocused })}
-          <div
-            class="item"
-            class:dragging={isDragging}
-            class:focused={isFocused}
-          >
+        {#snippet children({ isMoving, isFocused })}
+          <div class="item" class:moving={isMoving} class:focused={isFocused}>
             Item
           </div>
         {/snippet}
@@ -64,7 +60,7 @@
     overflow: hidden;
   }
 
-  .zone {
+  .sensor {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -106,7 +102,8 @@
     outline-offset: 2px;
   }
 
-  .dragging {
+  .item.focused,
+  .moving {
     opacity: 0.9;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     z-index: 50;

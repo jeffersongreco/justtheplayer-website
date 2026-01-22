@@ -20,13 +20,13 @@
     class?: string;
     tabindex?: number;
 
-    children?: Snippet<[{ isDragging: boolean; isFocused: boolean }]>;
+    children?: Snippet<[{ isMoving: boolean; isFocused: boolean }]>;
 
     asChild?: Snippet<
       [
         {
           movable: Action<HTMLElement>;
-          isDragging: boolean;
+          isMoving: boolean;
           isFocused: boolean;
         },
       ]
@@ -40,38 +40,49 @@
     return { destroy: manager.destroy };
   };
 
-  let isDragging = $derived(model.activeItemID === id);
+  let isMoving = $derived(model.activeItemID === id);
   let isFocused = $state(false);
+
+  function handleFocus(e: FocusEvent) {
+    if (e.target instanceof HTMLElement) {
+      isFocused = e.target.matches(":focus-visible");
+    }
+  }
+
+  function handleBlur() {
+    isFocused = false;
+  }
 </script>
 
 {#if asChild}
-  {@render asChild({ movable, isDragging, isFocused })}
+  {@render asChild({ movable, isMoving, isFocused })}
 {:else}
   <div
     use:movable
-    class="draggable {className}"
-    data-dragging={isDragging}
+    class="movable {className}"
+    data-dragging={isMoving}
     role="button"
     tabindex={tabindex}
-    onfocus={() => isFocused = true}
-    onblur={() => isFocused = false}
+    onfocus={handleFocus}
+    onblur={handleBlur}
   >
-    {@render children?.({ isDragging, isFocused })}
+    {@render children?.({ isMoving, isFocused })}
   </div>
 {/if}
 
 <style>
-  .draggable {
+  .movable {
     display: flex;
     width: max-content;
     height: max-content;
   }
 
-  .draggable:focus-visible {
+  .movable:focus,
+  .movable:focus-visible {
     outline: none;
   }
 
-  .draggable[data-dragging="true"] :global(*) {
+  .movable[data-dragging="true"] :global(*) {
     animation-play-state: paused !important;
   }
 </style>
