@@ -5,10 +5,12 @@
 
   let {
     id,
+    accepts = [],
     onDrop,
     children,
   }: {
     id: string;
+    accepts?: string | string[];
     onDrop?: () => void;
     children: Snippet<[{ isOver: boolean; sensor: Action<HTMLElement> }]>;
   } = $props();
@@ -19,7 +21,8 @@
   }
 
   const sensor: Action<HTMLElement> = (node) => {
-    model.registerTarget(id, node.getBoundingClientRect());
+    const acceptList = Array.isArray(accepts) ? accepts : [accepts];
+    model.registerTarget(id, node.getBoundingClientRect(), acceptList);
     return {
       destroy() {
         model.unregisterTarget(id);

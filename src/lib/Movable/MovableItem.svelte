@@ -9,6 +9,7 @@
     id = crypto.randomUUID(),
     initialX = 0,
     initialY = 0,
+    group = "default",
     class: className = "",
     tabindex = 0,
     children,
@@ -17,6 +18,7 @@
     id?: string;
     initialX?: InitialPosition;
     initialY?: InitialPosition;
+    group?: string;
     class?: string;
     tabindex?: number;
 
@@ -36,7 +38,14 @@
   const model = getContext<MovableModel>(Symbol.for("MVB_CTX"));
 
   const movable: Action<HTMLElement> = (node) => {
-    const manager = createMovableManager(node, model, id, initialX, initialY);
+    const manager = createMovableManager(
+      node,
+      model,
+      id,
+      initialX,
+      initialY,
+      group
+    );
     return { destroy: manager.destroy };
   };
 

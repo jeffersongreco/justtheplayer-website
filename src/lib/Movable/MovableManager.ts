@@ -6,7 +6,8 @@ export function createMovableManager(
   model: MovableModel,
   id: string,
   initialX: InitialPosition,
-  initialY: InitialPosition
+  initialY: InitialPosition,
+  group?: string
 ) {
   let currentX = 0;
   let currentY = 0;
@@ -77,7 +78,7 @@ export function createMovableManager(
     node.style.willChange = "transform";
     node.style.cursor = "grabbing";
 
-    model.beginMove(e, node, id);
+    model.beginMove(e, node, id, group ?? "default");
 
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onEnd);

@@ -9,7 +9,7 @@
   <div class="canvas">
     <Movable.Context>
       <!-- Sensor -->
-      <Movable.Sensor id="sensor-1">
+      <Movable.Sensor id="sensor-1" accepts="ghost">
         {#snippet children({ sensor, isOver })}
           <div
             use:sensor
@@ -32,7 +32,7 @@
       </Movable.Item>
 
       <!-- EXAMPLE: The Floating Ghost -->
-      <Movable.Item initialX="80%" initialY="80%">
+      <Movable.Item initialX="80%" initialY="80%" group="ghost">
         {#snippet children()}
           <div class="ghost">👻</div>
         {/snippet}

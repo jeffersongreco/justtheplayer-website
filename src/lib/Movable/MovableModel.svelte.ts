@@ -1,20 +1,26 @@
 import { Geometry } from "./Geometry";
 
+type SensorConfiguration = {
+  rect: DOMRect;
+  accepts: string[];
+};
+
 export class MovableModel {
   activeItemID = $state<string | null>(null);
+  activeItemGroup = $state<string>("default");
   activeSensorID = $state<string | null>(null);
   pointerPos = $state({ x: 0, y: 0 });
 
   #limits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
   #dragStart = { x: 0, y: 0, mouseX: 0, mouseY: 0 };
   #dims = { w: 0, h: 0, offsetX: 0, offsetY: 0 };
-  readonly #sensors = new Map<string, DOMRect>();
+  readonly #sensors = new Map<string, SensorConfiguration>();
 
   get targetCount() {
     return this.#sensors.size;
   }
 
-  beginMove(e: PointerEvent, node: HTMLElement, id: string) {
+  beginMove(e: PointerEvent, node: HTMLElement, id: string, group = "default") {
     const parent = node.offsetParent as HTMLElement;
     if (!parent) {
       return;
@@ -22,6 +28,7 @@ export class MovableModel {
 
     this.activeSensorID = null;
     this.activeItemID = id;
+    this.activeItemGroup = group;
 
     const nodeRect = node.getBoundingClientRect();
     const parentRect = parent.getBoundingClientRect();
@@ -94,8 +101,13 @@ export class MovableModel {
     };
 
     let hitId: string | null = null;
-    for (const [id, rect] of this.#sensors) {
-      if (Geometry.intersects(projectedRect, rect)) {
+
+    for (const [id, config] of this.#sensors) {
+      if (
+        Geometry.intersects(projectedRect, config.rect) &&
+        (config.accepts.length === 0 ||
+          config.accepts.includes(this.activeItemGroup))
+      ) {
         hitId = id;
         break;
       }
@@ -103,8 +115,8 @@ export class MovableModel {
     this.activeSensorID = hitId;
   }
 
-  registerTarget(id: string, rect: DOMRect) {
-    this.#sensors.set(id, rect);
+  registerTarget(id: string, rect: DOMRect, accepts: string[] = []) {
+    this.#sensors.set(id, { rect, accepts });
   }
 
   unregisterTarget(id: string) {
