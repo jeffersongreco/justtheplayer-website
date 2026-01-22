@@ -1,21 +1,16 @@
-// DragManager.ts
-import type { DragModel } from "./DragModel.svelte";
-import { Physics } from "./Physics";
+import { Geometry, type InitialPosition } from "./Geometry";
+import type { MovableModel } from "./MovableModel.svelte";
 
-// Define the config type
-type InitialPos = number | string;
-
-export function createDragManager(
+export function createMovableManager(
   node: HTMLElement,
-  model: DragModel,
+  model: MovableModel,
   id: string,
-  initialConfig: { x: InitialPos; y: InitialPos } // NEW
+  initialX: InitialPosition,
+  initialY: InitialPosition
 ) {
-  // Internal state for this specific node
   let currentX = 0;
   let currentY = 0;
 
-  // Setup Styles
   Object.assign(node.style, {
     touchAction: "none",
     userSelect: "none",
@@ -26,25 +21,19 @@ export function createDragManager(
     isolation: "isolate",
   });
 
-  // NEW: Resolve Initial Position
   const resolvePosition = () => {
     const parent = node.offsetParent as HTMLElement;
     if (!parent) {
       return;
     }
 
-    // Convert % or px to real numbers based on parent dimensions
-    currentX = Physics.toPixels(initialConfig.x, parent.clientWidth);
-    currentY = Physics.toPixels(initialConfig.y, parent.clientHeight);
+    currentX = Geometry.resolve(initialX, parent.clientWidth);
+    currentY = Geometry.resolve(initialY, parent.clientHeight);
 
-    // Apply immediately
     node.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
   };
 
-  // Use ResizeObserver to ensure parent dimensions are ready before calculating %
   const resizeObserver = new ResizeObserver(() => {
-    // We only resolve if we haven't moved yet (optional, or force reset)
-    // Here we run it once to set initial state then disconnect if static
     resolvePosition();
     resizeObserver.disconnect();
   });
@@ -53,20 +42,15 @@ export function createDragManager(
     resizeObserver.observe(node.parentElement);
   }
 
-  // --- Interaction Logic ---
-
   const onMove = (e: PointerEvent) => {
-    if (model.activeDraggableId !== id) {
+    if (model.activeItemID !== id) {
       return;
     }
     if (e.cancelable) {
       e.preventDefault();
     }
 
-    // The model calculates the delta and clamping
-    // We pass the event. The Model uses its internal 'dragStart' state
-    // which was captured in onStart to return the new absolute X/Y.
-    const { x, y } = model.calculateMove(e);
+    const { x, y } = model.updatePosition(e);
 
     currentX = x;
     currentY = y;
@@ -74,13 +58,12 @@ export function createDragManager(
     node.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
   };
 
-  const prepareLayer = () => {
-    // Promote to GPU Layer just before interaction
+  const promoteLayer = () => {
     node.style.willChange = "transform";
   };
 
-  const cleanupLayer = () => {
-    if (model.activeDraggableId !== id) {
+  const demoteLayer = () => {
+    if (model.activeItemID !== id) {
       node.style.willChange = "auto";
     }
   };
@@ -94,8 +77,7 @@ export function createDragManager(
     node.style.willChange = "transform";
     node.style.cursor = "grabbing";
 
-    // Pass the CURRENT transform position to the model to start calculation
-    model.startDrag(e, node, id);
+    model.beginMove(e, node, id);
 
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onEnd);
@@ -103,7 +85,7 @@ export function createDragManager(
   };
 
   const onEnd = (e: PointerEvent) => {
-    model.stopDrag();
+    model.endMove();
 
     node.style.willChange = "auto";
     node.style.cursor = "grab";
@@ -115,14 +97,14 @@ export function createDragManager(
   };
 
   node.addEventListener("pointerdown", onStart);
-  node.addEventListener("pointerenter", prepareLayer);
-  node.addEventListener("pointerleave", cleanupLayer);
+  node.addEventListener("pointerenter", promoteLayer);
+  node.addEventListener("pointerleave", demoteLayer);
 
   return {
     destroy() {
       node.removeEventListener("pointerdown", onStart);
-      node.removeEventListener("pointerenter", prepareLayer);
-      node.removeEventListener("pointerleave", cleanupLayer);
+      node.removeEventListener("pointerenter", promoteLayer);
+      node.removeEventListener("pointerleave", demoteLayer);
       resizeObserver.disconnect();
     },
   };

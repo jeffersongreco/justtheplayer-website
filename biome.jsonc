@@ -13,8 +13,31 @@
   "overrides": [
     {
       "includes": [
+        "**/*.ts"
+      ],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "useMaxParams": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
         "**/*.svelte"
       ],
+      "css": {
+        "formatter": {
+          "enabled": true
+        },
+        "linter": {
+          "enabled": true
+        },
+        "parser": {
+          "cssModules": true
+        }
+      },
       "linter": {
         "rules": {
           "style": {

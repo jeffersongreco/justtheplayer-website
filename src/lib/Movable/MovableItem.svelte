@@ -1,21 +1,22 @@
 <script lang="ts">
   import { getContext, type Snippet } from "svelte";
   import type { Action } from "svelte/action";
-  import { createDragManager } from "./DragManager";
-  import type { DragModel } from "./DragModel.svelte";
+  import type { InitialPosition } from "./Geometry";
+  import { createMovableManager } from "./MovableManager";
+  import type { MovableModel } from "./MovableModel.svelte";
 
   let {
     id = crypto.randomUUID(),
-    x = 0,
-    y = 0,
+    initialX = 0,
+    initialY = 0,
     class: className = "",
     tabindex = 0,
     children,
     asChild,
   }: {
     id?: string;
-    x?: number | string;
-    y?: number | string;
+    initialX?: InitialPosition;
+    initialY?: InitialPosition;
     class?: string;
     tabindex?: number;
 
@@ -24,7 +25,7 @@
     asChild?: Snippet<
       [
         {
-          dragAction: Action<HTMLElement>;
+          movable: Action<HTMLElement>;
           isDragging: boolean;
           isFocused: boolean;
         },
@@ -32,22 +33,22 @@
     >;
   } = $props();
 
-  const model = getContext<DragModel>(Symbol.for("DRAG_CTX"));
+  const model = getContext<MovableModel>(Symbol.for("MVB_CTX"));
 
-  const dragAction: Action<HTMLElement> = (node) => {
-    const manager = createDragManager(node, model, id, { x, y });
+  const movable: Action<HTMLElement> = (node) => {
+    const manager = createMovableManager(node, model, id, initialX, initialY);
     return { destroy: manager.destroy };
   };
 
-  let isDragging = $derived(model.activeDraggableId === id);
+  let isDragging = $derived(model.activeItemID === id);
   let isFocused = $state(false);
 </script>
 
 {#if asChild}
-  {@render asChild({ dragAction, isDragging, isFocused })}
+  {@render asChild({ movable, isDragging, isFocused })}
 {:else}
   <div
-    use:dragAction
+    use:movable
     class="draggable {className}"
     data-dragging={isDragging}
     role="button"

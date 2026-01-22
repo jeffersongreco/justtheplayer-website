@@ -1,29 +1,27 @@
-import { Physics } from "./Physics";
+import { Geometry } from "./Geometry";
 
-export class DragModel {
-  // Logic State
-  activeDraggableId = $state<string | null>(null);
-  hoveredTargetId = $state<string | null>(null);
+export class MovableModel {
+  activeItemID = $state<string | null>(null);
+  activeSensorID = $state<string | null>(null);
   pointerPos = $state({ x: 0, y: 0 });
 
-  // Internal Physics State
   #limits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
   #dragStart = { x: 0, y: 0, mouseX: 0, mouseY: 0 };
   #dims = { w: 0, h: 0, offsetX: 0, offsetY: 0 };
-  #targets = new Map<string, DOMRect>();
+  readonly #sensors = new Map<string, DOMRect>();
 
   get targetCount() {
-    return this.#targets.size;
+    return this.#sensors.size;
   }
 
-  startDrag(e: PointerEvent, node: HTMLElement, id: string) {
+  beginMove(e: PointerEvent, node: HTMLElement, id: string) {
     const parent = node.offsetParent as HTMLElement;
     if (!parent) {
       return;
     }
 
-    this.hoveredTargetId = null;
-    this.activeDraggableId = id;
+    this.activeSensorID = null;
+    this.activeItemID = id;
 
     const nodeRect = node.getBoundingClientRect();
     const parentRect = parent.getBoundingClientRect();
@@ -56,32 +54,32 @@ export class DragModel {
     };
   }
 
-  calculateMove(e: PointerEvent) {
+  updatePosition(e: PointerEvent) {
     const deltaX = e.clientX - this.#dragStart.mouseX;
     const deltaY = e.clientY - this.#dragStart.mouseY;
 
-    const x = Physics.clamp(
+    const x = Geometry.clamp(
       this.#dragStart.x + deltaX,
       this.#limits.minX,
       this.#limits.maxX
     );
-    const y = Physics.clamp(
+    const y = Geometry.clamp(
       this.#dragStart.y + deltaY,
       this.#limits.minY,
       this.#limits.maxY
     );
 
     this.pointerPos = { x: e.clientX, y: e.clientY };
-    this.checkCollisions(x, y);
+    this.detectCollisions(x, y);
 
     return { x, y };
   }
 
-  stopDrag() {
-    this.activeDraggableId = null;
+  endMove() {
+    this.activeItemID = null;
   }
 
-  private checkCollisions(currentX: number, currentY: number) {
+  private detectCollisions(currentX: number, currentY: number) {
     const projectedRect = {
       x:
         this.#dragStart.mouseX +
@@ -96,20 +94,20 @@ export class DragModel {
     };
 
     let hitId: string | null = null;
-    for (const [id, rect] of this.#targets) {
-      if (Physics.checkIntersection(projectedRect, rect)) {
+    for (const [id, rect] of this.#sensors) {
+      if (Geometry.intersects(projectedRect, rect)) {
         hitId = id;
         break;
       }
     }
-    this.hoveredTargetId = hitId;
+    this.activeSensorID = hitId;
   }
 
   registerTarget(id: string, rect: DOMRect) {
-    this.#targets.set(id, rect);
+    this.#sensors.set(id, rect);
   }
 
   unregisterTarget(id: string) {
-    this.#targets.delete(id);
+    this.#sensors.delete(id);
   }
 }

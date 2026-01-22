@@ -1,7 +1,5 @@
 <script lang="ts">
-  import Draggable from "$lib/Draggable/Draggable.svelte";
-  import DragRoot from "$lib/Draggable/DragRoot.svelte";
-  import DropTarget from "$lib/Draggable/DropTarget.svelte";
+  import { Movable } from "$lib/Movable";
 </script>
 
 <main>
@@ -9,12 +7,12 @@
 
   <!-- The boundary for the drag context -->
   <div class="canvas">
-    <DragRoot>
+    <Movable.Context>
       <!-- Drop Zone -->
-      <DropTarget id="zone-1">
-        {#snippet children({ targetAction, isOver })}
+      <Movable.Sensor id="zone-1">
+        {#snippet children({ sensor, isOver })}
           <div
-            use:targetAction
+            use:sensor
             class="zone"
             style:background={isOver ? '#d1fae5' : '#f3f4f6'}
             style:border-color={isOver ? '#059669' : '#d1d5db'}
@@ -22,10 +20,10 @@
             {isOver ? 'Release now' : 'Drop here'}
           </div>
         {/snippet}
-      </DropTarget>
+      </Movable.Sensor>
 
       <!-- Item: Percentage Position -->
-      <Draggable x="10%" y="10%">
+      <Movable.Item initialX="10%" initialY="10%">
         {#snippet children({ isDragging, isFocused })}
           <div
             class="item"
@@ -35,15 +33,15 @@
             Item
           </div>
         {/snippet}
-      </Draggable>
+      </Movable.Item>
 
       <!-- EXAMPLE: The Floating Ghost -->
-      <Draggable x="80%" y="80%">
+      <Movable.Item initialX="80%" initialY="80%">
         {#snippet children()}
           <div class="ghost">👻</div>
         {/snippet}
-      </Draggable>
-    </DragRoot>
+      </Movable.Item>
+    </Movable.Context>
   </div>
 </main>
 
