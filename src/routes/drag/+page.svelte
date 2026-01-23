@@ -5,40 +5,34 @@
 <main>
   <h1>Movable</h1>
 
-  <!-- The boundary for the movable context -->
-  <div class="canvas">
-    <Movable.Context>
-      <!-- Sensor -->
-      <Movable.Sensor id="sensor-1" accepts="ghost">
-        {#snippet children({ sensor, isOver })}
-          <div
-            use:sensor
-            class="sensor"
-            style:background={isOver ? '#d1fae5' : '#f3f4f6'}
-            style:border-color={isOver ? '#059669' : '#d1d5db'}
-          >
-            Sensor
-          </div>
-        {/snippet}
-      </Movable.Sensor>
+  <Movable.Root>
+    {#snippet asChild()}
+      <div class="canvas">
+        <Movable.Sensor accepts={["ghost"]}>
+          {#snippet asChild({ sensor, isOver })}
+            <div use:sensor class="sensor" class:active={isOver}>Sensor</div>
+          {/snippet}
+        </Movable.Sensor>
 
-      <!-- Item: Percentage Position -->
-      <Movable.Item initialX="10%" initialY="10%">
-        {#snippet children({ isMoving, isFocused })}
-          <div class="item" class:moving={isMoving} class:focused={isFocused}>
-            Item
-          </div>
-        {/snippet}
-      </Movable.Item>
+        <Movable.Item initialPosition={{ x: "10%", y: "10%" }}>
+          {#snippet children({ isMoving, isFocused })}
+            <div class="item" class:moving={isMoving} class:focused={isFocused}>
+              Item
+            </div>
+          {/snippet}
+        </Movable.Item>
 
-      <!-- EXAMPLE: The Floating Ghost -->
-      <Movable.Item initialX="80%" initialY="80%" group="ghost">
-        {#snippet children()}
-          <div class="ghost">👻</div>
-        {/snippet}
-      </Movable.Item>
-    </Movable.Context>
-  </div>
+        <Movable.Item
+          initialPosition={{ x: "80%", y: "80%" }}
+          group={["ghost"]}
+        >
+          {#snippet children()}
+            <div class="ghost">👻</div>
+          {/snippet}
+        </Movable.Item>
+      </div>
+    {/snippet}
+  </Movable.Root>
 </main>
 
 <style>
@@ -65,7 +59,6 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-
     width: 150px;
     height: 150px;
     border: 2px dashed #d1d5db;
@@ -76,34 +69,37 @@
     font-weight: 500;
     color: #374151;
     transition: all 0.2s;
+    background: #f3f4f6;
+  }
+
+  .sensor.active {
+    background: #d1fae5;
+    border-color: #059669;
+    color: #065f46;
   }
 
   .item {
     width: 80px;
     height: 80px;
     background: #93c5fd;
-    border-color: #3b82f6;
     color: #1e3a8a;
     border-radius: 8px;
     cursor: grab;
     font-weight: bold;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     transition:
       transform 0.1s,
       box-shadow 0.1s;
   }
 
   .item.focused {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid #2563eb;
     outline-offset: 2px;
   }
 
-  .item.focused,
-  .moving {
+  .item.moving {
     opacity: 0.9;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     z-index: 50;
@@ -111,6 +107,7 @@
 
   .ghost {
     font-size: 80px;
+    cursor: grab;
     animation: float 3s ease-in-out infinite;
   }
 

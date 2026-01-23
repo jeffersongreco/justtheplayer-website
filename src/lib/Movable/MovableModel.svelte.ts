@@ -1,13 +1,31 @@
+import { getContext, setContext } from "svelte";
 import { Geometry } from "./Geometry";
+import type { MovableGroup, MovableSensorBounds } from "./types";
+
+const CONTEXT_KEY = Symbol("MOVABLE_MODEL");
 
 type SensorConfiguration = {
-  rect: DOMRect;
-  accepts: string[];
+  bounds: MovableSensorBounds;
+  accepts: MovableGroup;
 };
 
 export class MovableModel {
+  static provide(): MovableModel {
+    const model = new MovableModel();
+    setContext(CONTEXT_KEY, model);
+    return model;
+  }
+
+  static get(): MovableModel {
+    const model = getContext<MovableModel>(CONTEXT_KEY);
+    if (!model) {
+      throw new Error("Movable components must be inside a <Movable.Context>.");
+    }
+    return model;
+  }
+
   activeItemID = $state<string | null>(null);
-  activeItemGroup = $state<string>("default");
+  activeItemGroup = $state<MovableGroup>([]);
   activeSensorID = $state<string | null>(null);
   pointerPos = $state({ x: 0, y: 0 });
 
@@ -20,7 +38,12 @@ export class MovableModel {
     return this.#sensors.size;
   }
 
-  beginMove(e: PointerEvent, node: HTMLElement, id: string, group = "default") {
+  beginMove(
+    e: PointerEvent,
+    node: HTMLElement,
+    id: string,
+    group: MovableGroup
+  ) {
     const parent = node.offsetParent as HTMLElement;
     if (!parent) {
       return;
@@ -96,17 +119,21 @@ export class MovableModel {
         this.#dragStart.mouseY +
         (currentY - this.#dragStart.y) +
         this.#dims.offsetY,
-      w: this.#dims.w,
-      h: this.#dims.h,
+      width: this.#dims.w,
+      height: this.#dims.h,
     };
 
     let hitId: string | null = null;
 
+    const resolvedGroup = Array.isArray(this.activeItemGroup)
+      ? this.activeItemGroup
+      : [this.activeItemGroup];
+
     for (const [id, config] of this.#sensors) {
       if (
-        Geometry.intersects(projectedRect, config.rect) &&
+        Geometry.intersects(projectedRect, config.bounds) &&
         (config.accepts.length === 0 ||
-          config.accepts.includes(this.activeItemGroup))
+          resolvedGroup.some((g) => config.accepts.includes(g)))
       ) {
         hitId = id;
         break;
@@ -115,11 +142,15 @@ export class MovableModel {
     this.activeSensorID = hitId;
   }
 
-  registerTarget(id: string, rect: DOMRect, accepts: string[] = []) {
-    this.#sensors.set(id, { rect, accepts });
+  registerSensor(
+    id: string,
+    bounds: MovableSensorBounds,
+    accepts: MovableGroup
+  ) {
+    this.#sensors.set(id, { bounds, accepts });
   }
 
-  unregisterTarget(id: string) {
+  unregisterSensor(id: string) {
     this.#sensors.delete(id);
   }
 }

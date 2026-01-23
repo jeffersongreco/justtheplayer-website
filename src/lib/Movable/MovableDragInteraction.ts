@@ -1,13 +1,13 @@
-import { Geometry, type InitialPosition } from "./Geometry";
+import { Geometry } from "./Geometry";
 import type { MovableModel } from "./MovableModel.svelte";
+import type { MovableGroup, MovableItemPosition } from "./types";
 
-export function createMovableManager(
+export function createMovableDragInteraction(
   node: HTMLElement,
   model: MovableModel,
   id: string,
-  initialX: InitialPosition,
-  initialY: InitialPosition,
-  group?: string
+  initialPosition: MovableItemPosition,
+  group: MovableGroup
 ) {
   let currentX = 0;
   let currentY = 0;
@@ -20,6 +20,7 @@ export function createMovableManager(
     cursor: "grab",
     zIndex: "999",
     isolation: "isolate",
+    willChange: "auto",
   });
 
   const resolvePosition = () => {
@@ -28,8 +29,8 @@ export function createMovableManager(
       return;
     }
 
-    currentX = Geometry.resolve(initialX, parent.clientWidth);
-    currentY = Geometry.resolve(initialY, parent.clientHeight);
+    currentX = Geometry.resolve(initialPosition.x, parent.clientWidth);
+    currentY = Geometry.resolve(initialPosition.y, parent.clientHeight);
 
     node.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
   };

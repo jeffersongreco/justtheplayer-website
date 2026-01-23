@@ -19,6 +19,12 @@
         "rules": {
           "nursery": {
             "useMaxParams": "off"
+          },
+          "style": {
+            "useConsistentTypeDefinitions": "off"
+          },
+          "performance": {
+            "noBarrelFile": "off"
           }
         }
       }

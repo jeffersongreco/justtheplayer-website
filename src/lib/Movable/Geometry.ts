@@ -1,28 +1,28 @@
-type Pixel = `${number}px`;
-type Percentage = `${number}%`;
-export type InitialPosition = number | Pixel | Percentage;
+import type {
+  MovableContainerDimension,
+  MovableRect,
+  PositionValue,
+} from "./types";
 
 export const Geometry = {
   clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(value, max));
   },
 
-  intersects(
-    rectA: { x: number; y: number; w: number; h: number },
-    rectB: { left: number; right: number; top: number; bottom: number }
-  ): boolean {
+  intersects(rectA: MovableRect, rectB: MovableRect): boolean {
     return (
-      rectA.x < rectB.right &&
-      rectA.x + rectA.w > rectB.left &&
-      rectA.y < rectB.bottom &&
-      rectA.y + rectA.h > rectB.top
+      rectA.x < rectB.x + rectB.width &&
+      rectA.x + rectA.width > rectB.x &&
+      rectA.y < rectB.y + rectB.height &&
+      rectA.y + rectA.height > rectB.y
     );
   },
 
-  resolve(value: InitialPosition, relativeTo: number): number {
+  resolve(value: PositionValue, relativeTo: MovableContainerDimension): number {
     if (typeof value === "number") {
       if (!Number.isFinite(value)) {
-        throw new Error(`Invalid numeric dimension: ${value}.`);
+        console.warn(`Invalid <Movable.Item> initial position: ${value}`);
+        return 0;
       }
       return value;
     }
@@ -31,7 +31,8 @@ export const Geometry = {
       const float = Number.parseFloat(value);
 
       if (!Number.isFinite(float)) {
-        throw new Error(`Invalid numeric dimension: ${value}.`);
+        console.warn(`Invalid <Movable.Item> initial position: ${value}`);
+        return 0;
       }
 
       if (value.endsWith("%")) {
@@ -43,6 +44,7 @@ export const Geometry = {
       }
     }
 
-    throw new Error(`Invalid value type: ${typeof value}.`);
+    console.warn(`Invalid <Movable.Item> initial position: ${value}`);
+    return 0;
   },
 };

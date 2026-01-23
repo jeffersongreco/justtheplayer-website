@@ -1,55 +1,35 @@
 <script lang="ts">
   import { getContext, type Snippet } from "svelte";
   import type { Action } from "svelte/action";
-  import type { InitialPosition } from "./Geometry";
-  import { createMovableManager } from "./MovableManager";
-  import type { MovableModel } from "./MovableModel.svelte";
+  import { createMovableDragInteraction } from "./MovableDragInteraction";
+  import { MovableModel } from "./MovableModel.svelte";
+  import type { MovableItemProps } from "./types";
 
   let {
     id = crypto.randomUUID(),
-    initialX = 0,
-    initialY = 0,
-    group = "default",
-    class: className = "",
+    initialPosition = { x: "50%", y: "50%" },
+    group = [],
     tabindex = 0,
+    class: className = "",
     children,
     asChild,
-  }: {
-    id?: string;
-    initialX?: InitialPosition;
-    initialY?: InitialPosition;
-    group?: string;
-    class?: string;
-    tabindex?: number;
+  }: MovableItemProps = $props();
 
-    children?: Snippet<[{ isMoving: boolean; isFocused: boolean }]>;
+  const model = MovableModel.get();
 
-    asChild?: Snippet<
-      [
-        {
-          movable: Action<HTMLElement>;
-          isMoving: boolean;
-          isFocused: boolean;
-        },
-      ]
-    >;
-  } = $props();
-
-  const model = getContext<MovableModel>(Symbol.for("MVB_CTX"));
-
-  const movable: Action<HTMLElement> = (node) => {
-    const manager = createMovableManager(
+  const item: Action<HTMLElement> = (node) => {
+    const controller = createMovableDragInteraction(
       node,
       model,
       id,
-      initialX,
-      initialY,
+      initialPosition,
       group
     );
-    return { destroy: manager.destroy };
+    return { destroy: controller.destroy };
   };
 
   let isMoving = $derived(model.activeItemID === id);
+
   let isFocused = $state(false);
 
   function handleFocus(e: FocusEvent) {
@@ -64,10 +44,10 @@
 </script>
 
 {#if asChild}
-  {@render asChild({ movable, isMoving, isFocused })}
+  {@render asChild({ item, isMoving, isFocused })}
 {:else}
   <div
-    use:movable
+    use:item
     class="movable {className}"
     data-dragging={isMoving}
     role="button"

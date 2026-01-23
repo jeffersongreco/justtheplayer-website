@@ -1,9 +1,11 @@
-import MovableContext from "./MovableContext.svelte";
 import MovableItem from "./MovableItem.svelte";
+import MovableRoot from "./MovableRoot.svelte";
 import MovableSensor from "./MovableSensor.svelte";
 
+export * from "./types";
+
 export const Movable = {
-  Context: MovableContext,
+  Root: MovableRoot,
   Item: MovableItem,
   Sensor: MovableSensor,
 };

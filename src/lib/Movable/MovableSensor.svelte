@@ -1,31 +1,25 @@
 <script lang="ts">
   import { getContext, type Snippet } from "svelte";
   import type { Action } from "svelte/action";
-  import type { MovableModel } from "./MovableModel.svelte";
+  import { MovableModel } from "./MovableModel.svelte";
+  import type { MovableSensorProps } from "./types";
 
   let {
-    id,
+    id = crypto.randomUUID(),
     accepts = [],
     onDrop,
+    class: className = "",
     children,
-  }: {
-    id: string;
-    accepts?: string | string[];
-    onDrop?: () => void;
-    children: Snippet<[{ isOver: boolean; sensor: Action<HTMLElement> }]>;
-  } = $props();
+    asChild,
+  }: MovableSensorProps = $props();
 
-  const model = getContext<MovableModel>(Symbol.for("MVB_CTX"));
-  if (!model) {
-    throw new Error("DropTarget must be inside a <MovableContext>");
-  }
+  const model = MovableModel.get();
 
   const sensor: Action<HTMLElement> = (node) => {
-    const acceptList = Array.isArray(accepts) ? accepts : [accepts];
-    model.registerTarget(id, node.getBoundingClientRect(), acceptList);
+    model.registerSensor(id, node.getBoundingClientRect(), accepts);
     return {
       destroy() {
-        model.unregisterTarget(id);
+        model.unregisterSensor(id);
       },
     };
   };
@@ -39,4 +33,18 @@
   });
 </script>
 
-{@render children({ isOver, sensor })}
+{#if asChild}
+  {@render asChild({ isOver, sensor })}
+{:else}
+  <div use:sensor class="sensor {className}" data-over={isOver}>
+    {@render children?.({ isOver })}
+  </div>
+{/if}
+
+<style>
+  .sensor {
+    display: flex;
+    width: max-content;
+    height: max-content;
+  }
+</style>
