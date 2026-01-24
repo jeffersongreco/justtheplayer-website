@@ -132,7 +132,9 @@ export class MovableModel {
         break;
       }
     }
-    this.activeSensorID = hitId;
+    if (this.activeSensorID !== hitId) {
+      this.activeSensorID = hitId;
+    }
   }
 
   registerSensor(id: string, rect: MovableRect, accepts: MovableGroup) {

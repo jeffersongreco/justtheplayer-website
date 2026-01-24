@@ -27,6 +27,11 @@ export function createMovableItemController(
   let currentY = 0;
   let hasUserMoved = false;
 
+  let rafId: number | null = null;
+  let pendingX = 0;
+  let pendingY = 0;
+  let isDirty = false;
+
   Object.assign(node.style, {
     position: "absolute",
     top: "0",
@@ -117,6 +122,14 @@ export function createMovableItemController(
     });
   }
 
+  const syncVisuals = () => {
+    if (isDirty) {
+      node.style.transform = `translate3d(${pendingX}px, ${pendingY}px, 0)`;
+      isDirty = false;
+    }
+    rafId = requestAnimationFrame(syncVisuals);
+  };
+
   const controller: MovableItemControllerInteractionAPI = {
     node,
     model,
@@ -134,14 +147,23 @@ export function createMovableItemController(
     moveTo(x: number, y: number) {
       currentX = x;
       currentY = y;
-      node.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+      pendingX = x;
+      pendingY = y;
+      isDirty = true;
     },
     promoteLayer() {
       node.style.willChange = "transform";
+      if (!rafId) {
+        rafId = requestAnimationFrame(syncVisuals);
+      }
     },
     demoteLayer() {
       if (model.activeItemID !== id) {
         node.style.willChange = "auto";
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
       }
     },
   };

@@ -45,6 +45,8 @@
     position: relative;
     width: 100%;
     height: 100%;
+    isolation: isolate;
+    contain: strict;
   }
 
   .noise {
@@ -56,6 +58,9 @@
     visibility: visible;
     z-index: -1;
     transition: opacity 0.3s ease-out;
+    /* Force GPU layer promotion */
+    will-change: transform, opacity;
+    transform: translateZ(0);
   }
 
   .noise.isCursorOutScreen {
