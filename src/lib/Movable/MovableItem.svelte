@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Action } from "svelte/action";
-  import { createMovableDragInteraction } from "./MovableDragInteraction";
+  import { createMovableItemController } from "./MovableItemController";
   import { MovableModel } from "./MovableModel.svelte";
   import type { MovableItemProps } from "./types";
 
@@ -17,7 +17,7 @@
   const model = MovableModel.get();
 
   const item: Action<HTMLElement> = (node) => {
-    const controller = createMovableDragInteraction(
+    const controller = createMovableItemController(
       node,
       model,
       id,
