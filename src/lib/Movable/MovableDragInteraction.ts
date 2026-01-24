@@ -34,8 +34,6 @@ export function createMovableDragInteraction(
       return false;
     }
 
-    // offsetParent is the nearest positioned ancestor.
-    // It SHOULD be the root.
     if (node.offsetParent && node.offsetParent !== root) {
       console.error(
         `[Movable] Structural Error: <Movable.Item> is nested inside an intermediate positioned element (<${node.offsetParent.tagName.toLowerCase()}>).\n` +
@@ -48,7 +46,6 @@ export function createMovableDragInteraction(
 
   const resolvePosition = () => {
     const root = model.rootNode;
-    // Wait for Root to be registered and layout to be ready
     if (!root || (root.clientWidth === 0 && root.clientHeight === 0)) {
       return false;
     }
@@ -57,6 +54,13 @@ export function createMovableDragInteraction(
     currentY = Geometry.resolve(initialPosition.y, root.clientHeight);
 
     node.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+
+    model.detectCollisions({
+      x: currentX,
+      y: currentY,
+      width: node.offsetWidth,
+      height: node.offsetHeight,
+    });
 
     return true;
   };

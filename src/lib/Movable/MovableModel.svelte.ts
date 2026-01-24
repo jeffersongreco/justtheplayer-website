@@ -104,7 +104,13 @@ export class MovableModel {
     );
 
     this.pointerPos = { x: e.clientX, y: e.clientY };
-    this.detectCollisions(x, y);
+
+    this.detectCollisions({
+      x: this.#dragStart.mouseX + (x - this.#dragStart.x) + this.#dims.offsetX,
+      y: this.#dragStart.mouseY + (y - this.#dragStart.y) + this.#dims.offsetY,
+      width: this.#dims.w,
+      height: this.#dims.h,
+    });
 
     return { x, y };
   }
@@ -113,31 +119,14 @@ export class MovableModel {
     this.activeItemID = null;
   }
 
-  private detectCollisions(currentX: number, currentY: number) {
-    const projectedRect = {
-      x:
-        this.#dragStart.mouseX +
-        (currentX - this.#dragStart.x) +
-        this.#dims.offsetX,
-      y:
-        this.#dragStart.mouseY +
-        (currentY - this.#dragStart.y) +
-        this.#dims.offsetY,
-      width: this.#dims.w,
-      height: this.#dims.h,
-    };
-
+  detectCollisions(rect: MovableRect) {
     let hitId: string | null = null;
-
-    const resolvedGroup = Array.isArray(this.activeItemGroup)
-      ? this.activeItemGroup
-      : [this.activeItemGroup];
 
     for (const [id, config] of this.#sensors) {
       if (
-        Geometry.intersects(projectedRect, config.rect) &&
+        Geometry.intersects(rect, config.rect) &&
         (config.accepts.length === 0 ||
-          resolvedGroup.some((g) => config.accepts.includes(g)))
+          this.activeItemGroup.some((g) => config.accepts.includes(g)))
       ) {
         hitId = id;
         break;
