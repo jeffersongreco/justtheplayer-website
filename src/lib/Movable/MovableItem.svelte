@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getContext, type Snippet } from "svelte";
   import type { Action } from "svelte/action";
   import { createMovableDragInteraction } from "./MovableDragInteraction";
   import { MovableModel } from "./MovableModel.svelte";

@@ -1,11 +1,11 @@
 import { getContext, setContext } from "svelte";
 import { Geometry } from "./Geometry";
-import type { MovableGroup, MovableSensorBounds } from "./types";
+import type { MovableGroup, MovableRect } from "./types";
 
 const CONTEXT_KEY = Symbol("MOVABLE_MODEL");
 
 type SensorConfiguration = {
-  bounds: MovableSensorBounds;
+  rect: MovableRect;
   accepts: MovableGroup;
 };
 
@@ -19,7 +19,7 @@ export class MovableModel {
   static get(): MovableModel {
     const model = getContext<MovableModel>(CONTEXT_KEY);
     if (!model) {
-      throw new Error("Movable components must be inside a <Movable.Context>.");
+      throw new Error("Movable components must be inside a <Movable.Root>.");
     }
     return model;
   }
@@ -27,6 +27,7 @@ export class MovableModel {
   activeItemID = $state<string | null>(null);
   activeItemGroup = $state<MovableGroup>([]);
   activeSensorID = $state<string | null>(null);
+  rootNode = $state<HTMLElement | null>(null);
   pointerPos = $state({ x: 0, y: 0 });
 
   #limits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
@@ -38,14 +39,17 @@ export class MovableModel {
     return this.#sensors.size;
   }
 
+  isOverSensor(id: string): boolean {
+    return this.activeSensorID === id;
+  }
+
   beginMove(
     e: PointerEvent,
     node: HTMLElement,
     id: string,
     group: MovableGroup
   ) {
-    const parent = node.offsetParent as HTMLElement;
-    if (!parent) {
+    if (!this.rootNode) {
       return;
     }
 
@@ -54,7 +58,7 @@ export class MovableModel {
     this.activeItemGroup = group;
 
     const nodeRect = node.getBoundingClientRect();
-    const parentRect = parent.getBoundingClientRect();
+    const rootRect = this.rootNode.getBoundingClientRect();
 
     this.#dims = {
       w: nodeRect.width,
@@ -70,10 +74,10 @@ export class MovableModel {
     const currentY = currentTransform.m42;
 
     this.#limits = {
-      minX: currentX - (nodeRect.left - parentRect.left),
-      maxX: currentX + (parentRect.right - nodeRect.right),
-      minY: currentY - (nodeRect.top - parentRect.top),
-      maxY: currentY + (parentRect.bottom - nodeRect.bottom),
+      minX: currentX - (nodeRect.left - rootRect.left),
+      maxX: currentX + (rootRect.right - nodeRect.right),
+      minY: currentY - (nodeRect.top - rootRect.top),
+      maxY: currentY + (rootRect.bottom - nodeRect.bottom),
     };
 
     this.#dragStart = {
@@ -131,7 +135,7 @@ export class MovableModel {
 
     for (const [id, config] of this.#sensors) {
       if (
-        Geometry.intersects(projectedRect, config.bounds) &&
+        Geometry.intersects(projectedRect, config.rect) &&
         (config.accepts.length === 0 ||
           resolvedGroup.some((g) => config.accepts.includes(g)))
       ) {
@@ -142,15 +146,15 @@ export class MovableModel {
     this.activeSensorID = hitId;
   }
 
-  registerSensor(
-    id: string,
-    bounds: MovableSensorBounds,
-    accepts: MovableGroup
-  ) {
-    this.#sensors.set(id, { bounds, accepts });
+  registerSensor(id: string, rect: MovableRect, accepts: MovableGroup) {
+    this.#sensors.set(id, { rect, accepts });
   }
 
   unregisterSensor(id: string) {
     this.#sensors.delete(id);
+  }
+
+  registerRoot(node: HTMLElement | null) {
+    this.rootNode = node;
   }
 }

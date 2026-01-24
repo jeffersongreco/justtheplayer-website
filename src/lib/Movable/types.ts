@@ -1,5 +1,6 @@
 import type { Snippet } from "svelte";
 import type { Action } from "svelte/action";
+import type { MovableModel } from "./MovableModel.svelte";
 
 export interface MovableRect {
   x: number;
@@ -21,8 +22,13 @@ export type MovableContainerDimension = number;
 
 export type MovableGroup = string[];
 
+export interface MovableRootState {
+  root: Action<HTMLElement>;
+  model: MovableModel;
+}
+
 export interface MovableRootProps {
-  asChild: Snippet<[object]>;
+  asChild: Snippet<[MovableRootState]>;
 }
 
 interface MovableItemConfiguration {

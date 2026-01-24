@@ -1,32 +1,39 @@
 <script lang="ts">
+  import { Movable } from "$lib/Movable";
   import browserTop from "./tmp/browser-top.png";
   import disparada from "./tmp/disparada.webm";
   import youtubeBottom from "./tmp/youtube-bottom.png";
   import youtubeTop from "./tmp/youtube-top.png";
-
-  let { isCursorOutScreen }: { isCursorOutScreen: boolean } = $props();
 </script>
 
-<div class="screen">
-  <div class="window">
-    <img src={browserTop} alt="" class="browser-top">
-    <img src={youtubeTop} alt="" class="youtube-top" class:isCursorOutScreen>
+<Movable.Sensor id="home-screen-sensor">
+  {#snippet asChild({ sensor, isOver })}
+    <div use:sensor class="screen">
+      <div class="window">
+        <img src={browserTop} alt="" class="browser-top">
+        <img
+          src={youtubeTop}
+          alt=""
+          class="youtube-top"
+          class:isCursorOutScreen={!isOver}
+        >
 
-    <!-- Player -->
-    <div class="player-tmp">
-      <video autoplay loop muted playsinline>
-        <source src={disparada} type="video/webm">
-      </video>
+        <div class="player-tmp">
+          <video autoplay loop muted playsinline>
+            <source src={disparada} type="video/webm">
+          </video>
+        </div>
+
+        <img
+          src={youtubeBottom}
+          alt=""
+          class="youtube-bottom"
+          class:isCursorOutScreen={!isOver}
+        >
+      </div>
     </div>
-
-    <img
-      src={youtubeBottom}
-      alt=""
-      class="youtube-bottom"
-      class:isCursorOutScreen
-    >
-  </div>
-</div>
+  {/snippet}
+</Movable.Sensor>
 
 <style>
   .screen {

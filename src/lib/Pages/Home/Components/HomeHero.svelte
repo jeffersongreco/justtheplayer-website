@@ -1,36 +1,48 @@
 <script lang="ts">
-  import IMac from "$lib/Components/IMac.svelte";
-  import type { Ref } from "$lib/Types";
+  import { Movable } from "$lib/Movable";
+  import Cursor from "./Cursor.svelte";
   import HomeScreen from "./HomeScreen.svelte";
+  import IMac from "./IMac.svelte";
   import noise from "./tmp/noise.mp4";
 
-  let {
-    screenRef,
-    isHeroCollapsed,
-    isCursorOutScreen,
-  }: { screenRef: Ref; isHeroCollapsed: boolean; isCursorOutScreen: boolean } =
-    $props();
+  let { isHeroSubtle }: { isHeroSubtle: boolean } = $props();
 </script>
 
-<div class="hero z-stack">
-  <!-- Vídeo -->
-  <div class="noise" class:isHeroCollapsed class:isCursorOutScreen>
-    <video autoplay loop muted playsinline>
-      <source src={noise} type="video/mp4">
-    </video>
-  </div>
-  <!-- iMac -->
-  <div class="imac" class:isHeroCollapsed>
-    <IMac {screenRef}>
-      <HomeScreen {isCursorOutScreen} />
-    </IMac>
-  </div>
-  <!-- Sombra inferior -->
-  <div class="gradient" class:isHeroCollapsed></div>
-</div>
+<Movable.Root>
+  {#snippet asChild({ root, model })}
+    <div use:root class="hero z-stack">
+      <!-- Vídeo -->
+      <div
+        class="noise"
+        class:isHeroSubtle
+        class:isCursorOutScreen={!model.isOverSensor("home-screen-sensor")}
+      >
+        <video autoplay loop muted playsinline>
+          <source src={noise} type="video/mp4">
+        </video>
+      </div>
+      <!-- iMac -->
+      <div class="imac" class:isHeroSubtle>
+        <IMac>
+          <HomeScreen />
+        </IMac>
+      </div>
+      <!-- Sombra inferior -->
+      <div class="gradient" class:isHeroSubtle></div>
+
+      <!-- Cursor -->
+      <Movable.Item initialPosition={{ x: "50%", y: "50%" }}>
+        {#snippet children()}
+          <Cursor />
+        {/snippet}
+      </Movable.Item>
+    </div>
+  {/snippet}
+</Movable.Root>
 
 <style>
   .hero {
+    position: relative;
     width: 100%;
     height: 100%;
   }
@@ -65,7 +77,7 @@
     padding: 80px 80px 20px 80px;
   }
 
-  .imac.isHeroCollapsed {
+  .imac.isHeroSubtle {
     --imac-brightness: 0.7;
   }
 
@@ -97,7 +109,7 @@
     transition: opacity 2s ease-out;
   }
 
-  .gradient.isHeroCollapsed {
+  .gradient.isHeroSubtle {
     /*transform: scaleY(1);*/
     opacity: 1;
   }

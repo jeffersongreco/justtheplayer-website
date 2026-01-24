@@ -2,7 +2,7 @@
   import cursorSimple from "$lib/assets/os-x-cursor.png";
   import cursor from "$lib/assets/os-x-cursor-with-tooltip.png";
 
-  let { hasReturned = false } = $props();
+  let hasReturned = $state(false);
 
   let imgSrc = $derived(hasReturned ? cursorSimple : cursor);
 </script>

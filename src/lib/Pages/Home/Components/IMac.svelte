@@ -1,22 +1,16 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { Ref } from "$lib/Types";
   import crt from "./tmp/crt.png";
   import imac from "./tmp/imac.png";
   import wallpaper from "./tmp/wallpaper.png";
 
-  let { screenRef, children }: { screenRef?: Ref; children: Snippet } =
-    $props();
-
-  // biome-ignore lint/suspicious/noEmptyBlockStatements: Intencional void
-  const noop: Ref = () => {};
-  const resolvedScreenRef = $derived(screenRef ?? noop);
+  let { children }: { children: Snippet } = $props();
 </script>
 
 <div class="container">
   <div class="imac-wrapper">
     <!-- Screen -->
-    <div class="screen z-stack" use:resolvedScreenRef>
+    <div class="screen z-stack">
       <!-- Wallpaper -->
       <img src={wallpaper} alt="" class="wallpaper">
       <!-- Children -->

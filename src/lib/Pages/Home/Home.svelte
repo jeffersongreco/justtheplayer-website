@@ -1,26 +1,8 @@
 <script lang="ts">
-  import Cursor from "$lib/Home/Cursor.svelte";
-  // import HomeFooter from "$lib/Home/HomeFooter.svelte";
-  import { HomeModel } from "$lib/Pages/Home/HomeModel.svelte";
-  // import { PlayerModel } from "$lib/Home/PlayerModel.svelte";
-  import Draggable from "$lib/Sensor/Draggable.svelte";
-  import { DragModel } from "$lib/Sensor/DragModel.svelte";
-  import type { Ref } from "$lib/Types";
   import HomeHeadline from "./Components/HomeHeadline.svelte";
   import HomeHero from "./Components/HomeHero.svelte";
 
-  // import ImacMockup from "$lib/Home/ImacMockup.svelte";
-  //   // const homeModel = new HomeModel();
-  // const playerModel = new PlayerModel();
-
-  const dragModel = new DragModel("50%", "50%");
-
-  let screenRef = $derived(dragModel.target);
-  // let isTutorialFinished = $derived(dragModel.isTutorialFinished);
   let isTutorialFinished = $state(false);
-  let isCursorOutScreen = $derived(!dragModel.isIntersecting);
-  // let isTutorialFinished = true;
-  // let isCursorOutScreen = false;
 </script>
 
 <main class:isTutorialFinished>
@@ -30,21 +12,8 @@
   >
     Toggle Tutorial
   </button>
-  <!-- <div class="layout">
-    <ImacMockup {dragModel} {playerModel} />
-
-    <HomeFooter {homeModel} {dragModel} {playerModel} />
-
-    <Draggable model={dragModel}>
-      <Cursor hasReturned={dragModel.isTutorialFinished} />
-    </Draggable>
-  </div> -->
   <div class="hero">
-    <HomeHero
-      {screenRef}
-      isHeroCollapsed={isTutorialFinished}
-      {isCursorOutScreen}
-    />
+    <HomeHero isHeroSubtle={isTutorialFinished} />
   </div>
 
   <div class="headline">
@@ -52,10 +21,6 @@
       <HomeHeadline />
     </div>
   </div>
-
-  <Draggable model={dragModel}>
-    <Cursor hasReturned={dragModel.isTutorialFinished} />
-  </Draggable>
 </main>
 
 <style>
