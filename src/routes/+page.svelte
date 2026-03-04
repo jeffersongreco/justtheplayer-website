@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
   import "./page.css";
   import ImacMockup from "$lib/components/ImacMockup.svelte";
   import FloatingCursor from "$lib/components/FloatingCursor.svelte";
@@ -260,3 +260,4 @@
     recording was accessed via a third-party digital archive. The English
     lyrical translation is credited to David Treece, as published in the liner
     notes of the album The São Paulo Tapes (2010), by Monica Vasconcelos. -->
+-->

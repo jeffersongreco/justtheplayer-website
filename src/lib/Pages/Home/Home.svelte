@@ -6,12 +6,12 @@
 </script>
 
 <main class:isTutorialFinished>
-  <button
+  <!-- <button
     style="position: fixed; top: 1rem; left: 1rem; z-index: 9999;"
     onclick={() => (isTutorialFinished = !isTutorialFinished)}
   >
     Toggle Tutorial
-  </button>
+  </button> -->
   <div class="hero">
     <HomeHero isHeroSubtle={isTutorialFinished} />
   </div>
