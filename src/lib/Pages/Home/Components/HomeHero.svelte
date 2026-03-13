@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { AttentionRequester, PhysicsBounce } from "$lib/Attention Requester";
   import { Movable } from "$lib/Movable";
   import Cursor from "./Cursor.svelte";
   import HomeScreen from "./HomeScreen.svelte";
@@ -6,6 +8,22 @@
   import noise from "./tmp/noise.mp4";
 
   let { isHeroSubtle }: { isHeroSubtle: boolean } = $props();
+
+  // biome-ignore lint/suspicious/noUnassignedVariables: atribuído via bind:this antes do onMount
+  let attention: AttentionRequester;
+  const animation = PhysicsBounce({
+    direction: "up",
+    loop: true,
+    onInterrupt: "discard",
+  });
+
+  onMount(() => {
+    const timeout = setTimeout(() => {
+      attention.request(animation);
+    }, 4000);
+
+    return () => clearTimeout(timeout);
+  });
 </script>
 
 <Movable.Root>
@@ -32,8 +50,10 @@
 
       <!-- Cursor -->
       <Movable.Item initialPosition={{ x: "50%", y: "50%" }}>
-        {#snippet children()}
-          <Cursor />
+        {#snippet children({isMoving})}
+          <AttentionRequester bind:this={attention} paused={isMoving}>
+            <Cursor />
+          </AttentionRequester>
         {/snippet}
       </Movable.Item>
     </div>
