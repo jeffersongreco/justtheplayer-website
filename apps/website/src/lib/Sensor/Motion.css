@@ -1,0 +1,119 @@
+/* src/styles/motion.css */
+
+:root {
+  --ease-physics-up: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-physics-down: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  --ease-spring-snap: cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+/* FASE 1: Arremesso fixo para a direita (Pede para sair) */
+@keyframes physics-throw-right {
+  0% {
+    transform: translateX(0);
+    animation-timing-function: ease-in-out;
+  }
+
+  15% {
+    transform: translateX(-5%);
+    animation-timing-function: var(--ease-spring-snap);
+  }
+
+  45% {
+    transform: translateX(100%);
+    animation-timing-function: linear;
+  }
+
+  50% {
+    transform: translateX(100%);
+    animation-timing-function: var(--ease-physics-down);
+  }
+
+  75% {
+    transform: translateX(0);
+    animation-timing-function: ease-out;
+  }
+
+  82% {
+    transform: translateX(1%);
+  }
+
+  90% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* FASE 2: Arremesso Vetorial (Homing)
+   Usa Trigonometria CSS para calcular o deslocamento X/Y baseado no ângulo.
+   --target-angle: Deve ser passado em radianos (ex: 1.57rad).
+   --jump-dist: A distância do pulo (amplitude).
+*/
+@keyframes physics-throw-vector {
+  0% {
+    transform: translate(0, 0);
+    animation-timing-function: ease-in-out;
+  }
+
+  /* Recuo (Wind-up) - Vai um pouco na direção oposta (sinal negativo) */
+  15% {
+    transform: translate(
+      calc(cos(var(--target-angle)) * var(--jump-dist) * -0.05),
+      calc(sin(var(--target-angle)) * var(--jump-dist) * -0.05)
+    );
+    animation-timing-function: var(--ease-spring-snap);
+  }
+
+  /* Apex (Ponto Alto) */
+  45% {
+    transform: translate(
+      calc(cos(var(--target-angle)) * var(--jump-dist)),
+      calc(sin(var(--target-angle)) * var(--jump-dist))
+    );
+    animation-timing-function: linear;
+  }
+
+  /* Início da Queda */
+  50% {
+    transform: translate(
+      calc(cos(var(--target-angle)) * var(--jump-dist)),
+      calc(sin(var(--target-angle)) * var(--jump-dist))
+    );
+    animation-timing-function: var(--ease-physics-down);
+  }
+
+  /* Impacto */
+  75% {
+    transform: translate(0, 0);
+    animation-timing-function: ease-out;
+  }
+
+  /* Assentamento */
+  82% {
+    transform: translate(
+      calc(cos(var(--target-angle)) * var(--jump-dist) * 0.01),
+      calc(sin(var(--target-angle)) * var(--jump-dist) * 0.01)
+    );
+  }
+
+  90% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* Modifiers */
+.motion-throw-right {
+  animation: physics-throw-right 1.2s forwards;
+}
+
+.motion-homing {
+  /* Define a distância do pulo aqui (ex: 100% da largura ou valor fixo) */
+  --jump-dist: 100px;
+  animation: physics-throw-vector 1.2s forwards;
+}
