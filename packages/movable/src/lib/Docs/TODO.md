@@ -1,0 +1,1 @@
+- [ ] Verificar se já é assim e, se não for, implementar um Movable Item que é só estético, sem carregar código sobre a conversa com o Sensor.

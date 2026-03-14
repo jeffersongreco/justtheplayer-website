@@ -1,0 +1,6 @@
+- O imperativa e MV, como o padrão novo adotado após a última versão do Swift.
+- Há Controller, mas não é MVC. Aqui o controller é apenas uma "refatoração" para manter o Model abstrato. O Model sabe as regras de negócio, o Controller não. O Controller sabe manipular o DOM (ou outro sistema externo), o Model não. O Controller é um agente do Model, que obedece suas ordens, não um "mediador" como no MVC.
+- Responsabilidade única é imperativo, Movable é um exemplo de como existe um Interaction que lida com a observação de eventos do usuário, o Controller não tem isso dentro dele.
+- Além de responsabilidade única, sempre que possível, tudo é "plugável" e "agnóstico", como o Attention Requester que é agnóstico de qual animação irá receber. Como o Controller do Movable que é agnóstico de qual Interaction irá receber.
+- A motivação da criação dessa arquitetura é que um dev Apple, ou que goste de desenvolver com Swift/SwiftUI, possa manter o mesmo modelo mental de arquitetura, de design, da naming, .etc, quando estiver trabalhando em projetos web. E também por acreditar que é uma boa base para conseguir tanto boa DX quanto UX, em um sistema altamente modular, com módulos pequenos testáveis, com lógicas independentes, e com uma boa separação de responsabilidades.
+- TDD não é arch, mas é pressuposto como prática a ser adota junto com ela.
