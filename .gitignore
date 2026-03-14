@@ -12,6 +12,7 @@
 
 # Outputs
 **/build
+**/dist
 **/.output
 **/.vercel
 **/.netlify

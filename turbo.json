@@ -6,18 +6,16 @@
       "persistent": true
     },
     "build": {
-      "outputs": [".svelte-kit/**"],
-      "inputs": ["src/**", "static/**", "vite.config.ts", "svelte.config.js"]
+      "dependsOn": ["^build"],
+      "outputs": [".svelte-kit/**", "dist/**"]
     },
     "check": {
-      "outputs": [] 
+      "dependsOn": ["^build"]
     },
-    "lint": {
-      "outputs": []
-    },
+    "lint": {},
     "optimize-images": {
       "inputs": ["media/src/**"],
-      "outputs": ["media/dist/**"], 
+      "outputs": ["media/dist/**"],
       "cache": true
     }
   }
