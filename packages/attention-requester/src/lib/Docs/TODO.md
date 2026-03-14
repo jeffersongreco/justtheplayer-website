@@ -1,0 +1,1 @@
+- [ ] Definir se o componente assumirá a responsabilidade de ter uma fila de chamadas. Por hora o consumidor é responsável por chamar o concelamento e a próxima chamada, chamadas consecutivas durante uma animação em curso são ignoradas atualmente.
