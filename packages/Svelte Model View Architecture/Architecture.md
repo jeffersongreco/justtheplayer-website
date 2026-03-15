@@ -113,22 +113,40 @@ Componentes **autocontidos** (que não precisam de comunicação entre partes �
 
 Propriedades expostas pelo Model para as Views são definidas como `$derived` (sinais cacheados), não getters tradicionais. Isso garante uma API de leitura estável, performática e reativa, evitando recálculos custosos quando múltiplos componentes leem a mesma propriedade.
 
-**Cuidado com proxies em objetos:** Quando um `$derived` retorna um objeto vindo de `$state`, o valor exposto é um **proxy reativo** do Svelte, não o objeto original. Isso pode causar campos aparentemente "omitidos" ou comportamentos inesperados ao serializar, logar ou iterar. Para obter o objeto plano sem proxy, use `$state.snapshot()`:
+**Proxies e `$state.snapshot()`:** Objetos declarados com `$state` no Svelte 5 são **Proxies reativos**, não objetos comuns. Dentro do contexto reativo (templates, `$derived`, `$effect`), o Proxy funciona perfeitamente e **deve ser lido diretamente** — é ele que garante a reatividade. O problema surge quando esse Proxy é passado para código que **não espera um Proxy**: bibliotecas externas, APIs nativas do browser, serialização, ou comparações de identidade.
+
+`$state.snapshot()` retorna uma **cópia estática e plana** do estado — um POJO sem rastros do sistema reativo. É uma ferramenta oficial com uso bem definido, não uma gambiarra.
+
+**Quando usar `$state.snapshot()`:**
+
+| Contexto | Usar snapshot? |
+|---|---|
+| Leitura reativa no template ou `$effect` | ❌ Não — o Proxy é o mecanismo de reatividade |
+| Derivações com `$derived` | ❌ Não — o Proxy é o que torna a derivação reativa |
+| Passagem para biblioteca externa que não espera Proxy | ✅ Sim |
+| `structuredClone`, `JSON.stringify` em classes | ✅ Sim |
+| IndexedDB, Web Workers, serialização | ✅ Sim |
+| `console.log` para debug | ✅ Recomendado (ou usar `$inspect`) |
+| Comparação de identidade com `===` | ✅ Necessário |
+
+**Regra crítica — nunca usar snapshot dentro de derivações:**
 
 ```ts
-// ❌ Proxy — campos podem parecer ausentes em console.log ou JSON.stringify
-readonly config = $derived(this.#config)
+// ❌ ERRADO — o snapshot é estático, $derived nunca vai reatualizar
+let intent = $derived($state.snapshot(animation).intent);
 
-// ✅ Snapshot — objeto plano, sem proxy
-const plain = $state.snapshot(this.#config)
+// ✅ CORRETO — lê diretamente do Proxy; reativo
+let intent = $derived(animation.intent);
 ```
+
+**Regra prática:** Use `$state.snapshot()` sempre que precisar passar estado reativo para **fora** do contexto reativo do Svelte. **Não use** dentro de derivações, effects ou do template — nesses contextos o Proxy deve ser lido diretamente.
 
 ### Delegação: Serviços e Utils
 
 **"Serviço"** é o termo interno para classes que orbitam o Model — recebem ordens dele ou interagem com ambientes externos, ouvindo e trazendo informações de volta para o Model. Os serviços atuais da arquitetura são:
 
 - **Controllers** — gerenciam o ciclo de vida e integridade do elemento no DOM (§3)
-- **Interactions** — traduzem eventos de hardware em comandos para o Controller (§4)
+- **Interactions** — traduzem eventos de hardware em comandos para o Model (§4)
 
 **"Util"** é uma extração de lógica pura — matemática, cálculos, funções auxiliares — que não tem estado próprio nem interage com o ambiente. Exemplos:
 - Extrair a lógica de cálculo de colisão do Model para um módulo de geometria
@@ -149,7 +167,6 @@ O Controller é o **dono da existência do elemento no espaço**. Ele é persist
 - Gerenciar o ciclo de vida (iniciação e destruição)
 - Fazer atualizações quando receber notificações do ambiente (`ResizeObserver`)
 - Garantir a integridade estrutural (validar se o pai é o Context correto)
-- Gerenciar `will-change` (promover antes do ciclo, liberar no finish)
 
 **O que o Controller NÃO faz:**
 - Tomar decisões de negócio
@@ -163,6 +180,42 @@ O wrapper do componente pode ser `display: contents` — sem caixa de layout. O 
 
 Se uma variável como `controller` ou `el` precisa disparar `$effect`, ela **deve** ser declarada com `$state`. Declarar sem `$state` cria uma dependência silenciosa que nunca reexecuta.
 
+### Comunicação Model→Controller
+
+Toda comunicação Model→Controller segue o paradigma de **observação de estado** (state-observation). O Controller observa o estado reativo do Model (`$state`, `$derived`) e reage via `$effect`. O Model nunca mantém referências a Controllers, nunca chama métodos de Controllers e não tem conhecimento da existência deles.
+
+O Model expõe fatos — estado e intenções tipadas. O Controller interpreta esses fatos e executa side effects no DOM. Múltiplos Controllers podem observar o mesmo Model independentemente.
+
+APIs imperativas expostas ao consumidor (ex: `request(animation)` via `bind:this`) são inputs externos do consumidor para o Model — não constituem comunicação Model→Controller. Command-dispatch direto (`controller.fazerAlgo()`) é reservado exclusivamente para a API imperativa do consumidor (§5), nunca para o fluxo interno Model→Controller.
+
+### Ciclo de Vida e Ownership Reativo
+
+Controllers são classes `.svelte.ts` que observam o estado do Model diretamente via `$effect` no seu construtor. São sempre instanciados dentro de um bloco `$effect` no `<script>` do componente:
+
+```svelte
+let node = $state<HTMLElement | null>(null);
+
+$effect(() => {
+  if (!node) return;
+  const controller = new SomeController(node, model);
+  return () => controller.destroy();
+});
+
+const action: Action = (n) => { node = n; return {}; };
+```
+
+Este padrão é universal — componentes autocontidos e componentes baseados em Context seguem a mesma estrutura. O bloco `$effect` garante ownership reativo: qualquer `$effect` criado internamente pelo Controller herda o escopo do componente e é limpo automaticamente no unmount.
+
+O método `destroy()` do Controller trata apenas cleanup imperativo: animações WAAPI, `requestAnimationFrame`, `ResizeObserver`, timers. O cleanup reativo dos `$effect` internos é automático via ownership do Svelte.
+
+A Svelte action captura a referência ao `HTMLElement`. Ela **não** é dona do ciclo de vida do Controller.
+
+**Regra:** O componente que cria o Controller é responsável por garantir que nada vaze quando ele desmontar. Sem exceções.
+
+**Escape hatch:** Se um Controller precisar ser criado fora de um contexto reativo, ele usa `$effect.root` internamente e o `destroy()` é obrigatório. Esta é a exceção, não o padrão.
+
+O template `<script>` contém apenas: (1) `$effect` que roteia props para o Model, (2) `$effect` que cria e destrói o Controller, (3) a action para captura do node. Nenhum `$effect` no template roteia estado do Model para o Controller — o Controller trata disso internamente.
+
 ---
 
 ## 4. Interaction
@@ -171,9 +224,9 @@ Se uma variável como `controller` ou `el` precisa disparar `$effect`, ela **dev
 
 A Interaction é puramente um **tradutor de hardware**. Ela não sabe sobre coordenadas CSS, porcentagens ou redimensionamento de janela. Ela só sabe que "o mouse desceu", "o mouse moveu" ou "o dedo levantou".
 
-**Responsabilidade:** Capturar a intenção física do usuário e traduzi-la em **comandos** para o Controller. Ela diz ao Controller: *"O usuário quer mover para a direita"*.
+**Responsabilidade:** Capturar a intenção física do usuário e traduzi-la em **comandos** para o Model. Ela diz ao Model: *"O usuário quer mover para a direita"*.
 
-**Natureza:** Plugável e substituível. Hoje existe uma `DragInteraction` (Mouse/Touch). Amanhã pode-se plugar uma `KeyboardInteraction` (setas do teclado) no **mesmo** Controller, sem alterar uma linha da lógica de posicionamento ou renderização.
+**Natureza:** Plugável e substituível. Hoje existe uma `DragInteraction` (Mouse/Touch). Amanhã pode-se plugar uma `KeyboardInteraction` (setas do teclado) no **mesmo** Model, sem alterar uma linha da lógica de posicionamento ou renderização.
 
 ### Barreira Sanitária
 
@@ -181,6 +234,14 @@ Em vez de misturar lógica imperativa (DOM) com declarativa (Model), a Interacti
 - O **Model** permanece matematicamente puro (testável sem DOM)
 - A **View** permanece semanticamente limpa
 - Toda a "sujeira" de `addEventListener`, `requestAnimationFrame` e `getBoundingClientRect` vive e morre isolada na Interaction
+
+### Fluxo de Dados
+
+A Interaction comunica-se exclusivamente com o Model. Traduz eventos de hardware (pointer, keyboard, touch) em chamadas de método no Model (`model.beginMove()`, `model.updatePosition()`, `model.endMove()`). Nunca mantém referência ao Controller e nunca chama métodos do Controller.
+
+O Controller observa as mudanças de estado resultantes no Model e aplica-as ao DOM. O fluxo de dados é sempre: **Interaction → Model → Controller**.
+
+Concerns de DOM que não são intenção do usuário (ex: promoção de GPU layer no hover, mudanças de cursor) são responsabilidade do próprio Controller. O Controller pode observar eventos DOM diretamente no seu elemento para esses fins, da mesma forma que observa `ResizeObserver`. Estes não são concerns da Interaction.
 
 ### Diferenciação: Controller vs. Interaction
 
@@ -303,7 +364,7 @@ Quando um tipo tem variantes com contratos incompatíveis (parâmetros obrigató
 ### Regras Obrigatórias
 
 - **`fill: 'none'`** — Impede estado residual da animação no elemento após o ciclo terminar. O elemento retorna à posição CSS base automaticamente.
-- **`will-change` gerenciado pelo Controller** — Setar `will-change` estaticamente desperdiça memória de GPU em elementos idle. O Controller promove antes do ciclo e libera no `finish`.
+- **`will-change` não é gerenciado imperativamente** — Ao usar WAAPI com `element.animate()`, o browser já sabe que o elemento será animado e promove a camada automaticamente. Adicionar e remover `will-change` no entorno de cada animação é trabalho redundante sem benefício. Em casos excepcionais (elementos muito pesados com animação de duração/delay zero e problema de performance medido), considere `will-change` em CSS estático na classe do elemento — nunca via JavaScript imperativo.
 - **Propriedade CSS `translate` separada de `transform`** — Usar `translate` nos keyframes da WAAPI não interfere com `transform: translate3d()` usado por sistemas de posicionamento. As duas propriedades coexistem e se compõem. Isso é intencional.
 
 ---
@@ -348,9 +409,9 @@ A detecção de colisão não verifica onde o cursor do mouse está, mas projeta
 
 O processamento lógico (alta frequência do mouse, até 1000Hz) é separado da renderização do DOM. O estilo visual (`transform`) só é atualizado sincronizado com a taxa de atualização do monitor via `requestAnimationFrame`.
 
-### Gestão de VRAM
+### VRAM e `will-change`
 
-`will-change: transform` não fica ativa o tempo todo. É adicionada antecipadamente no `pointerenter` (hover) para garantir zero latência, e removida no `pointerleave` ou `onEnd` para evitar esgotamento de memória de vídeo em telas com muitos itens.
+Com WAAPI, o browser gerencia a promoção de camada automaticamente ao receber `element.animate()` com propriedades de composição (`transform`, `opacity`). Não é necessário adicionar nem remover `will-change` imperativamente — o browser reconhece a intenção de animação e aplica aceleração de hardware por conta própria. Para sistemas baseados em manipulação direta de estilo (ex: `requestAnimationFrame` + atribuição de `transform`), onde o browser não tem como saber que o elemento será animado, `will-change` pode ser adicionado em CSS estático para elementos que animam com frequência.
 
 ### Pointer Capture
 
@@ -392,7 +453,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Toda lógica de negócio vive no Model — Controller tem zero tomada de decisão
 - [ ] Estado mutável usa `#field = $state()` (privado nativo JS, não convenção)
 - [ ] Estado público usa `readonly field = $derived(this.#field)`
-- [ ] Ao expor objetos via `$derived`, considera `$state.snapshot()` quando necessário para evitar proxy
+- [ ] Usa `$state.snapshot()` apenas ao passar estado para fora do contexto reativo (libs externas, serialização, `===`); nunca dentro de `$derived`, `$effect` ou template
 - [ ] Comportamentos qualitativamente diferentes usam union discriminada, não boolean
 - [ ] Sem singletons globais — instâncias injetadas via Context (multi-componente) ou internas (autocontido)
 - [ ] Lógica complexa ou externa extraída para Serviços (Controller, Interaction) ou Utils (funções puras)
@@ -401,12 +462,18 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 ### Controller (§3)
 - [ ] Nunca toma decisões de negócio — apenas executa ordens do Model
 - [ ] Elemento-alvo resolvido de forma lazy (`wrapper.children[0]`), não na construção
-- [ ] `will-change` promovido antes da operação e liberado no finish
+- [ ] `will-change` não é gerenciado imperativamente — WAAPI promove camadas automaticamente
 - [ ] Variáveis que disparam `$effect` declaradas com `$state`
 - [ ] Gerencia ciclo de vida: cleanup de observers e listeners na destruição
+- [ ] Comunicação Model→Controller é por observação de estado (`$effect`), nunca command-dispatch interno
+- [ ] Instanciado dentro de `$effect` no `<script>` do componente (ownership reativo garantido)
+- [ ] Nenhum `$effect` no template roteia estado do Model para o Controller — o Controller observa o Model internamente
+- [ ] `destroy()` trata apenas cleanup imperativo (WAAPI, rAF, observers, timers); cleanup reativo é automático
 
 ### Interaction (§4)
-- [ ] Responsabilidade única: traduzir hardware em comandos
+- [ ] Responsabilidade única: traduzir hardware em comandos para o Model
+- [ ] Comunica-se exclusivamente com o Model — nunca referencia ou chama o Controller
+- [ ] Fluxo de dados: Interaction → Model → Controller
 - [ ] Plugável — pode ser substituída sem alterar Controller ou Model
 - [ ] Não sabe sobre CSS, coordenadas ou renderização
 - [ ] Toda "sujeira" imperativa (`addEventListener`, `rAF`, `getBoundingClientRect`) isolada aqui
@@ -433,7 +500,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Animações são objetos de dados (nome, duração, keyframes, loop, onInterrupt), não comportamento
 - [ ] WAAPI preferida sobre CSS animations para componentes com estado
 - [ ] `fill: 'none'` obrigatório — sem estado residual
-- [ ] `will-change` gerenciado pelo Controller, não por CSS estático
+- [ ] `will-change` não é gerenciado imperativamente pelo Controller — WAAPI promove camadas automaticamente; CSS estático apenas se houver problema de performance medido
 - [ ] Propriedade CSS `translate` usada em keyframes (não `transform`) para evitar clash com posicionamento
 - [ ] Contratos tipados como unions discriminadas (ex: loop vs one-shot)
 
@@ -446,7 +513,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Sistema de coordenadas unificado (AABB) referenciado ao Context
 - [ ] Delta absoluto para movimentos (sem `movementX/Y`)
 - [ ] Renderização desacoplada via `requestAnimationFrame`
-- [ ] `will-change` adicionada em hover, removida em idle
+- [ ] `will-change` não gerenciado imperativamente — para WAAPI o browser promove automaticamente; para `rAF` + estilo direto, CSS estático se necessário
 - [ ] `setPointerCapture` para continuidade em movimentos rápidos
 - [ ] Animações de posição (`transform`) e decorativas (`translate`) não conflitam
 
