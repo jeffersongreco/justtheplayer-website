@@ -3,7 +3,7 @@ import type {
   ARAnimationOneShot,
   AttentionInterruptBehavior,
   AttentionRequesterAnimation,
-} from "../types";
+} from "../AttentionRequester.types";
 
 interface ARAnimationParams {
   name: string;

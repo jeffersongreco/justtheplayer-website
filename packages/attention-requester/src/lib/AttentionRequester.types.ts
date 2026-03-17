@@ -3,10 +3,9 @@ import type { Action } from "svelte/action";
 
 export type AttentionInterruptBehavior = "resume" | "discard";
 
-export type PauseIntent =
-  | { action: "freeze" } // isPaused virou true — congela
-  | { action: "resume" } // resume normal
-  | { action: "discard"; interval: number }; // descarta e aguarda intervalo
+export type InterruptResolution =
+  | { strategy: "resume" }
+  | { strategy: "discard"; interval: number };
 
 export interface ARAnimationConfig {
   name: string;
@@ -34,6 +33,6 @@ export interface AttentionRequester {
 export type AttentionRequesterProps = {
   paused?: boolean;
 } & (
-  | { children: Snippet; asChild?: never }
-  | { asChild: Snippet<[{ action: Action }]>; children?: never }
+  | { children: Snippet<[{ isAnimating: boolean }]>; asChild?: never }
+  | { asChild: Snippet<[{ action: Action; isAnimating: boolean }]>; children?: never }
 );

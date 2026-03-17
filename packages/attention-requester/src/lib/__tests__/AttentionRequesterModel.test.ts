@@ -4,7 +4,7 @@ import type {
 	ARAnimationLoop,
 	ARAnimationOneShot,
 	AttentionRequesterAnimation,
-} from '../types';
+} from '../AttentionRequester.types';
 
 // ---------------------------------------------------------------------------
 // Test helpers — animation factories
@@ -167,19 +167,10 @@ describe('§3.1 Pause/Resume — Resume Strategy', () => {
 		expect(model.isPaused).toBe(false);
 	});
 
-	it('pauseIntent reflects "resume" after resume with default strategy', () => {
+	it('interruptResolution reflects "resume" with default strategy', () => {
 		const model = new AttentionRequesterModel();
 		requestAnimation(model, oneShot());
-		model.pause();
-		model.resume();
-		expect(model.pauseIntent).toEqual({ action: 'resume' });
-	});
-
-	it('pauseIntent is "freeze" while paused', () => {
-		const model = new AttentionRequesterModel();
-		requestAnimation(model, oneShot());
-		model.pause();
-		expect(model.pauseIntent).toEqual({ action: 'freeze' });
+		expect(model.interruptResolution).toEqual({ strategy: 'resume' });
 	});
 });
 
@@ -188,28 +179,22 @@ describe('§3.1 Pause/Resume — Resume Strategy', () => {
 // ===========================================================================
 
 describe('§3.2 Pause/Resume — Discard Strategy', () => {
-	it('pauseIntent reflects "discard" after resume with discard strategy', () => {
+	it('interruptResolution reflects "discard" with discard strategy', () => {
 		const model = new AttentionRequesterModel();
 		requestAnimation(model, looping({ onInterrupt: 'discard' }));
-		model.pause();
-		model.resume();
-		expect(model.pauseIntent).toEqual({ action: 'discard', interval: 500 });
+		expect(model.interruptResolution).toEqual({ strategy: 'discard', interval: 500 });
 	});
 
 	it('discard strategy includes interval from the animation', () => {
 		const model = new AttentionRequesterModel();
 		requestAnimation(model, looping({ onInterrupt: 'discard', interval: 1000 }));
-		model.pause();
-		model.resume();
-		expect(model.pauseIntent).toEqual({ action: 'discard', interval: 1000 });
+		expect(model.interruptResolution).toEqual({ strategy: 'discard', interval: 1000 });
 	});
 
 	it('discard strategy with one-shot has interval 0', () => {
 		const model = new AttentionRequesterModel();
 		requestAnimation(model, oneShot({ onInterrupt: 'discard' }));
-		model.pause();
-		model.resume();
-		expect(model.pauseIntent).toEqual({ action: 'discard', interval: 0 });
+		expect(model.interruptResolution).toEqual({ strategy: 'discard', interval: 0 });
 	});
 });
 
@@ -291,7 +276,7 @@ describe('§4 Pluggable Animations', () => {
 	it('default interruption strategy is "resume" when not specified', () => {
 		const model = new AttentionRequesterModel();
 		requestAnimation(model, oneShot()); // no onInterrupt
-		expect(model.pauseIntent).toEqual({ action: 'resume' });
+		expect(model.interruptResolution).toEqual({ strategy: 'resume' });
 	});
 });
 
