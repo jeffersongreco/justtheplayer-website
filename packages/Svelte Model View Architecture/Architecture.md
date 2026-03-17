@@ -1,7 +1,7 @@
 # Svelte Model View Architecture
 
 > **Documento Vivo:** Esta arquitetura evolui a cada novo pacote criado.
-> Ao criar um novo pacote, execute o Checklist de Conformidade (§10).
+> Ao criar um novo pacote, execute o Checklist de Conformidade (§14).
 > Se um padrão estiver ausente ou um novo princípio surgir, adicione-o aqui e atualize o checklist.
 > Após qualquer atualização, reavalie os pacotes existentes contra os novos itens.
 
@@ -417,6 +417,22 @@ Com WAAPI, o browser gerencia a promoção de camada automaticamente ao receber 
 
 Uso de `setPointerCapture` para garantir que eventos de movimento e soltura não se percam caso o usuário mova o mouse rápido demais para fora do elemento ou da janela do navegador.
 
+### Propriedades Compositor-Friendly
+
+Animações devem usar exclusivamente propriedades que rodam no compositor thread do browser: `translate`, `transform`, `opacity`, `scale`, `rotate`, `filter`. Nunca animar propriedades que trigam layout: `width`, `height`, `top`, `left`, `margin`, `padding`. Essa decisão arquitetural é mais impactante que qualquer otimização de runtime.
+
+Para drag/posicionamento (Movable), mover elementos via `translate` ou `transform: translate()`, nunca `top`/`left`.
+
+### Bundle Size
+
+Cada package deve ter um budget de bundle size monitorado via `size-limit`. É o teste automatizado de performance com maior ROI — impede imports acidentais de dependências pesadas e tree-shaking quebrado.
+
+### Benchmarks de Runtime
+
+`vitest bench` é usado para detectar **regressões relativas** entre commits no Model e Utils (tempo de instanciação, ciclo de vida completo). Não é gate de CI (performance absoluta varia por máquina), é comparativo.
+
+Frame rate e jank são verificados manualmente via DevTools Performance panel — não são automatizáveis em CI de forma confiável. Quando disponível, o Chrome DevTools MCP deve ser usado para automatizar coleta de métricas.
+
 ### Isolamento de Animações (Anti-Transform Clash)
 
 O Modifier invisível controlado pelo JS lida com as coordenadas (física via `transform`), enquanto o conteúdo interno lida com animações decorativas (via propriedade CSS `translate`). As duas não conflitam.
@@ -445,7 +461,159 @@ Nomes baseados no **domínio e capacidade** (ex: `Movable` — domínio do espa�
 
 ---
 
-## 10. Checklist de Conformidade
+## 10. Testes
+
+### Spec de Comportamento Exaustivo
+
+O Behavioral Spec é a fundação de tudo — tanto os testes automatizados quanto a implementação do Model são derivados dele. **O Spec deve ser exaustivo:** todo estado, transição, edge case e invariante deve estar descrito antes da implementação. Um Spec com gaps produz Models com gaps e testes que não cobrem o que deveriam.
+
+O Model é a fonte única da verdade; se os testes do Model passam mas o comportamento está errado, o bug está no Controller ou na View — a arquitetura dá isolamento de falhas de graça.
+
+### Granularidade: testar por camada
+
+| Camada | Estratégia | Rationale |
+|---|---|---|
+| Model (estado puro) | Testes automatizados, um arquivo por Model | Lógica pura, sem dependências, rápido, preciso |
+| Controller (orquestrador DOM) | Checklist de verificação manual na dev page | DOM + framework dependent; mocks seriam frágeis e enganosos |
+| View (componente Svelte) | Checklist de verificação manual na dev page | Mesmo que Controller |
+| Integração Model ↔ Controller | Checklist de verificação manual na dev page | Precisa de runtime real; teste automatizado seria E2E |
+| Utils / pure functions | Testes automatizados | 100% testável, sem side effects |
+
+### Organização dos Testes por Seção do Spec
+
+Os testes devem ser organizados por seção do Behavioral Spec (ex: `§2.1 Idle → Animating`, `§2.3 Cancellation`), não por módulo ou método. Isso permite que uma falha aponte diretamente para qual contrato comportamental quebrou — diagnóstico superior a separar por implementação.
+
+### Extrair Pure Functions para Ganhar Testabilidade
+
+Sempre que uma lógica puder ser extraída como pure function (sem side effects, sem estado, sem DOM), deve-se fazer essa extração. Isso converte código que só seria verificável manualmente (dentro do Controller ou Interaction) em código testável automaticamente. Exemplos: cálculos de colisão, boundary clamping, interpolação, resolução de coordenadas.
+
+### Testes Automatizados de UI
+
+Testes automatizados de UI (Vitest Browser Mode, Playwright Component Testing, visual regression) **não são considerados para nenhum pacote no momento**. O ROI é baixo para libraries de animação e interação — as libraries de referência da indústria (GSAP, Framer Motion, dnd-kit) também não os utilizam. A verificação visual é feita via dev pages dedicadas (§12).
+
+---
+
+## 11. Logging
+
+### Logs são Infraestrutura, não Ferramenta Temporária
+
+Logs ficam **permanentemente** no código-fonte. Nunca se adiciona e remove logs manualmente para diagnosticar um bug — os logs relevantes já devem estar lá.
+
+### Eliminação em Produção
+
+Logs de debug são guardados por `import.meta.env.DEV` — o Vite substitui em build time e o minifier elimina o bloco inteiro. Zero bytes no bundle de produção, zero custo.
+
+```ts
+if (import.meta.env.DEV) {
+  console.debug('[AR:Model] State transition', { from: 'idle', to: 'animating' });
+}
+```
+
+### Níveis e Visibilidade
+
+| Nível | Quando usar | Presente em produção? |
+|---|---|---|
+| `console.debug` | Transições de estado, lifecycle, dados de configuração | ❌ Eliminado |
+| `console.warn` | Uso incorreto da API, fallbacks aplicados, auto-correções (§7) | ✅ Sempre |
+| `console.error` | Falhas inesperadas | ✅ Sempre |
+
+### Namespacing
+
+Todos os logs usam prefixo `[Package:Layer]` para filtragem no DevTools (ex: `[AR:Model]`, `[AR:Controller]`, `[Movable:Interaction]`).
+
+### Onde Logar
+
+- **Sim:** Transições de estado, lifecycle (mount/destroy/configure), warnings de uso incorreto, interrupt resolution aplicada
+- **Nunca:** Dentro de animation frame callbacks, per-tick, event handlers de alta frequência (scroll, mousemove)
+
+### Sem Biblioteca Externa
+
+Para component libraries, `import.meta.env.DEV` + prefixos string é suficiente. Bibliotecas de logging não se justificam pelo overhead de dependência e bundle size.
+
+### Instrumentação de Animações
+
+Para timing e profiling de animações, preferir `performance.mark()` / `performance.measure()` e `Animation.id` (WAAPI) em vez de `console.log`. Estes aparecem nativamente nos painéis Performance e Animations do DevTools.
+
+### DevTools MCP
+
+Quando disponível, o Chrome DevTools MCP deve ser usado para consumir logs e métricas diretamente, reduzindo etapas manuais de verificação.
+
+---
+
+## 12. Dev Pages
+
+### Dev Page Dedicada por Package
+
+Cada package tem uma dev page dedicada (não Storybook) servida pelo Vite diretamente. A dev page é Svelte puro — sem DSL, sem framework de stories, sem configuração de addon.
+
+### Estrutura
+
+```
+packages/<package>/
+├── src/dev/
+│   ├── main.ts          ← Entry point
+│   └── App.svelte       ← Dev page principal
+├── index.html           ← HTML shell
+└── vite.config.ts       ← Vite dev server
+```
+
+### O que a Dev Page Deve Conter
+
+1. **Cenários visuais** — cada variante/estado renderizado e identificado com label
+2. **Controles interativos** — botões/inputs que chamam toda a API pública
+3. **Log panel** — eventos timestamped para rastrear comportamento
+4. **State inspector** — exibição dos valores atuais do Model (isActive, isPaused, etc.)
+
+### Alias no Root `package.json`
+
+Cada dev page deve ter um alias correspondente no root `package.json` (ex: `dev:ar`, `dev:movable`).
+
+### Smoke Test como Definition of Done
+
+Antes de completar uma feature ou fix, o último passo é: rodar a dev page, executar os cenários, verificar visualmente. A dev page é a especificação visual de referência.
+
+---
+
+## 13. Acessibilidade
+
+### Requisitos por Tipo de Package
+
+#### Packages de Animação (Attention Requester e similares)
+
+| Requisito | Prioridade |
+|---|---|
+| Respeitar `prefers-reduced-motion` (desabilitar ou simplificar animação) | **Obrigatório** |
+| Animação não bloqueia interação (não desabilitar botões/links durante animação) | **Obrigatório** |
+| Nenhuma animação pisca > 3Hz (WCAG 2.3.1 — risco de convulsão) | **Obrigatório** |
+| `aria-live` para mudanças de estado que comunicam informação | Recomendado |
+
+#### Packages de Drag/Interação (Movable e similares)
+
+| Requisito | Prioridade |
+|---|---|
+| **Alternativa completa via teclado** (Arrow keys para mover, Enter/Space para agarrar/soltar) | **Obrigatório** |
+| ARIA roles e attributes (`aria-roledescription`, estados de drag) | **Obrigatório** |
+| Anúncio de posição via live region ("Item movido para posição 3 de 5") | **Obrigatório** |
+| Instruções visíveis para uso via teclado | Recomendado |
+| Focus visible durante drag via teclado | **Obrigatório** |
+
+**Nota:** Para packages de drag, a acessibilidade via teclado é uma **feature arquitetural** — o Model deve ter estados (`grabbed`) e métodos (`moveByStep(direction)`) desde o Behavioral Spec. Não é algo que se adiciona depois. Referência: dnd-kit.
+
+### Processo de Verificação (5 Steps)
+
+Executar como parte do smoke test na dev page:
+
+1. **Svelte compiler warnings** — automático, já ativo no build
+2. **axe-core na dev page** — importar e rodar audit; feedback instantâneo
+3. **Keyboard-only testing** — desligar mouse, Tab por toda a page, verificar foco e operabilidade
+4. **VoiceOver spot-check** — Cmd+F5, navegar pelo componente, verificar anúncios
+5. **Toggle `prefers-reduced-motion`** — DevTools → Rendering → Emulate, verificar adaptação
+
+**DevTools MCP:** Quando disponível, usar o Chrome DevTools MCP para automatizar passos de auditoria (axe-core, Lighthouse a11y) e reduzir verificação manual.
+
+---
+
+## 14. Checklist de Conformidade
 
 Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todos os itens se aplicam a todos os pacotes — marque **N/A** quando o item não for relevante (ex: Interaction não existe em componentes sem input de hardware).
 
@@ -521,3 +689,40 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Arquivos prefixados com nome do domínio do pacote
 - [ ] Sufixos seguem convenção: `Model.svelte.ts`, `Controller.svelte.ts`, `Modifier.svelte`, `[domain].types.ts`, `index.ts`
 - [ ] Nomes baseados em capacidade/domínio, não em APIs legadas da web
+
+### Testes (§10)
+- [ ] Behavioral Spec exaustivo: todo estado, transição, edge case e invariante descrito antes da implementação
+- [ ] Testes automatizados do Model organizados por seção do Spec (ex: `§2.1`, `§2.3`)
+- [ ] Um arquivo de teste por Model
+- [ ] Pure functions extraídas de Controllers/Interactions com testes automatizados próprios
+- [ ] Zero testes automatizados de UI — verificação visual via dev page
+
+### Logging (§11)
+- [ ] Logs de debug permanentes no código, guardados por `import.meta.env.DEV`
+- [ ] `console.warn` para uso incorreto da API e auto-correções (sempre presente)
+- [ ] `console.error` para falhas inesperadas (sempre presente)
+- [ ] Prefixo `[Package:Layer]` em todos os logs
+- [ ] Nenhum log dentro de animation frame callbacks ou event handlers de alta frequência
+- [ ] `performance.mark()` / `Animation.id` para instrumentação de animações (não `console.log`)
+- [ ] Sem biblioteca de logging externa
+
+### Dev Pages (§12)
+- [ ] Dev page dedicada com `index.html` + `vite.config.ts` + `src/dev/`
+- [ ] Cenários visuais com labels, controles para API pública, log panel, state inspector
+- [ ] Alias `dev:<name>` no root `package.json`
+- [ ] Smoke test visual como último passo antes de completar feature/fix
+
+### Acessibilidade (§13)
+- [ ] `prefers-reduced-motion` respeitado (animação desabilitada ou simplificada)
+- [ ] Nenhuma animação pisca > 3Hz
+- [ ] Animação não bloqueia interação
+- [ ] Alternativa completa via teclado para interações de drag/mouse (quando aplicável)
+- [ ] ARIA roles e attributes para drag (quando aplicável)
+- [ ] Anúncio de estado via `aria-live` (quando aplicável)
+- [ ] Processo de 5 steps executado: Svelte warnings → axe-core → keyboard-only → VoiceOver → reduced-motion
+
+### Performance (§8) — adições
+- [ ] Animações usam exclusivamente propriedades compositor-friendly (`translate`, `transform`, `opacity`, `scale`, `rotate`)
+- [ ] Drag/posicionamento via `translate` ou `transform: translate()`, nunca `top`/`left`
+- [ ] Bundle size monitorado via `size-limit`
+- [ ] Benchmarks de Model/Utils via `vitest bench` para detectar regressões

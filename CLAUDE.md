@@ -10,6 +10,24 @@ Static marketing site built with **SvelteKit** + **Svelte 5**, deployed to **Clo
 - **Build system:** Turborepo (`turbo.json`)
 - **Language:** TypeScript
 
+## Dev Scripts
+
+Every package/app with a `dev` script must have a corresponding shortcut in the **root** `package.json` so it can be run from the repo root without `cd`:
+
+```
+"dev:<alias>": "turbo dev --filter=<package-name>"
+```
+
+Current aliases:
+
+| Alias | Package | Command |
+|---|---|---|
+| `dev` | All | `bun run dev` |
+| `dev:website` | `@just-the-player/website` | `bun run dev:website` |
+| `dev:ar` | `@headless-uai/attention-requester` | `bun run dev:ar` |
+
+When creating a new package that has a `dev` script, always add a `dev:<alias>` entry to the root `package.json`.
+
 ## MV Architecture (Model–View for Svelte 5)
 
 This project is developing a custom **Model–View architecture** inspired by modern Swift/SwiftUI, leveraging Svelte 5 runes. The architecture lives in `src/lib/` as self-contained packages.
