@@ -1,1 +1,2 @@
+- [x] Refatorar o `Architecture.md` em arquivos separados.
 - [ ] Pensar sobre a UI/UX, template, de páginas Dev dedicadas dos pacotes.

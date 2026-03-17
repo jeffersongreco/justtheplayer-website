@@ -16,6 +16,7 @@
     "dev": "vite dev",
     "build": "svelte-package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "ultracite check",
     "test": "vitest run",
     "test:watch": "vitest",
     "size": "size-limit",

@@ -6,10 +6,10 @@
   "scripts": {
     "build": "vite build",
     "cf-typegen": "wrangler types ./src/worker-configuration.d.ts",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && ultracite check",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "deploy": "wrangler deploy",
     "dev": "vite dev",
-    "lint": "ultracite fix",
+    "lint": "ultracite check",
     "optimize-images": "bun ./media/optimize.ts",
     "preview": "wrangler dev"
   },
@@ -19,7 +19,6 @@
     "@mux/mux-player": "^3.10.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.8",
     "@sveltejs/adapter-cloudflare": "^7.2.4",
     "@sveltejs/kit": "^2.48.5",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
@@ -30,7 +29,6 @@
     "svelte": "^5.43.8",
     "svelte-check": "^4.3.4",
     "typescript": "^5.9.3",
-    "ultracite": "6.3.10",
     "vite": "^7.2.2",
     "wrangler": "^4.54.0"
   }
