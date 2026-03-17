@@ -104,3 +104,23 @@ These are properties that must hold at **all times**, regardless of state:
 
 - Tests that involve multiple instances should verify they don't interfere with each other.
 - Multiple Attention Requester instances on the same page must operate independently.
+
+---
+
+## 7. Reduced Motion
+
+When the user has indicated a preference for reduced motion, the component must respect that preference.
+
+### 7.1 Reduced Motion Suppresses Animation
+
+- When reduced motion is active, requesting attention does nothing — the component stays idle.
+- The component does not play any animation, not even a simplified alternative.
+
+### 7.2 Dynamic Changes
+
+- If reduced motion becomes active while the component is idle, subsequent requests are suppressed.
+- If reduced motion is deactivated, the component resumes normal behavior — future requests work as expected.
+
+### 7.3 Reduced Motion Does Not Affect Active Animation
+
+- If an animation is already running when reduced motion becomes active, the current animation is not interrupted — it finishes normally. Only future requests are suppressed.
