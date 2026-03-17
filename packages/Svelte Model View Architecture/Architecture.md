@@ -491,6 +491,24 @@ Sempre que uma lógica puder ser extraída como pure function (sem side effects,
 
 Testes automatizados de UI (Vitest Browser Mode, Playwright Component Testing, visual regression) **não são considerados para nenhum pacote no momento**. O ROI é baixo para libraries de animação e interação — as libraries de referência da indústria (GSAP, Framer Motion, dnd-kit) também não os utilizam. A verificação visual é feita via dev pages dedicadas (§12).
 
+### Code Review Automatizado (CodeRabbit)
+
+Após os testes automatizados passarem e o smoke test visual na dev page ser concluído com confirmação do autor, o último gate antes do PR é o **code review via CodeRabbit** no terminal. O review é executado pelo Claude Code usando o plugin CodeRabbit (`/coderabbit:review`) — sem review automático no GitHub. Quando o PR é aberto, todo o código já foi revisado localmente e está pronto para merge.
+
+**Workflow:**
+1. Testes automatizados passam
+2. Smoke test visual na dev page — autor confirma que está tudo certo
+3. Claude Code executa `/coderabbit:review` no terminal
+4. Findings são analisados e corrigidos localmente antes de abrir o PR
+
+**O que o CodeRabbit verifica que complementa os testes:**
+- Violações arquiteturais que testes de Model não capturam (ex: Controller tomando decisões de negócio, View com lógica de domínio)
+- Code quality: encapsulamento, naming, tipagem, patterns inconsistentes com a arquitetura
+- Regressões sutis em APIs públicas (`index.ts` exports, Props types)
+- Segurança e edge cases não cobertos pelo Behavioral Spec
+
+**Configuração:** Nenhum `.coderabbit.yaml` no momento. Se for observado que o CodeRabbit não absorve as regras arquiteturais do projeto, um `.coderabbit.yaml` com `path_instructions` será introduzido.
+
 ---
 
 ## 11. Logging
@@ -696,6 +714,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Um arquivo de teste por Model
 - [ ] Pure functions extraídas de Controllers/Interactions com testes automatizados próprios
 - [ ] Zero testes automatizados de UI — verificação visual via dev page
+- [ ] Code review via CodeRabbit (`/coderabbit:review`) executado no terminal antes de abrir o PR
 
 ### Logging (§11)
 - [ ] Logs de debug permanentes no código, guardados por `import.meta.env.DEV`
