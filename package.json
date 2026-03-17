@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "turbo dev",
+    "dev:website": "turbo dev --filter=@just-the-player/website",
+    "dev:ar": "turbo dev --filter=@headless-uai/attention-requester",
     "build": "turbo build",
     "check": "turbo check",
     "lint": "turbo lint"

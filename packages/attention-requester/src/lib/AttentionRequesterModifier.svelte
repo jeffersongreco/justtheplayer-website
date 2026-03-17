@@ -5,7 +5,7 @@
   import type {
     AttentionRequesterAnimation,
     AttentionRequesterProps,
-  } from "./types";
+  } from "./AttentionRequester.types";
 
   let { paused = false, children, asChild }: AttentionRequesterProps = $props();
 
@@ -13,19 +13,13 @@
   let el = $state<HTMLElement | null>(null);
   let controller = $state<AttentionRequesterController | null>(null);
 
+  $effect(() => (paused ? model.pause() : model.resume()));
+
   $effect(() => {
-    if (!el) {
-      return;
-    }
+    if (!el) return;
     controller = new AttentionRequesterController(el, model);
     return () => controller?.destroy();
   });
-
-  $effect(() => (paused ? model.pause() : model.resume()));
-  $effect(() => {
-    controller?.syncActive(model.isActive);
-  });
-  $effect(() => controller?.syncPauseIntent(model.pauseIntent));
 
   const action: Action = (node) => {
     el = node;
@@ -43,11 +37,11 @@
 </script>
 
 {#if asChild}
-  {@render asChild({ action })}
+  {@render asChild({ action, isAnimating: model.isActive })}
 {:else}
   <div bind:this={el} style="display:contents">
     {#if children}
-      {@render children()}
+      {@render children({ isAnimating: model.isActive })}
     {/if}
   </div>
 {/if}

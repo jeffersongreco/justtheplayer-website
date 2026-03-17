@@ -1,4 +1,4 @@
-import type { AttentionRequesterAnimation, PauseIntent } from "./types";
+import type { AttentionRequesterAnimation, InterruptResolution } from "./AttentionRequester.types";
 
 export class AttentionRequesterModel {
   #active = $state(false);
@@ -9,25 +9,17 @@ export class AttentionRequesterModel {
   readonly isActive = $derived(this.#active);
   readonly isPaused = $derived(this.#paused);
   readonly animation = $derived(this.#animation);
-  readonly pauseIntent = $derived(this.#resolvePauseIntent());
+  readonly interruptResolution = $derived<InterruptResolution>(
+    this.#resolveInterruptResolution(),
+  );
 
-  #resolvePauseIntent(): PauseIntent {
-    if (this.#paused) {
-      return { action: "freeze" };
-    }
-
+  #resolveInterruptResolution(): InterruptResolution {
     const anim = this.#animation;
-
-    if (!anim) {
-      return { action: "resume" };
+    if (!anim || anim.onInterrupt !== "discard") {
+      return { strategy: "resume" };
     }
-
-    if (anim.onInterrupt === "discard") {
-      const interval = "loop" in anim && anim.loop ? anim.interval : 0;
-      return { action: "discard", interval };
-    }
-
-    return { action: "resume" };
+    const interval = anim.loop ? anim.interval : 0;
+    return { strategy: "discard", interval };
   }
 
   configure(animation: AttentionRequesterAnimation) {

@@ -2,7 +2,7 @@ import type {
   ARAnimationLoop,
   ARAnimationOneShot,
   AttentionInterruptBehavior,
-} from "../../types";
+} from "../../AttentionRequester.types";
 import { createARAnimation } from "../createARAnimation";
 
 export type CardinalDirection =

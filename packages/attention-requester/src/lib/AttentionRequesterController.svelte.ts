@@ -1,5 +1,5 @@
 import type { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
-import type { PauseIntent } from "./types";
+import type { InterruptResolution } from "./AttentionRequester.types";
 
 export class AttentionRequesterController {
   readonly #wrapper: HTMLElement;
@@ -12,27 +12,37 @@ export class AttentionRequesterController {
   constructor(el: HTMLElement, model: AttentionRequesterModel) {
     this.#wrapper = el;
     this.#model = model;
+
+    $effect(() => {
+      if (this.#model.isActive && !this.#anim) {
+        this.#startCycle();
+      }
+    });
+
+    $effect(() => {
+      if (this.#model.isPaused) {
+        this.#anim?.pause();
+      } else {
+        this.#applyInterruptResolution(this.#model.interruptResolution);
+      }
+    });
   }
 
   #resolveTarget(): HTMLElement {
     if (!this.#el) {
-      this.#el = (this.#wrapper.children[0] as HTMLElement) ?? this.#wrapper;
+      const child = this.#wrapper.children[0] as HTMLElement | undefined;
+      if (!child) {
+        console.warn(
+          "[AttentionRequester] No child element found — animating the wrapper instead. Wrap your content inside the <AttentionRequester> component.",
+        );
+      }
+      this.#el = child ?? this.#wrapper;
     }
     return this.#el;
   }
 
-  syncActive(isActive: boolean) {
-    if (isActive && !this.#anim) {
-      this.#startCycle();
-    }
-  }
-
-  syncPauseIntent(intent: PauseIntent) {
-    switch (intent.action) {
-      case "freeze": {
-        this.#anim?.pause();
-        break;
-      }
+  #applyInterruptResolution(resolution: InterruptResolution) {
+    switch (resolution.strategy) {
       case "resume": {
         this.#anim?.play();
         break;
@@ -56,7 +66,7 @@ export class AttentionRequesterController {
           if (!this.#destroyed && this.#model.isActive) {
             this.#startCycle();
           }
-        }, intent.interval);
+        }, resolution.interval);
         break;
       }
 
@@ -102,7 +112,7 @@ export class AttentionRequesterController {
           }, config.interval);
         }
       },
-      { once: true }
+      { once: true },
     );
   }
 
