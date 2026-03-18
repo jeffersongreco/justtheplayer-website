@@ -50,7 +50,7 @@ jobs:
       - run: bunx turbo check --filter='./packages/*'
 
   test:
-    name: Test
+    name: Test + Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +61,24 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - run: bunx turbo test --filter='./packages/*'
+      - run: bunx turbo test:coverage --filter='./packages/*'
+
+  size:
+    name: Size Limit
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.5"
+
+      - run: bun install --frozen-lockfile
+
+      - run: bunx turbo build --filter='./packages/*'
+
+      - run: bunx turbo size --filter='./packages/*'
 
   build:
     name: Build

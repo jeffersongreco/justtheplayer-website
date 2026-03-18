@@ -14,13 +14,13 @@ conformance:
   api_surface:        complete      # §5 — flat exports, bind:this, asChild
   animations:         partial       # §6 — WAAPI + fill:none, but Animation.id not set
   resilience:         complete      # §7 — auto-corrects position:relative, warns
-  performance:        partial       # §8 — compositor-friendly not audited, no size-limit active, no benchmarks
+  performance:        partial       # §8 — compositor-friendly not audited, no benchmarks
   naming:             complete      # §9 — domain-prefixed, correct suffixes
 
-  tests:              partial       # §10 — 30+ cases organized by spec, but spec exhaustiveness not verified
+  tests:              partial       # §10 — 40 cases, 97% Model coverage, spec exhaustiveness not verified
   logging:            partial       # §11 — 1 console.warn in Controller, no structured debug logs
   dev_page:           partial       # §12 — log panel + controls, missing state inspector
   guided_qa:          complete      # §12 — QA steps defined and functional
   accessibility:      not_started   # §13 — prefers-reduced-motion not implemented, 5-step audit not done
-  size_limit:         partial       # §8 — .size-limit.json exists, not wired to CI yet
+  size_limit:         complete      # §8 — 5.62 kB / 6 kB limit, wired to CI
   benchmarks:         not_started   # §8 — bench file exists but not configured in CI

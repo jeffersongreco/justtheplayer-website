@@ -50,7 +50,7 @@
     class="movable {className}"
     data-dragging={isMoving}
     role="button"
-    tabindex={tabindex}
+    {tabindex}
     onfocus={handleFocus}
     onblur={handleBlur}
   >

@@ -6,15 +6,15 @@ import type {
 } from "../AttentionRequester.types";
 
 interface ARAnimationParams {
-  name: string;
   duration: number;
   keyframes: Keyframe[] | ((el: HTMLElement) => Keyframe[]);
+  name: string;
   onInterrupt?: AttentionInterruptBehavior;
 }
 
 interface ARAnimationLoopParams extends ARAnimationParams {
-  loop: true;
   interval: number;
+  loop: true;
 }
 
 interface ARAnimationOneShotParams extends ARAnimationParams {

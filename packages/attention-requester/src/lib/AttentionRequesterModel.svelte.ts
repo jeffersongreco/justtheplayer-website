@@ -1,7 +1,10 @@
-import type { AttentionRequesterAnimation, InterruptResolution } from "./AttentionRequester.types";
+import type {
+  AttentionRequesterAnimation,
+  InterruptResolution,
+} from "./AttentionRequester.types";
 
 export function resolveInterruptResolution(
-  animation: AttentionRequesterAnimation | null,
+  animation: AttentionRequesterAnimation | null
 ): InterruptResolution {
   if (!animation || animation.onInterrupt !== "discard") {
     return { strategy: "resume" };
@@ -22,11 +25,13 @@ export class AttentionRequesterModel {
   readonly animation = $derived(this.#animation);
   readonly reducedMotion = $derived(this.#reducedMotion);
   readonly interruptResolution = $derived<InterruptResolution>(
-    resolveInterruptResolution(this.#animation),
+    resolveInterruptResolution(this.#animation)
   );
 
   configure(animation: AttentionRequesterAnimation) {
-    if (import.meta.env.DEV) console.log(`[AR:Model] configure → ${animation.name}`);
+    if (import.meta.env.DEV) {
+      console.log(`[AR:Model] configure → ${animation.name}`);
+    }
     this.#animation = animation;
   }
 
@@ -36,10 +41,14 @@ export class AttentionRequesterModel {
 
   request() {
     if (this.#reducedMotion || this.#active) {
-      if (import.meta.env.DEV && this.#reducedMotion) console.log("[AR:Model] request suppressed (reduced-motion)");
+      if (import.meta.env.DEV && this.#reducedMotion) {
+        console.log("[AR:Model] request suppressed (reduced-motion)");
+      }
       return;
     }
-    if (import.meta.env.DEV) console.log("[AR:Model] idle → animating");
+    if (import.meta.env.DEV) {
+      console.log("[AR:Model] idle → animating");
+    }
     this.#active = true;
     this.#paused = false;
     this.#cancelled = false;
@@ -50,7 +59,11 @@ export class AttentionRequesterModel {
       return;
     }
     if (this.#cancelled || !this.#animation?.loop) {
-      if (import.meta.env.DEV) console.log(`[AR:Model] animating → idle (${this.#cancelled ? "cancelled" : "finished"})`);
+      if (import.meta.env.DEV) {
+        console.log(
+          `[AR:Model] animating → idle (${this.#cancelled ? "cancelled" : "finished"})`
+        );
+      }
       this.#active = false;
       this.#cancelled = false;
     }
@@ -60,7 +73,9 @@ export class AttentionRequesterModel {
     if (!this.#animation) {
       return;
     }
-    if (import.meta.env.DEV) console.log("[AR:Model] cancel requested");
+    if (import.meta.env.DEV) {
+      console.log("[AR:Model] cancel requested");
+    }
     this.#cancelled = true;
   }
 
@@ -68,12 +83,16 @@ export class AttentionRequesterModel {
     if (!this.#active) {
       return;
     }
-    if (import.meta.env.DEV) console.log("[AR:Model] pause");
+    if (import.meta.env.DEV) {
+      console.log("[AR:Model] pause");
+    }
     this.#paused = true;
   }
 
   resume() {
-    if (import.meta.env.DEV && this.#paused) console.log("[AR:Model] resume");
+    if (import.meta.env.DEV && this.#paused) {
+      console.log("[AR:Model] resume");
+    }
     this.#paused = false;
   }
 }

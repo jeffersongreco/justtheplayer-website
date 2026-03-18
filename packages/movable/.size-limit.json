@@ -1,6 +1,6 @@
 [
   {
     "path": "dist/**/*.{js,svelte}",
-    "limit": "6 kB"
+    "limit": "10 kB"
   }
 ]

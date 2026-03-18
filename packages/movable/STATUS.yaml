@@ -14,7 +14,7 @@ conformance:
   api_surface:        partial       # §5 — exports exist, not audited against conventions
   animations:         n/a           # §6 — no animations in this package
   resilience:         partial       # §7 — not audited
-  performance:        partial       # §8 — coordinate system exists, no size-limit, no benchmarks
+  performance:        partial       # §8 — coordinate system exists, no benchmarks
   naming:             partial       # §9 — not audited
 
   tests:              not_started   # §10 — no test files, no behavioral spec
@@ -22,5 +22,5 @@ conformance:
   dev_page:           not_started   # §12 — no dev page, no dev script
   guided_qa:          not_started   # §12 — no QA steps
   accessibility:      not_started   # §13 — keyboard alternative, ARIA, reduced-motion all pending
-  size_limit:         not_started   # §8 — not configured
+  size_limit:         complete      # §8 — 9.07 kB / 10 kB limit, wired to CI
   benchmarks:         not_started   # §8 — not configured

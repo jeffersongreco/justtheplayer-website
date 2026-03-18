@@ -10,6 +10,14 @@
       "indentScriptAndStyle": true
     }
   },
+  // Architecture §9 requires PascalCase domain-prefixed filenames
+  "linter": {
+    "rules": {
+      "style": {
+        "useFilenamingConvention": "off"
+      }
+    }
+  },
   "overrides": [
     {
       "includes": [
@@ -17,9 +25,6 @@
       ],
       "linter": {
         "rules": {
-          "nursery": {
-            "useMaxParams": "off"
-          },
           "style": {
             "useConsistentTypeDefinitions": "off"
           },
@@ -54,6 +59,13 @@
             "noUnusedVariables": "off",
             "noUnusedImports": "off",
             "noUnknownPseudoClass": "off"
+          },
+          // Svelte templates use {(x = y, '')} to capture snippet params — idiomatic pattern
+          "suspicious": {
+            "noAssignInExpressions": "off"
+          },
+          "complexity": {
+            "noCommaOperator": "off"
           }
         }
       }

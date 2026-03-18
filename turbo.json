@@ -14,6 +14,10 @@
     },
     "lint": {},
     "test": {},
+    "test:coverage": {},
+    "size": {
+      "dependsOn": ["build"]
+    },
     "optimize-images": {
       "inputs": ["media/src/**"],
       "outputs": ["media/dist/**"],

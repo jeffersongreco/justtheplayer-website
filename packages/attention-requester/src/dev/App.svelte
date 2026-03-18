@@ -1,11 +1,7 @@
 <script lang="ts">
-  import type { AttentionRequester as AttentionRequesterType } from "../lib";
-  import {
-    AttentionRequester,
-    DoubleBounce,
-    PhysicsBounce,
-  } from "../lib";
   import { onMount, untrack } from "svelte";
+  import type { AttentionRequester as AttentionRequesterType } from "../lib";
+  import { AttentionRequester, DoubleBounce, PhysicsBounce } from "../lib";
   import type { QAStep, QASuite } from "./qa-types.js";
 
   // biome-ignore lint/suspicious/noUnassignedVariables: assigned via bind:this before onMount
@@ -65,7 +61,8 @@
     {
       id: "component",
       title: "Component lifecycle",
-      description: "Tests request, pause, resume, and cancel on a single element (left stage).",
+      description:
+        "Tests request, pause, resume, and cancel on a single element (left stage).",
       steps: [
         {
           title: "Step 1 of 5: Initial state",
@@ -135,16 +132,15 @@
             attentionDiscard.cancel();
           },
           expectedLogs: ["[AR][step:5] cancel() called"],
-          humanChecklist: [
-            "Element stops immediately at its current position",
-          ],
+          humanChecklist: ["Element stops immediately at its current position"],
         },
       ],
     },
     {
       id: "interrupt",
       title: "Interrupt strategies",
-      description: "Compares discard vs resume interrupt behavior when cancel is called mid-animation.",
+      description:
+        "Compares discard vs resume interrupt behavior when cancel is called mid-animation.",
       steps: [
         {
           title: "Step 1 of 2: Start both animations",
@@ -184,15 +180,16 @@
   ];
 
   const suite = $derived(
-    selectedSuiteIndex !== null ? suites[selectedSuiteIndex] : null,
+    selectedSuiteIndex === null ? null : suites[selectedSuiteIndex]
   );
   const step = $derived(suite ? suite.steps[currentStep] : null);
   const activeStages = $derived(
     mode === "guided" && suite !== null
-      ? suite.id === "component"
+      ? // biome-ignore lint/style/noNestedTernary: readable conditional stage selection
+        suite.id === "component"
         ? ["discard"]
         : ["discard", "resume"]
-      : [],
+      : []
   );
 
   function startGuidedMode() {
@@ -226,6 +223,7 @@
   $effect(() => {
     if (mode === "guided" && step?.trigger && !step.triggerLabel) {
       untrack(() => {
+        // biome-ignore lint/style/noNonNullAssertion: guarded by step?.trigger check above
         step.trigger!();
         triggerFired = true;
       });
@@ -245,10 +243,15 @@
 
 <div class="test-page">
   <div class="mode-toggle">
-    <button class:active={mode === "free"} onclick={() => { mode = "free"; }}>
+    <button
+      type="button"
+      class:active={mode === "free"}
+      onclick={() => { mode = "free"; }}
+    >
       Free
     </button>
     <button
+      type="button"
       class:active={mode === "guided"}
       onclick={startGuidedMode}
     >
@@ -269,11 +272,22 @@
       </div>
       <div class="inspector">
         <span class="inspector-title">discard — state</span>
-        <div class="inspector-row"><span>isAnimating</span><span class="val">{discardAnimating}</span></div>
-        <div class="inspector-row"><span>isPaused</span><span class="val">{pausedDiscard}</span></div>
-        <div class="inspector-row"><span>animation</span><span class="val">{animationDiscard.name}</span></div>
-        <div class="inspector-row"><span>interrupt</span><span class="val">discard ({animationDiscard.interval}ms)</span></div>
-        <div class="inspector-row"><span>reducedMotion</span><span class="val">{reducedMotion}</span></div>
+        <div class="inspector-row">
+          <span>isAnimating</span><span class="val">{discardAnimating}</span>
+        </div>
+        <div class="inspector-row">
+          <span>isPaused</span><span class="val">{pausedDiscard}</span>
+        </div>
+        <div class="inspector-row">
+          <span>animation</span><span class="val">{animationDiscard.name}</span>
+        </div>
+        <div class="inspector-row">
+          <span>interrupt</span
+          ><span class="val">discard ({animationDiscard.interval}ms)</span>
+        </div>
+        <div class="inspector-row">
+          <span>reducedMotion</span><span class="val">{reducedMotion}</span>
+        </div>
       </div>
     </div>
 
@@ -289,11 +303,21 @@
       </div>
       <div class="inspector">
         <span class="inspector-title">resume — state</span>
-        <div class="inspector-row"><span>isAnimating</span><span class="val">{resumeAnimating}</span></div>
-        <div class="inspector-row"><span>isPaused</span><span class="val">{pausedResume}</span></div>
-        <div class="inspector-row"><span>animation</span><span class="val">{animationResume.name}</span></div>
-        <div class="inspector-row"><span>interrupt</span><span class="val">resume</span></div>
-        <div class="inspector-row"><span>reducedMotion</span><span class="val">{reducedMotion}</span></div>
+        <div class="inspector-row">
+          <span>isAnimating</span><span class="val">{resumeAnimating}</span>
+        </div>
+        <div class="inspector-row">
+          <span>isPaused</span><span class="val">{pausedResume}</span>
+        </div>
+        <div class="inspector-row">
+          <span>animation</span><span class="val">{animationResume.name}</span>
+        </div>
+        <div class="inspector-row">
+          <span>interrupt</span><span class="val">resume</span>
+        </div>
+        <div class="inspector-row">
+          <span>reducedMotion</span><span class="val">{reducedMotion}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -301,6 +325,7 @@
   {#if mode === "free"}
     <div class="controls">
       <button
+        type="button"
         onclick={() => {
           addLog("▶ request() on both");
           attentionDiscard.request(animationDiscard);
@@ -311,6 +336,7 @@
       </button>
 
       <button
+        type="button"
         onclick={() => {
           const next = !pausedDiscard;
           pausedDiscard = next;
@@ -322,6 +348,7 @@
       </button>
 
       <button
+        type="button"
         onclick={() => {
           addLog("⏹ cancel() on both");
           attentionDiscard.cancel();
@@ -331,7 +358,7 @@
         cancel()
       </button>
 
-      <button onclick={() => (log = [])}>clear log</button>
+      <button type="button" onclick={() => (log = [])}>clear log</button>
     </div>
   {/if}
 
@@ -340,7 +367,11 @@
       <h2 class="suite-selector-title">Select test suite</h2>
       <div class="suite-list">
         {#each suites as s, i}
-          <button class="suite-card" onclick={() => selectSuite(i)}>
+          <button
+            type="button"
+            class="suite-card"
+            onclick={() => selectSuite(i)}
+          >
             <span class="suite-card-title">{s.title}</span>
             <span class="suite-card-desc">{s.description}</span>
           </button>
@@ -357,6 +388,7 @@
 
       {#if step.trigger && step.triggerLabel}
         <button
+          type="button"
           class="qa-trigger"
           disabled={triggerFired}
           onclick={() => { step!.trigger!(); triggerFired = true; }}
@@ -373,9 +405,15 @@
         </ul>
         <div class="qa-actions">
           {#if currentStep < suite.steps.length - 1}
-            <button class="qa-next" onclick={advance}>Next →</button>
+            <button type="button" class="qa-next" onclick={advance}>
+              Next →
+            </button>
           {:else}
-            <button class="qa-done-btn" onclick={() => { selectedSuiteIndex = null; }}>
+            <button
+              type="button"
+              class="qa-done-btn"
+              onclick={() => { selectedSuiteIndex = null; }}
+            >
               Done ✓ — Back to suites
             </button>
           {/if}
@@ -407,8 +445,8 @@
   }
 
   .mode-toggle button.active {
-    background: #171717;
     color: #fff;
+    background: #171717;
     border-color: #171717;
   }
 
@@ -441,9 +479,9 @@
     align-items: flex-end;
     justify-content: center;
     height: 200px;
+    padding: 24px;
     border: 1px solid #e2e2e2;
     border-radius: 12px;
-    padding: 24px;
   }
 
   .stage-active .stage-area {
@@ -453,9 +491,9 @@
   .target {
     width: 48px;
     height: 48px;
-    border-radius: 8px;
     background: #dbeafe;
     border: 1px solid #93c5fd;
+    border-radius: 8px;
   }
 
   .inspector {
@@ -469,11 +507,11 @@
   }
 
   .inspector-title {
+    margin-bottom: 4px;
     font-size: 11px;
     color: #a3a3a3;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 4px;
   }
 
   .inspector-row {
@@ -486,14 +524,14 @@
   }
 
   .val {
-    color: #171717;
     font-weight: 600;
+    color: #171717;
   }
 
   .controls {
     display: flex;
-    gap: 12px;
     flex-wrap: wrap;
+    gap: 12px;
   }
 
   .suite-selector {
@@ -530,8 +568,8 @@
   }
 
   .suite-card-desc {
-    color: #737373;
     font-size: 12px;
+    color: #737373;
   }
 
   .qa-step {
@@ -560,8 +598,8 @@
 
   .qa-instruction {
     margin: 0;
-    color: #404040;
     line-height: 1.5;
+    color: #404040;
   }
 
   .qa-trigger {
@@ -569,11 +607,11 @@
   }
 
   .qa-checklist {
-    margin: 0;
-    padding-left: 20px;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    padding-left: 20px;
+    margin: 0;
     color: #404040;
   }
 
@@ -589,13 +627,13 @@
 
   button {
     padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid #d4d4d4;
-    background: #f5f5f5;
-    color: #171717;
-    cursor: pointer;
     font-family: monospace;
     font-size: 13px;
+    color: #171717;
+    cursor: pointer;
+    background: #f5f5f5;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
   }
 
   button:hover:not(:disabled) {
@@ -603,8 +641,8 @@
   }
 
   button:disabled {
-    opacity: 0.4;
     cursor: default;
+    opacity: 0.4;
   }
 
   .log {
@@ -612,11 +650,11 @@
     flex-direction: column;
     gap: 4px;
     max-height: 300px;
-    overflow-y: auto;
     padding: 16px;
+    overflow-y: auto;
     background: #f5f5f5;
-    border-radius: 8px;
     border: 1px solid #e2e2e2;
+    border-radius: 8px;
   }
 
   .entry {

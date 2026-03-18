@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { Action } from "svelte/action";
-  import { AttentionRequesterController } from "./AttentionRequesterController.svelte";
-  import { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
   import type {
     AttentionRequesterAnimation,
     AttentionRequesterProps,
   } from "./AttentionRequester.types";
+  import { AttentionRequesterController } from "./AttentionRequesterController.svelte";
+  import { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 
   let { paused = false, children, asChild }: AttentionRequesterProps = $props();
 
@@ -17,7 +17,8 @@
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
     model.setReducedMotion(mql.matches);
 
-    const onChange = (e: MediaQueryListEvent) => model.setReducedMotion(e.matches);
+    const onChange = (e: MediaQueryListEvent) =>
+      model.setReducedMotion(e.matches);
     mql.addEventListener("change", onChange);
     return () => mql.removeEventListener("change", onChange);
   });
@@ -25,7 +26,9 @@
   $effect(() => (paused ? model.pause() : model.resume()));
 
   $effect(() => {
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     controller = new AttentionRequesterController(el, model);
     return () => controller?.destroy();
   });

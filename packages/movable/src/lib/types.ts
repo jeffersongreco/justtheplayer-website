@@ -3,10 +3,10 @@ import type { Action } from "svelte/action";
 import type { MovableModel } from "./MovableModel.svelte";
 
 export interface MovableRect {
+  height: number;
+  width: number;
   x: number;
   y: number;
-  width: number;
-  height: number;
 }
 
 type PixelValue = number | `${number}px`;
@@ -23,8 +23,8 @@ export type MovableContainerDimension = number;
 export type MovableGroup = string[];
 
 export interface MovableRootState {
-  root: Action<HTMLElement>;
   model: MovableModel;
+  root: Action<HTMLElement>;
 }
 
 export interface MovableRootProps {
@@ -32,22 +32,22 @@ export interface MovableRootProps {
 }
 
 interface MovableItemConfiguration {
+  class?: string;
+  group?: MovableGroup;
   id?: string;
   initialPosition?: MovableItemPosition;
-  group?: MovableGroup;
   tabindex?: number;
-  class?: string;
 }
 
 export interface MovableItemState {
-  item: Action<HTMLElement>;
-  isMoving: boolean;
   isFocused: boolean;
+  isMoving: boolean;
+  item: Action<HTMLElement>;
 }
 
 export interface MovableItemProps extends MovableItemConfiguration {
-  children?: Snippet<[Omit<MovableItemState, "item">]>;
   asChild?: Snippet<[MovableItemState]>;
+  children?: Snippet<[Omit<MovableItemState, "item">]>;
 }
 
 export interface MovableSensorState {
@@ -56,13 +56,13 @@ export interface MovableSensorState {
 }
 
 interface MovableSensorConfiguration {
-  id?: string;
   accepts?: MovableGroup;
-  onDrop?: () => void;
   class?: string;
+  id?: string;
+  onDrop?: () => void;
 }
 
 export interface MovableSensorProps extends MovableSensorConfiguration {
-  children?: Snippet<[Omit<MovableSensorState, "sensor">]>;
   asChild?: Snippet<[MovableSensorState]>;
+  children?: Snippet<[Omit<MovableSensorState, "sensor">]>;
 }

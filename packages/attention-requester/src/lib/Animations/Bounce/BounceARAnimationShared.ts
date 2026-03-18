@@ -70,9 +70,9 @@ export function makeTranslate(x: number, y: number, z: number): string {
 type KeyframeBuilder = (params: ResolvedBounceParams) => Keyframe[];
 
 interface BounceAnimationOptions {
-  namePrefix: string;
   defaultDuration?: number;
   keyframeBuilder: KeyframeBuilder;
+  namePrefix: string;
 }
 
 export function defineBounceAnimation(options: BounceAnimationOptions) {
