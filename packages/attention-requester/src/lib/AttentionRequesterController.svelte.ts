@@ -1,3 +1,4 @@
+import { untrack } from "svelte";
 import type { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 import type { InterruptResolution } from "./AttentionRequester.types";
 
@@ -15,7 +16,7 @@ export class AttentionRequesterController {
 
     $effect(() => {
       if (this.#model.isActive && !this.#anim) {
-        this.#startCycle();
+        untrack(() => this.#startCycle());
       }
     });
 
@@ -23,7 +24,9 @@ export class AttentionRequesterController {
       if (this.#model.isPaused) {
         this.#anim?.pause();
       } else {
-        this.#applyInterruptResolution(this.#model.interruptResolution);
+        untrack(() =>
+          this.#applyInterruptResolution(this.#model.interruptResolution),
+        );
       }
     });
   }
@@ -33,7 +36,7 @@ export class AttentionRequesterController {
       const child = this.#wrapper.children[0] as HTMLElement | undefined;
       if (!child) {
         console.warn(
-          "[AttentionRequester] No child element found — animating the wrapper instead. Wrap your content inside the <AttentionRequester> component.",
+          "[AR:Controller] No child element found — animating the wrapper instead. Wrap your content inside the <AttentionRequester> component.",
         );
       }
       this.#el = child ?? this.#wrapper;
@@ -42,6 +45,10 @@ export class AttentionRequesterController {
   }
 
   #applyInterruptResolution(resolution: InterruptResolution) {
+    if (import.meta.env.DEV) {
+      console.log(`[AR:Controller] interrupt resolution → ${resolution.strategy}`);
+      performance.mark("ar:interrupt-resolution");
+    }
     switch (resolution.strategy) {
       case "resume": {
         this.#anim?.play();
@@ -80,6 +87,10 @@ export class AttentionRequesterController {
     if (!config || this.#destroyed) {
       return;
     }
+    if (import.meta.env.DEV) {
+      console.log(`[AR:Controller] startCycle (${config.name})`);
+      performance.mark("ar:cycle-start");
+    }
 
     const el = this.#resolveTarget();
 
@@ -89,6 +100,7 @@ export class AttentionRequesterController {
         : config.keyframes;
 
     this.#anim = el.animate(keyframes, {
+      id: `ar-${config.name}`,
       duration: config.duration,
       fill: "none",
       easing: "linear",
@@ -101,6 +113,7 @@ export class AttentionRequesterController {
     this.#anim.addEventListener(
       "finish",
       () => {
+        if (import.meta.env.DEV) performance.mark("ar:cycle-end");
         this.#anim = null;
         this.#model.onCycleFinished();
 
@@ -117,6 +130,7 @@ export class AttentionRequesterController {
   }
 
   destroy() {
+    if (import.meta.env.DEV) console.log("[AR:Controller] destroy");
     this.#destroyed = true;
     this.#anim?.cancel();
     this.#anim = null;

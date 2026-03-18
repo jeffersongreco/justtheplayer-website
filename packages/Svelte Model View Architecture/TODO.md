@@ -1,1 +1,3 @@
-- [ ] Pensar sobre a UI/UX, template, de páginas Dev dedicadas dos pacotes.
+- [x] Refatorar o `Architecture.md` em arquivos separados.
+- [x] Pensar sobre a UI/UX, template, de páginas Dev dedicadas dos pacotes.
+- [ ] Estudar o uso de `untrack()` que está acontecendo, é certo ou remendo?
