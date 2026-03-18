@@ -1,0 +1,26 @@
+# Status — @headless-uai/movable
+# Tracks conformance against Checklist.md (§14)
+# Values: complete | partial | not_started | n/a
+# checklist_version: tracks which revision of §14 this was evaluated against
+
+checklist_version: "2026-03-17"
+last_updated: "2026-03-17"
+
+conformance:
+  model:              partial       # §2 — exists, not audited against latest rules
+  controller:         partial       # §3 — exists, not audited
+  interaction:        partial       # §4 — exists (drag handling), not audited
+  view:               partial       # §1 — exists, not audited
+  api_surface:        partial       # §5 — exports exist, not audited against conventions
+  animations:         n/a           # §6 — no animations in this package
+  resilience:         partial       # §7 — not audited
+  performance:        partial       # §8 — coordinate system exists, no size-limit, no benchmarks
+  naming:             partial       # §9 — not audited
+
+  tests:              not_started   # §10 — no test files, no behavioral spec
+  logging:            not_started   # §11 — no structured logging
+  dev_page:           not_started   # §12 — no dev page, no dev script
+  guided_qa:          not_started   # §12 — no QA steps
+  accessibility:      not_started   # §13 — keyboard alternative, ARIA, reduced-motion all pending
+  size_limit:         not_started   # §8 — not configured
+  benchmarks:         not_started   # §8 — not configured
