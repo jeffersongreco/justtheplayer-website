@@ -1,3 +1,4 @@
+import { untrack } from "svelte";
 import type { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 import type { InterruptResolution } from "./AttentionRequester.types";
 
@@ -15,7 +16,7 @@ export class AttentionRequesterController {
 
     $effect(() => {
       if (this.#model.isActive && !this.#anim) {
-        this.#startCycle();
+        untrack(() => this.#startCycle());
       }
     });
 
@@ -23,7 +24,9 @@ export class AttentionRequesterController {
       if (this.#model.isPaused) {
         this.#anim?.pause();
       } else {
-        this.#applyInterruptResolution(this.#model.interruptResolution);
+        untrack(() =>
+          this.#applyInterruptResolution(this.#model.interruptResolution),
+        );
       }
     });
   }

@@ -94,6 +94,7 @@ Os logs são lidos automaticamente via DevTools MCP — o autor reporta apenas d
 
 ```svelte
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { QAStep } from './qa-types.js';
 
   let mode = $state<'free' | 'guided'>('free');
@@ -124,10 +125,15 @@ Os logs são lidos automaticamente via DevTools MCP — o autor reporta apenas d
     currentStep += 1;
   }
 
+  // untrack prevents the effect from subscribing to state written inside trigger()
+  // (e.g. logs, triggerFired). Without it, any $state write inside trigger() would
+  // re-run the effect immediately → infinite loop.
   $effect(() => {
     if (mode === 'guided' && step?.trigger && !step.triggerLabel) {
-      step.trigger();
-      triggerFired = true;
+      untrack(() => {
+        step.trigger!();
+        triggerFired = true;
+      });
     }
   });
 </script>
@@ -161,3 +167,35 @@ Os logs são lidos automaticamente via DevTools MCP — o autor reporta apenas d
 ```
 
 **Mode toggle**: `mode: 'free' | 'guided'` — default `'free'` para desenvolvimento diário; mudar para `'guided'` antes de fechar uma feature.
+
+---
+
+#### Armadilha: `$effect` + leitura de `$state` dentro de `trigger()`
+
+**Sintoma**: clicar em "Guided QA" trava a página (loop infinito silencioso).
+
+**Causa**: `$effect` no Svelte 5 rastreia *qualquer* leitura de `$state` que ocorra durante sua execução — inclusive leituras dentro de funções chamadas por ele. A função `qaLog` → `addLog` lê o array `logs` (via spread `...logs`) para construir a nova lista. Isso faz o efeito se inscrever em `logs`. Como `addLog` também *escreve* em `logs`, a escrita re-dispara o efeito imediatamente → loop infinito.
+
+```
+$effect roda
+  → trigger() → qaLog() → addLog() lê `logs`   ← efeito se inscreve em `logs`
+                                  addLog() escreve `logs`  ← re-dispara o efeito
+  → loop infinito
+```
+
+**Regra**: sempre use `untrack()` em torno de side effects dentro de `$effect` que não devem ser fontes de re-execução:
+
+```ts
+import { untrack } from 'svelte';
+
+$effect(() => {
+  if (mode === 'guided' && step?.trigger && !step.triggerLabel) {
+    untrack(() => {          // ← leituras/escritas aqui não re-disparam o efeito
+      step.trigger!();
+      triggerFired = true;
+    });
+  }
+});
+```
+
+**Princípio geral**: a parte `if (...)` do `$effect` define *quando* ele roda (dependências reativas); o corpo dentro de `untrack()` define *o que* ele faz (side effects puros). Misturar os dois sem `untrack` é a causa raiz desse bug.

@@ -42,6 +42,7 @@ export class AttentionRequesterModel {
     if (import.meta.env.DEV) console.log("[AR:Model] idle → animating");
     this.#active = true;
     this.#paused = false;
+    this.#cancelled = false;
   }
 
   onCycleFinished() {
