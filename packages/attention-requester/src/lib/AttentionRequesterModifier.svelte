@@ -13,6 +13,15 @@
   let el = $state<HTMLElement | null>(null);
   let controller = $state<AttentionRequesterController | null>(null);
 
+  $effect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    model.setReducedMotion(mql.matches);
+
+    const onChange = (e: MediaQueryListEvent) => model.setReducedMotion(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  });
+
   $effect(() => (paused ? model.pause() : model.resume()));
 
   $effect(() => {

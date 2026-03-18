@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AttentionRequesterModel } from '../AttentionRequesterModel.svelte';
+import { AttentionRequesterModel, resolveInterruptResolution } from '../AttentionRequesterModel.svelte';
 import type {
 	ARAnimationLoop,
 	ARAnimationOneShot,
@@ -308,6 +308,70 @@ describe('§5 Behavioral Invariants', () => {
 });
 
 // ===========================================================================
+// §7 Reduced Motion
+// ===========================================================================
+
+describe('§7.1 Reduced Motion Suppresses Animation', () => {
+	it('request() is a no-op when reduced motion is active', () => {
+		const model = new AttentionRequesterModel();
+		model.setReducedMotion(true);
+		requestAnimation(model, oneShot());
+		expect(model.isActive).toBe(false);
+	});
+
+	it('reduced motion does not affect state when idle', () => {
+		const model = new AttentionRequesterModel();
+		model.setReducedMotion(true);
+		expect(model.isActive).toBe(false);
+		expect(model.isPaused).toBe(false);
+	});
+});
+
+describe('§7.2 Reduced Motion Dynamic Changes', () => {
+	it('activating reduced motion suppresses future requests', () => {
+		const model = new AttentionRequesterModel();
+		requestAnimation(model, oneShot());
+		model.onCycleFinished();
+
+		model.setReducedMotion(true);
+		requestAnimation(model, oneShot());
+		expect(model.isActive).toBe(false);
+	});
+
+	it('deactivating reduced motion allows requests again', () => {
+		const model = new AttentionRequesterModel();
+		model.setReducedMotion(true);
+		requestAnimation(model, oneShot());
+		expect(model.isActive).toBe(false);
+
+		model.setReducedMotion(false);
+		requestAnimation(model, oneShot());
+		expect(model.isActive).toBe(true);
+	});
+});
+
+describe('§7.3 Reduced Motion Does Not Affect Active Animation', () => {
+	it('active animation continues when reduced motion is enabled', () => {
+		const model = new AttentionRequesterModel();
+		requestAnimation(model, oneShot());
+		expect(model.isActive).toBe(true);
+
+		model.setReducedMotion(true);
+		expect(model.isActive).toBe(true);
+	});
+
+	it('active looping animation finishes cycle normally', () => {
+		const model = new AttentionRequesterModel();
+		requestAnimation(model, looping());
+		model.setReducedMotion(true);
+
+		model.onCycleFinished();
+		// Loop continues because the animation was already active
+		expect(model.isActive).toBe(true);
+	});
+});
+
+// ===========================================================================
 // §6 Multiple Instances
 // ===========================================================================
 
@@ -337,5 +401,37 @@ describe('§6 Multiple Instances', () => {
 
 		expect(a.isActive).toBe(false);
 		expect(b.isActive).toBe(true);
+	});
+});
+
+// ===========================================================================
+// resolveInterruptResolution (pure function)
+// ===========================================================================
+
+describe('resolveInterruptResolution', () => {
+	it('returns resume when animation is null', () => {
+		expect(resolveInterruptResolution(null)).toEqual({ strategy: 'resume' });
+	});
+
+	it('returns resume when no onInterrupt is specified', () => {
+		expect(resolveInterruptResolution(oneShot())).toEqual({ strategy: 'resume' });
+	});
+
+	it('returns resume when onInterrupt is "resume"', () => {
+		expect(resolveInterruptResolution(oneShot({ onInterrupt: 'resume' }))).toEqual({ strategy: 'resume' });
+	});
+
+	it('returns discard with interval for looping animation', () => {
+		expect(resolveInterruptResolution(looping({ onInterrupt: 'discard', interval: 800 }))).toEqual({
+			strategy: 'discard',
+			interval: 800,
+		});
+	});
+
+	it('returns discard with interval 0 for one-shot animation', () => {
+		expect(resolveInterruptResolution(oneShot({ onInterrupt: 'discard' }))).toEqual({
+			strategy: 'discard',
+			interval: 0,
+		});
 	});
 });

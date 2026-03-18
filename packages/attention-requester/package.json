@@ -16,15 +16,20 @@
     "dev": "vite dev",
     "build": "svelte-package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "ultracite check",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "size": "size-limit",
+    "bench": "vitest bench"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
   },
   "devDependencies": {
+    "@size-limit/file": "^12.0.1",
     "@sveltejs/package": "^2.3.7",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "size-limit": "^12.0.1",
     "svelte": "^5.43.8",
     "svelte-check": "^4.3.4",
     "typescript": "^5.9.3",
