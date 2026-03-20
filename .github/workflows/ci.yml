@@ -103,6 +103,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
     strategy:
       matrix:
         include:
@@ -119,13 +122,73 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - uses: andresz1/size-limit-action@v1
+      - name: "Size: PR branch"
+        run: |
+          cd ${{ matrix.path }}
+          bun run build
+          bunx size-limit --json > /tmp/size-pr.json
+          cat /tmp/size-pr.json
+
+      - name: "Size: base branch"
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          git checkout -f ${{ github.base_ref }}
+          bun install --frozen-lockfile
+          cd ${{ matrix.path }}
+          bun run build
+          bunx size-limit --json > /tmp/size-base.json
+          cat /tmp/size-base.json
+
+      - name: Compare & comment
+        uses: actions/github-script@v7
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          directory: ${{ matrix.path }}
-          build_script: "build"
-          package_manager: "bun"
-          skip_step: "install"
+          script: |
+            const fs = require('fs');
+            const pr = JSON.parse(fs.readFileSync('/tmp/size-pr.json', 'utf8'));
+            const base = JSON.parse(fs.readFileSync('/tmp/size-base.json', 'utf8'));
+
+            const fmt = (b) => b < 1024 ? `${b} B` : `${(b / 1024).toFixed(2)} KB`;
+            const pct = (a, b) => b === 0 ? '—' : `${((a - b) / b * 100).toFixed(1)}%`;
+
+            let rows = '';
+            for (let i = 0; i < pr.length; i++) {
+              const p = pr[i];
+              const b = base[i] || { size: 0 };
+              const diff = p.size - b.size;
+              const sign = diff > 0 ? '+' : '';
+              rows += `| ${{ matrix.package }} | ${fmt(b.size)} | ${fmt(p.size)} | ${sign}${fmt(diff)} (${sign}${pct(p.size, b.size)}) | ${p.passed ? '✅' : '🔴'} |\n`;
+            }
+
+            const body = `### 📦 Size Limit — \`${{ matrix.package }}\`\n\n` +
+              `| Package | Base | PR | Diff | Status |\n` +
+              `|---|---|---|---|---|\n` +
+              rows +
+              `\n<sub>Measured with <a href="https://github.com/ai/size-limit">size-limit</a></sub>`;
+
+            const marker = `<!-- size-limit:${{ matrix.package }} -->`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+
+            const commentBody = marker + '\n' + body;
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: commentBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody,
+              });
+            }
 
   security:
     name: Security Scan
