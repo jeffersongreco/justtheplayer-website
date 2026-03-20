@@ -295,4 +295,33 @@ Manual trigger or dev→main merge:
 
 ---
 
+## 6. Implementation Status
+
+Items marked with ✅ were implemented in the `dev` branch. Items marked with ⬜ are still pending.
+
+### Done
+
+- ✅ **Pre-commit hooks (lefthook)** — lint, check, test on pre-commit; build on pre-push (package-scoped)
+- ✅ **GitHub Actions Phase 1** — CI workflow with lint, check, test+coverage, build, size jobs (path-filtered to `packages/**`)
+- ✅ **PR template** — `.github/pull_request_template.md` with quality gate checklist
+- ✅ **STATUS.yaml per package** — machine-readable status for attention-requester and movable
+- ✅ **Git convention doc (§15)** — branch naming, commit format, versioning scheme, documented in Architecture
+- ✅ **size-limit config** — attention-requester (6kB), movable (10kB), with CI job
+- ✅ **Coverage tracking** — vitest v8 provider scoped to `*Model.svelte.ts`, 80% thresholds on AR
+- ✅ **Biome upgrade** — 2.3.8 → 2.4.7 with ultracite 7.3.2, all lint issues fixed
+
+### Pending
+
+- [Do] **Branch protection rules** — require PR reviews, status checks, disable force-push on `main`/`dev`, require linear history
+- ✅ **axe-core in CI** — automated a11y audit against package dev pages
+- [Do] **CHANGELOG generation** — per-package, auto-generated from conventional commits
+- [Do] **Release runbook** — documented process for version bump, tag, changelog, merge to `main`
+- [Do] **Versioning automation** — `version.ts` generated at build time from `git rev-list --count`
+- ⬜ **registry.json** — shadcn-style machine-readable install manifest per package
+- [Do] **Dependency security** — `bun audit` or equivalent in CI
+- ⬜ **Monorepo dependency validation** — `syncpack` or `manypkg` to catch undeclared cross-package imports
+- [Do] **Size-limit PR comments** — GitHub Action to comment delta on PRs (currently only fails/passes)
+
+---
+
 *End of memo.*

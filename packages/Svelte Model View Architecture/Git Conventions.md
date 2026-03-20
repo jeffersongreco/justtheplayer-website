@@ -116,13 +116,16 @@ Tags são criadas apenas em releases (merge `dev` → `main`).
 
 ## Release
 
-%% Será detalhado quando Phase 3 do CI for implementada. %%
+Processo completo documentado em [Release (§16)](Release.md).
 
 Workflow resumido:
 
-1. Calcular versão via contagem de commits
-2. Gerar/atualizar `CHANGELOG.md` do pacote
-3. Atualizar `STATUS.yaml`
-4. Criar tag: `<pacote>@<versão>`
-5. Merge `dev` → `main` via PR
-6. (Futuro) Atualizar `registry.json` para consumidores shadcn
+1. Verificar CI verde no `dev`
+2. Gerar `version.ts` via `bun run version`
+3. Gerar/atualizar `CHANGELOG.md` do pacote via `bun run changelog:<pacote>`
+4. Atualizar `STATUS.yaml`
+5. Commitar artefatos de release
+6. Criar PR `dev` → `main` e aguardar CI + review
+7. Merge via rebase
+8. Criar tag: `<pacote>@<versão>`
+9. (Futuro) Atualizar `registry.json` para consumidores shadcn
