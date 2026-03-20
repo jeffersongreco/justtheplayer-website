@@ -5,8 +5,11 @@
       "cache": false,
       "persistent": true
     },
+    "version": {
+      "cache": false
+    },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "version"],
       "outputs": [".svelte-kit/**", "dist/**"]
     },
     "check": {
@@ -14,6 +17,10 @@
     },
     "lint": {},
     "test": {},
+    "test:coverage": {},
+    "size": {
+      "dependsOn": ["build"]
+    },
     "optimize-images": {
       "inputs": ["media/src/**"],
       "outputs": ["media/dist/**"],

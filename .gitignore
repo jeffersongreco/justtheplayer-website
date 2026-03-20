@@ -10,6 +10,9 @@
 **/vite.config.js.timestamp-*
 **/vite.config.ts.timestamp-*
 
+# Coverage
+**/coverage
+
 # Outputs
 **/build
 **/dist
@@ -31,6 +34,9 @@
 **/.pem
 **/.zip
 **/Thumbs.db
+
+# Generated version files
+**/src/lib/version.ts
 
 # Medias
 **/media/*

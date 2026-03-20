@@ -11,11 +11,17 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "version": "bun run ../../scripts/generate-version.ts packages/movable",
     "build": "svelte-package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "lint": "ultracite check"
+    "lint": "ultracite check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
@@ -23,8 +29,10 @@
   "devDependencies": {
     "@sveltejs/package": "^2.3.7",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@vitest/coverage-v8": "^4.1.0",
     "svelte": "^5.43.8",
     "svelte-check": "^4.3.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   }
 }

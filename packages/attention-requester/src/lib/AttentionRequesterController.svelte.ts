@@ -1,6 +1,7 @@
+import { DEV } from "esm-env";
 import { untrack } from "svelte";
-import type { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 import type { InterruptResolution } from "./AttentionRequester.types";
+import type { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 
 export class AttentionRequesterController {
   readonly #wrapper: HTMLElement;
@@ -25,7 +26,7 @@ export class AttentionRequesterController {
         this.#anim?.pause();
       } else {
         untrack(() =>
-          this.#applyInterruptResolution(this.#model.interruptResolution),
+          this.#applyInterruptResolution(this.#model.interruptResolution)
         );
       }
     });
@@ -36,7 +37,7 @@ export class AttentionRequesterController {
       const child = this.#wrapper.children[0] as HTMLElement | undefined;
       if (!child) {
         console.warn(
-          "[AR:Controller] No child element found — animating the wrapper instead. Wrap your content inside the <AttentionRequester> component.",
+          "[AR:Controller] No child element found — animating the wrapper instead. Wrap your content inside the <AttentionRequester> component."
         );
       }
       this.#el = child ?? this.#wrapper;
@@ -45,8 +46,10 @@ export class AttentionRequesterController {
   }
 
   #applyInterruptResolution(resolution: InterruptResolution) {
-    if (import.meta.env.DEV) {
-      console.log(`[AR:Controller] interrupt resolution → ${resolution.strategy}`);
+    if (DEV) {
+      console.log(
+        `[AR:Controller] interrupt resolution → ${resolution.strategy}`
+      );
       performance.mark("ar:interrupt-resolution");
     }
     switch (resolution.strategy) {
@@ -87,7 +90,7 @@ export class AttentionRequesterController {
     if (!config || this.#destroyed) {
       return;
     }
-    if (import.meta.env.DEV) {
+    if (DEV) {
       console.log(`[AR:Controller] startCycle (${config.name})`);
       performance.mark("ar:cycle-start");
     }
@@ -113,7 +116,9 @@ export class AttentionRequesterController {
     this.#anim.addEventListener(
       "finish",
       () => {
-        if (import.meta.env.DEV) performance.mark("ar:cycle-end");
+        if (DEV) {
+          performance.mark("ar:cycle-end");
+        }
         this.#anim = null;
         this.#model.onCycleFinished();
 
@@ -125,12 +130,14 @@ export class AttentionRequesterController {
           }, config.interval);
         }
       },
-      { once: true },
+      { once: true }
     );
   }
 
   destroy() {
-    if (import.meta.env.DEV) console.log("[AR:Controller] destroy");
+    if (DEV) {
+      console.log("[AR:Controller] destroy");
+    }
     this.#destroyed = true;
     this.#anim?.cancel();
     this.#anim = null;

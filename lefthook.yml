@@ -1,0 +1,26 @@
+# Lefthook — Git hooks configuration
+# Scoped to packages/* only (website app is excluded)
+# https://lefthook.dev/configuration/
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: lint
+      glob: "packages/**/*.{ts,svelte,json,jsonc,css,html}"
+      run: bunx turbo lint --filter='./packages/*'
+
+    - name: check
+      glob: "packages/**/*.{ts,svelte}"
+      run: bunx turbo check --filter='./packages/*'
+
+    - name: test
+      glob: "packages/**/*.{ts,svelte}"
+      run: bunx turbo test --filter='./packages/*'
+
+pre-push:
+  jobs:
+    - name: lint
+      run: bunx turbo lint --filter='./packages/*'
+
+    - name: build
+      run: bunx turbo build --filter='./packages/*'

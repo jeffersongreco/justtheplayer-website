@@ -45,7 +45,7 @@ Both are used together in `src/lib/Pages/Home/Components/HomeHero.svelte`.
 
 ### Architecture Reference
 
-Core principles, patterns, and conventions live in `packages/Svelte Model View Architecture/Architecture.md` (§0–§9). Operational concerns are in separate files: [Testing](packages/Svelte%20Model%20View%20Architecture/Testing.md) (§10), [Logging](packages/Svelte%20Model%20View%20Architecture/Logging.md) (§11), [Dev Pages](packages/Svelte%20Model%20View%20Architecture/Dev%20Pages.md) (§12), [Accessibility](packages/Svelte%20Model%20View%20Architecture/Accessibility.md) (§13), and the [Conformance Checklist](packages/Svelte%20Model%20View%20Architecture/Checklist.md) (§14). Read Architecture.md before creating or modifying any MV package.
+Core principles, patterns, and conventions live in `packages/Svelte Model View Architecture/Architecture.md` (§0–§9). Operational concerns are in separate files: [Testing](packages/Svelte%20Model%20View%20Architecture/Testing.md) (§10), [Logging](packages/Svelte%20Model%20View%20Architecture/Logging.md) (§11), [Dev Pages](packages/Svelte%20Model%20View%20Architecture/Dev%20Pages.md) (§12), [Accessibility](packages/Svelte%20Model%20View%20Architecture/Accessibility.md) (§13), [Conformance Checklist](packages/Svelte%20Model%20View%20Architecture/Checklist.md) (§14), and [Git Conventions](packages/Svelte%20Model%20View%20Architecture/Git%20Conventions.md) (§15). Read Architecture.md before creating or modifying any MV package.
 
 ## Testing
 
@@ -75,6 +75,23 @@ Core principles, patterns, and conventions live in `packages/Svelte Model View A
 - **Every commit must contain working code** — code that builds, passes all automated tests, and has been through all applicable reviews (CodeRabbit, manual smoke test) with no remaining issues to fix.
 - Never commit partial, broken, or "will fix later" code. If something isn't ready, keep it in the working tree until it is.
 - The review–fix cycle (tests → smoke test → `/coderabbit:review` → fix findings → re-test) must complete fully **before** committing.
+
+### Commit Message Format
+
+```
+<type>(<scope>): <description>
+```
+
+- **Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `a11y`
+- **Scopes:** `attention-requester`, `movable`, `arch`, `ci` (new package → new scope, always `kebab-case`)
+- Full rules and examples in [Git Conventions](packages/Svelte%20Model%20View%20Architecture/Git%20Conventions.md) (§15)
+
+### Branch Naming
+
+- `feat/<package>/<short-desc>` — new features
+- `fix/<package>/<short-desc>` — bug fixes
+- `chore/<short-desc>` — non-functional (CI, docs, tooling)
+- Always branch for package source code changes; optional for docs-only on `dev`
 
 ## Code Style
 

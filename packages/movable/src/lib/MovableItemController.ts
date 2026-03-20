@@ -4,16 +4,16 @@ import type { MovableModel } from "./MovableModel.svelte";
 import type { MovableGroup, MovableItemPosition } from "./types";
 
 export interface MovableItemControllerInteractionAPI {
-  node: HTMLElement;
-  model: MovableModel;
-  id: string;
+  demoteLayer(): void;
   group: MovableGroup;
+  id: string;
+  markAsUserMoved(): void;
+  model: MovableModel;
+  moveTo(x: number, y: number): void;
+  node: HTMLElement;
+  promoteLayer(): void;
   readonly x: number;
   readonly y: number;
-  markAsUserMoved(): void;
-  moveTo(x: number, y: number): void;
-  promoteLayer(): void;
-  demoteLayer(): void;
 }
 
 export function createMovableItemController(

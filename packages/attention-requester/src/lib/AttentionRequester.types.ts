@@ -8,15 +8,15 @@ export type InterruptResolution =
   | { strategy: "discard"; interval: number };
 
 export interface ARAnimationConfig {
-  name: string;
   duration: number;
   keyframes: Keyframe[] | ((el: HTMLElement) => Keyframe[]);
+  name: string;
   onInterrupt?: AttentionInterruptBehavior; // padrão: 'resume'
 }
 
 export interface ARAnimationLoop extends ARAnimationConfig {
-  loop: true;
   interval: number;
+  loop: true;
 }
 
 export interface ARAnimationOneShot extends ARAnimationConfig {
@@ -26,13 +26,16 @@ export interface ARAnimationOneShot extends ARAnimationConfig {
 export type AttentionRequesterAnimation = ARAnimationLoop | ARAnimationOneShot;
 
 export interface AttentionRequester {
-  request: (animation: AttentionRequesterAnimation) => void;
   cancel: () => void;
+  request: (animation: AttentionRequesterAnimation) => void;
 }
 
 export type AttentionRequesterProps = {
   paused?: boolean;
 } & (
   | { children: Snippet<[{ isAnimating: boolean }]>; asChild?: never }
-  | { asChild: Snippet<[{ action: Action; isAnimating: boolean }]>; children?: never }
+  | {
+      asChild: Snippet<[{ action: Action; isAnimating: boolean }]>;
+      children?: never;
+    }
 );

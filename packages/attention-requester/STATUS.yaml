@@ -1,0 +1,26 @@
+# Status — @headless-uai/attention-requester
+# Tracks conformance against Checklist.md (§14)
+# Values: complete | partial | not_started | n/a
+# checklist_version: tracks which revision of §14 this was evaluated against
+
+checklist_version: "2026-03-17"
+last_updated: "2026-03-17"
+
+conformance:
+  model:              complete      # §2 — 4 state vars, 4 derived, full lifecycle
+  controller:         complete      # §3 — dual $effect, WAAPI, interrupt strategies
+  interaction:        n/a           # §4 — no hardware input layer
+  view:               complete      # §1 — renders state, captures intent
+  api_surface:        complete      # §5 — flat exports, bind:this, asChild
+  animations:         partial       # §6 — WAAPI + fill:none, but Animation.id not set
+  resilience:         complete      # §7 — auto-corrects position:relative, warns
+  performance:        partial       # §8 — compositor-friendly not audited, no benchmarks
+  naming:             complete      # §9 — domain-prefixed, correct suffixes
+
+  tests:              partial       # §10 — 40 cases, 97% Model coverage, spec exhaustiveness not verified
+  logging:            partial       # §11 — 1 console.warn in Controller, no structured debug logs
+  dev_page:           partial       # §12 — log panel + controls, missing state inspector
+  guided_qa:          complete      # §12 — QA steps defined and functional
+  accessibility:      not_started   # §13 — prefers-reduced-motion not implemented, 5-step audit not done
+  size_limit:         complete      # §8 — 5.62 kB / 6 kB limit, wired to CI
+  benchmarks:         not_started   # §8 — bench file exists but not configured in CI

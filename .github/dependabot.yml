@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    target-branch: "dev"
+    open-pull-requests-limit: 10
+    groups:
+      svelte:
+        patterns: ["svelte*", "@sveltejs/*"]
+      vitest:
+        patterns: ["vitest*", "@vitest/*"]
+      biome:
+        patterns: ["@biomejs/*", "ultracite"]
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    target-branch: "dev"
+    labels:
+      - "dependencies"
+      - "ci"
