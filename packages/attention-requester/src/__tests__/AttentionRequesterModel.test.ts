@@ -3,11 +3,11 @@ import type {
   ARAnimationLoop,
   ARAnimationOneShot,
   AttentionRequesterAnimation,
-} from "../AttentionRequester.types";
+} from "../lib/AttentionRequester.types";
 import {
   AttentionRequesterModel,
   resolveInterruptResolution,
-} from "../AttentionRequesterModel.svelte";
+} from "../lib/AttentionRequesterModel.svelte";
 
 // ---------------------------------------------------------------------------
 // Test helpers — animation factories

@@ -4,7 +4,7 @@
   No styling, no layout, no extra markup — just the component's actual DOM footprint.
 -->
 <script lang="ts">
-  import AttentionRequesterModifier from "../../AttentionRequesterModifier.svelte";
+  import AttentionRequesterModifier from "../../lib/AttentionRequesterModifier.svelte";
 </script>
 
 <AttentionRequesterModifier>
