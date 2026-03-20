@@ -111,8 +111,6 @@ jobs:
         include:
           - package: attention-requester
             path: packages/attention-requester
-          - package: movable
-            path: packages/movable
     steps:
       - uses: actions/checkout@v4
 
