@@ -1,3 +1,4 @@
+import { DEV } from "esm-env";
 import type {
   AttentionRequesterAnimation,
   InterruptResolution,
@@ -29,7 +30,7 @@ export class AttentionRequesterModel {
   );
 
   configure(animation: AttentionRequesterAnimation) {
-    if (import.meta.env.DEV) {
+    if (DEV) {
       console.log(`[AR:Model] configure → ${animation.name}`);
     }
     this.#animation = animation;
@@ -41,12 +42,12 @@ export class AttentionRequesterModel {
 
   request() {
     if (this.#reducedMotion || this.#active) {
-      if (import.meta.env.DEV && this.#reducedMotion) {
+      if (DEV && this.#reducedMotion) {
         console.log("[AR:Model] request suppressed (reduced-motion)");
       }
       return;
     }
-    if (import.meta.env.DEV) {
+    if (DEV) {
       console.log("[AR:Model] idle → animating");
     }
     this.#active = true;
@@ -59,7 +60,7 @@ export class AttentionRequesterModel {
       return;
     }
     if (this.#cancelled || !this.#animation?.loop) {
-      if (import.meta.env.DEV) {
+      if (DEV) {
         console.log(
           `[AR:Model] animating → idle (${this.#cancelled ? "cancelled" : "finished"})`
         );
@@ -73,7 +74,7 @@ export class AttentionRequesterModel {
     if (!this.#animation) {
       return;
     }
-    if (import.meta.env.DEV) {
+    if (DEV) {
       console.log("[AR:Model] cancel requested");
     }
     this.#cancelled = true;
@@ -83,14 +84,14 @@ export class AttentionRequesterModel {
     if (!this.#active) {
       return;
     }
-    if (import.meta.env.DEV) {
+    if (DEV) {
       console.log("[AR:Model] pause");
     }
     this.#paused = true;
   }
 
   resume() {
-    if (import.meta.env.DEV && this.#paused) {
+    if (DEV && this.#paused) {
       console.log("[AR:Model] resume");
     }
     this.#paused = false;

@@ -36,6 +36,9 @@
     "packages/attention-requester": {
       "name": "@headless-uai/attention-requester",
       "version": "0.0.1",
+      "dependencies": {
+        "esm-env": "^1.2.2",
+      },
       "devDependencies": {
         "@size-limit/file": "^12.0.1",
         "@sveltejs/package": "^2.3.7",

@@ -1,3 +1,4 @@
+import { DEV } from "esm-env";
 import { untrack } from "svelte";
 import type { InterruptResolution } from "./AttentionRequester.types";
 import type { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
@@ -45,7 +46,7 @@ export class AttentionRequesterController {
   }
 
   #applyInterruptResolution(resolution: InterruptResolution) {
-    if (import.meta.env.DEV) {
+    if (DEV) {
       console.log(
         `[AR:Controller] interrupt resolution → ${resolution.strategy}`
       );
@@ -89,7 +90,7 @@ export class AttentionRequesterController {
     if (!config || this.#destroyed) {
       return;
     }
-    if (import.meta.env.DEV) {
+    if (DEV) {
       console.log(`[AR:Controller] startCycle (${config.name})`);
       performance.mark("ar:cycle-start");
     }
@@ -115,7 +116,7 @@ export class AttentionRequesterController {
     this.#anim.addEventListener(
       "finish",
       () => {
-        if (import.meta.env.DEV) {
+        if (DEV) {
           performance.mark("ar:cycle-end");
         }
         this.#anim = null;
@@ -134,7 +135,7 @@ export class AttentionRequesterController {
   }
 
   destroy() {
-    if (import.meta.env.DEV) {
+    if (DEV) {
       console.log("[AR:Controller] destroy");
     }
     this.#destroyed = true;
