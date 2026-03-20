@@ -202,4 +202,4 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Scan lockfile
-        run: osv-scanner --lockfile=bun.lock
+        run: osv-scanner --config=osv-scanner.toml --lockfile=bun.lock

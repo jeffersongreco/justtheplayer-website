@@ -1,0 +1,35 @@
+# OSV-Scanner vulnerability ignore list
+#
+# These are transitive dependencies from upstream packages we don't control.
+# They only run at build/dev time — the production output is a static site
+# deployed to Cloudflare Pages with none of these packages.
+
+# cookie 0.6.0 — pinned by @sveltejs/kit; server-side only, unused in static output
+[[IgnoredVulns]]
+id = "GHSA-pxg6-pf52-xh8x"
+reason = "Transitive dep of @sveltejs/kit; not shipped to production (static site)"
+
+# undici 7.18.2 — pinned by miniflare (wrangler); local dev tooling only
+[[IgnoredVulns]]
+id = "GHSA-2mjp-6q6p-2qxm"
+reason = "Transitive dep of miniflare/wrangler; dev-only, not in production bundle"
+
+[[IgnoredVulns]]
+id = "GHSA-4992-7rv2-5pvq"
+reason = "Transitive dep of miniflare/wrangler; dev-only, not in production bundle"
+
+[[IgnoredVulns]]
+id = "GHSA-f269-vfmq-vjvj"
+reason = "Transitive dep of miniflare/wrangler; dev-only, not in production bundle"
+
+[[IgnoredVulns]]
+id = "GHSA-phc3-fgpg-7m6h"
+reason = "Transitive dep of miniflare/wrangler; dev-only, not in production bundle"
+
+[[IgnoredVulns]]
+id = "GHSA-v9p9-hfj2-hcw8"
+reason = "Transitive dep of miniflare/wrangler; dev-only, not in production bundle"
+
+[[IgnoredVulns]]
+id = "GHSA-vrm6-8vpv-qv8q"
+reason = "Transitive dep of miniflare/wrangler; dev-only, not in production bundle"
