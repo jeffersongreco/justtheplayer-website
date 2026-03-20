@@ -128,6 +128,8 @@ jobs:
           cat /tmp/size-pr.json
 
       - name: "Size: base branch"
+        id: size-base
+        continue-on-error: true
         run: |
           git fetch origin ${{ github.base_ref }} --depth=1
           git checkout -f ${{ github.base_ref }}
@@ -143,7 +145,10 @@ jobs:
           script: |
             const fs = require('fs');
             const pr = JSON.parse(fs.readFileSync('/tmp/size-pr.json', 'utf8'));
-            const base = JSON.parse(fs.readFileSync('/tmp/size-base.json', 'utf8'));
+            const baseExists = '${{ steps.size-base.outcome }}' === 'success';
+            const base = baseExists
+              ? JSON.parse(fs.readFileSync('/tmp/size-base.json', 'utf8'))
+              : null;
 
             const fmt = (b) => b < 1024 ? `${b} B` : `${(b / 1024).toFixed(2)} KB`;
             const pct = (a, b) => b === 0 ? '—' : `${((a - b) / b * 100).toFixed(1)}%`;
@@ -151,16 +156,21 @@ jobs:
             let rows = '';
             for (let i = 0; i < pr.length; i++) {
               const p = pr[i];
-              const b = base[i] || { size: 0 };
-              const diff = p.size - b.size;
-              const sign = diff > 0 ? '+' : '';
-              rows += `| ${{ matrix.package }} | ${fmt(b.size)} | ${fmt(p.size)} | ${sign}${fmt(diff)} (${sign}${pct(p.size, b.size)}) | ${p.passed ? '✅' : '🔴'} |\n`;
+              if (base) {
+                const b = base[i] || { size: 0 };
+                const diff = p.size - b.size;
+                const sign = diff > 0 ? '+' : '';
+                rows += `| ${{ matrix.package }} | ${fmt(b.size)} | ${fmt(p.size)} | ${sign}${fmt(diff)} (${sign}${pct(p.size, b.size)}) | ${p.passed ? '✅' : '🔴'} |\n`;
+              } else {
+                rows += `| ${{ matrix.package }} | — | ${fmt(p.size)} | — | ${p.passed ? '✅' : '🔴'} |\n`;
+              }
             }
 
+            const note = base ? '' : '\n\n> ⚠️ Base branch build failed — showing PR size only.\n';
             const body = `### 📦 Size Limit — \`${{ matrix.package }}\`\n\n` +
               `| Package | Base | PR | Diff | Status |\n` +
               `|---|---|---|---|---|\n` +
-              rows +
+              rows + note +
               `\n<sub>Measured with <a href="https://github.com/ai/size-limit">size-limit</a></sub>`;
 
             const marker = `<!-- size-limit:${{ matrix.package }} -->`;
