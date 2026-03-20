@@ -19,6 +19,9 @@
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
     "size": "turbo size",
+    "version": "turbo version --filter='./packages/*'",
+    "changelog:ar": "git cliff --config cliff.toml --include-path 'packages/attention-requester/**' -o packages/attention-requester/CHANGELOG.md",
+    "changelog:movable": "git cliff --config cliff.toml --include-path 'packages/movable/**' -o packages/movable/CHANGELOG.md",
     "prepare": "lefthook install"
   }
 }

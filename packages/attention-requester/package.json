@@ -16,6 +16,7 @@
   ],
   "scripts": {
     "dev": "vite dev",
+    "version": "bun run ../../scripts/generate-version.ts packages/attention-requester",
     "build": "svelte-package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "ultracite check",

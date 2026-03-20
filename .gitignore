@@ -35,6 +35,9 @@
 **/.zip
 **/Thumbs.db
 
+# Generated version files
+**/src/lib/version.ts
+
 # Medias
 **/media/*
 !**/media/*.ts

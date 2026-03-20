@@ -15,6 +15,7 @@
     "dist"
   ],
   "scripts": {
+    "version": "bun run ../../scripts/generate-version.ts packages/movable",
     "build": "svelte-package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "ultracite check",

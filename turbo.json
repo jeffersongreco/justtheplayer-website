@@ -5,8 +5,11 @@
       "cache": false,
       "persistent": true
     },
+    "version": {
+      "cache": false
+    },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "version"],
       "outputs": [".svelte-kit/**", "dist/**"]
     },
     "check": {
