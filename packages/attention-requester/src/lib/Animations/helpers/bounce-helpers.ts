@@ -71,8 +71,8 @@ export function readCurrentTranslate(el: HTMLElement): {
   const parts =
     raw === "none" ? [0, 0, 0] : raw.split(" ").map(Number.parseFloat);
   return {
-    cx: parts[0] ?? 0,
-    cy: parts[1] ?? 0,
-    cz: parts[2] ?? 0,
+    cx: parts[0] || 0,
+    cy: parts[1] || 0,
+    cz: parts[2] || 0,
   };
 }
