@@ -36,11 +36,11 @@ export class AttentionRequesterCoordinator {
     if (!this.#el) {
       const child = this.#wrapper.children[0] as HTMLElement | undefined;
       if (!child) {
-        console.warn(
-          "[AR:Coordinator] No child element found — animating the wrapper instead. Wrap your content inside the <AttentionRequester> component."
+        throw new Error(
+          "[AR:Coordinator] No target element found. Wrap a child element inside <AttentionRequester>."
         );
       }
-      this.#el = child ?? this.#wrapper;
+      this.#el = child;
     }
     return this.#el;
   }
