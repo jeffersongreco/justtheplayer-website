@@ -26,6 +26,9 @@
     "size": "size-limit",
     "bench": "vitest bench"
   },
+  "dependencies": {
+    "esm-env": "^1.2.2"
+  },
   "peerDependencies": {
     "svelte": "^5.0.0"
   },

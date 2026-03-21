@@ -2,8 +2,8 @@ import { bench, describe } from "vitest";
 import type {
   ARAnimationLoop,
   ARAnimationOneShot,
-} from "../AttentionRequester.types";
-import { AttentionRequesterModel } from "../AttentionRequesterModel.svelte";
+} from "../lib/AttentionRequester.types";
+import { AttentionRequesterModel } from "../lib/AttentionRequesterModel.svelte";
 
 function oneShot(): ARAnimationOneShot {
   return {

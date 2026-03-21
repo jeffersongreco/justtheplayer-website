@@ -391,7 +391,7 @@
           type="button"
           class="qa-trigger"
           disabled={triggerFired}
-          onclick={() => { step!.trigger!(); triggerFired = true; }}
+          onclick={() => { step?.trigger?.(); triggerFired = true; }}
         >
           {step.triggerLabel}
         </button>

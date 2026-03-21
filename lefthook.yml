@@ -19,5 +19,8 @@ pre-commit:
 
 pre-push:
   jobs:
+    - name: lint
+      run: bunx turbo lint --filter='./packages/*'
+
     - name: build
       run: bunx turbo build --filter='./packages/*'

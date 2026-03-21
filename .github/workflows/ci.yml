@@ -103,11 +103,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: github.event_name == 'pull_request'
+<<<<<<< HEAD
+=======
+    permissions:
+      contents: read
+      pull-requests: write
+>>>>>>> 09316c2c494d6e8e20ad0e30807f9c6bdaf8bc34
     strategy:
       matrix:
         include:
           - package: attention-requester
             path: packages/attention-requester
+<<<<<<< HEAD
           - package: movable
             path: packages/movable
     steps:
@@ -119,6 +126,94 @@ jobs:
           directory: ${{ matrix.path }}
           build_script: "build"
           package_manager: "bun"
+=======
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.5"
+
+      - run: bun install --frozen-lockfile
+
+      - name: "Size: PR branch"
+        run: |
+          cd ${{ matrix.path }}
+          bun run build
+          bunx size-limit --json > /tmp/size-pr.json
+          cat /tmp/size-pr.json
+
+      - name: "Size: base branch"
+        id: size-base
+        continue-on-error: true
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          git checkout -f ${{ github.base_ref }}
+          bun install --frozen-lockfile
+          cd ${{ matrix.path }}
+          bun run build
+          bunx size-limit --json > /tmp/size-base.json
+          cat /tmp/size-base.json
+
+      - name: Compare & comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const pr = JSON.parse(fs.readFileSync('/tmp/size-pr.json', 'utf8'));
+            const baseExists = '${{ steps.size-base.outcome }}' === 'success';
+            const base = baseExists
+              ? JSON.parse(fs.readFileSync('/tmp/size-base.json', 'utf8'))
+              : null;
+
+            const fmt = (b) => b < 1024 ? `${b} B` : `${(b / 1024).toFixed(2)} KB`;
+            const pct = (a, b) => b === 0 ? '—' : `${((a - b) / b * 100).toFixed(1)}%`;
+
+            let rows = '';
+            for (let i = 0; i < pr.length; i++) {
+              const p = pr[i];
+              if (base) {
+                const b = base[i] || { size: 0 };
+                const diff = p.size - b.size;
+                const sign = diff > 0 ? '+' : '';
+                rows += `| ${{ matrix.package }} | ${fmt(b.size)} | ${fmt(p.size)} | ${sign}${fmt(diff)} (${sign}${pct(p.size, b.size)}) | ${p.passed ? '✅' : '🔴'} |\n`;
+              } else {
+                rows += `| ${{ matrix.package }} | — | ${fmt(p.size)} | — | ${p.passed ? '✅' : '🔴'} |\n`;
+              }
+            }
+
+            const note = base ? '' : '\n\n> ⚠️ Base branch build failed — showing PR size only.\n';
+            const body = `### 📦 Size Limit — \`${{ matrix.package }}\`\n\n` +
+              `| Package | Base | PR | Diff | Status |\n` +
+              `|---|---|---|---|---|\n` +
+              rows + note +
+              `\n<sub>Measured with <a href="https://github.com/ai/size-limit">size-limit</a></sub>`;
+
+            const marker = `<!-- size-limit:${{ matrix.package }} -->`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+
+            const commentBody = marker + '\n' + body;
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: commentBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody,
+              });
+            }
+>>>>>>> 09316c2c494d6e8e20ad0e30807f9c6bdaf8bc34
 
   security:
     name: Security Scan
@@ -126,7 +221,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+<<<<<<< HEAD
       - uses: google/osv-scanner-action/osv-scanner-action@v1
         with:
           scan-args: |-
             --lockfile=bun.lock
+=======
+      - name: Install osv-scanner
+        run: |
+          go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Scan lockfile
+        run: osv-scanner --config=osv-scanner.toml --lockfile=bun.lock
+>>>>>>> 09316c2c494d6e8e20ad0e30807f9c6bdaf8bc34
