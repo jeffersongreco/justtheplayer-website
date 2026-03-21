@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Action } from "svelte/action";
   import type {
     AttentionRequesterAnimation,
     AttentionRequesterProps,
@@ -10,8 +9,6 @@
   let { paused = false, children, asChild }: AttentionRequesterProps = $props();
 
   const model = new AttentionRequesterModel();
-  let el = $state<HTMLElement | null>(null);
-  let controller = $state<AttentionRequesterController | null>(null);
 
   $effect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -25,18 +22,10 @@
 
   $effect(() => (paused ? model.pause() : model.resume()));
 
-  $effect(() => {
-    if (!el) {
-      return;
-    }
-    controller = new AttentionRequesterController(el, model);
-    return () => controller?.destroy();
-  });
-
-  const action: Action = (node) => {
-    el = node;
-    return {};
-  };
+  function attach(el: HTMLElement) {
+    const ctrl = new AttentionRequesterController(el, model);
+    return () => ctrl.destroy();
+  }
 
   export function request(animation: AttentionRequesterAnimation) {
     model.configure(animation);
@@ -49,9 +38,9 @@
 </script>
 
 {#if asChild}
-  {@render asChild({ action, isAnimating: model.isActive })}
+  {@render asChild({ attach, isAnimating: model.isActive })}
 {:else}
-  <div bind:this={el} style="display:contents">
+  <div {@attach attach} style="display:contents">
     {#if children}
       {@render children({ isAnimating: model.isActive })}
     {/if}

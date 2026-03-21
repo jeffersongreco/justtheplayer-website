@@ -1,5 +1,4 @@
 import type { Snippet } from "svelte";
-import type { Action } from "svelte/action";
 
 export type AttentionInterruptBehavior = "resume" | "discard";
 
@@ -35,7 +34,14 @@ export type AttentionRequesterProps = {
 } & (
   | { children: Snippet<[{ isAnimating: boolean }]>; asChild?: never }
   | {
-      asChild: Snippet<[{ action: Action; isAnimating: boolean }]>;
+      asChild: Snippet<
+        [
+          {
+            attach: (el: HTMLElement) => (() => void) | undefined;
+            isAnimating: boolean;
+          },
+        ]
+      >;
       children?: never;
     }
 );
