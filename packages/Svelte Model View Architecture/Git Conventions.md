@@ -16,7 +16,7 @@
 
 ### Quando criar branch
 
-- **Sempre** para trabalho que toca código-fonte de pacotes (`packages/*/src/`)
+- **Sempre** antes de qualquer alteração — criar a branch **antes** do primeiro commit
 - **Opcional** para mudanças exclusivamente de documentação em `dev`
 - **Nunca commitar diretamente em `main`** — sempre via PR de `dev`
 
@@ -26,6 +26,16 @@
 - Require status checks (CI) para merge
 - Desabilitar force-push em `main` e `dev`
 - Require linear history (rebase merge) — necessário para versionamento por contagem de commits
+
+### Estratégia de merge: Rebase (nunca squash)
+
+PRs são sempre merged via **rebase merge**. Cada commit da branch é replayed individualmente no topo da branch alvo. Isso significa:
+
+- **Múltiplos commits por PR são normais e esperados** — um commit por fronteira lógica
+- **Squash é proibido** — destrói a granularidade do histórico e quebra a contagem de commits para versionamento CalVer
+- **Reset/force-push é proibido** em `dev` e `main` — histórico é append-only
+- **Se um commit precisa ser corrigido**, faça um novo commit de fix, nunca amend ou rebase interativo em branches já pushed
+- A única exceção para rebase local é **antes do primeiro push** de uma branch nova, para manter commits limpos
 
 ---
 
