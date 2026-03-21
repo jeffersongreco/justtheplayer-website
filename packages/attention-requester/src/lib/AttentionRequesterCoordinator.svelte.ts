@@ -3,7 +3,7 @@ import { untrack } from "svelte";
 import type { InterruptResolution } from "./AttentionRequester.types";
 import type { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 
-export class AttentionRequesterController {
+export class AttentionRequesterCoordinator {
   readonly #wrapper: HTMLElement;
   readonly #model: AttentionRequesterModel;
   #el: HTMLElement | null = null;
@@ -36,11 +36,11 @@ export class AttentionRequesterController {
     if (!this.#el) {
       const child = this.#wrapper.children[0] as HTMLElement | undefined;
       if (!child) {
-        console.warn(
-          "[AR:Controller] No child element found — animating the wrapper instead. Wrap your content inside the <AttentionRequester> component."
+        throw new Error(
+          "[AR:Coordinator] No target element found. Wrap a child element inside <AttentionRequester>."
         );
       }
-      this.#el = child ?? this.#wrapper;
+      this.#el = child;
     }
     return this.#el;
   }
@@ -48,7 +48,7 @@ export class AttentionRequesterController {
   #applyInterruptResolution(resolution: InterruptResolution) {
     if (DEV) {
       console.log(
-        `[AR:Controller] interrupt resolution → ${resolution.strategy}`
+        `[AR:Coordinator] interrupt resolution → ${resolution.strategy}`
       );
       performance.mark("ar:interrupt-resolution");
     }
@@ -91,7 +91,7 @@ export class AttentionRequesterController {
       return;
     }
     if (DEV) {
-      console.log(`[AR:Controller] startCycle (${config.name})`);
+      console.log(`[AR:Coordinator] startCycle (${config.name})`);
       performance.mark("ar:cycle-start");
     }
 
@@ -136,7 +136,7 @@ export class AttentionRequesterController {
 
   destroy() {
     if (DEV) {
-      console.log("[AR:Controller] destroy");
+      console.log("[AR:Coordinator] destroy");
     }
     this.#destroyed = true;
     this.#anim?.cancel();

@@ -41,3 +41,6 @@
 # Medias
 **/media/*
 !**/media/*.ts
+
+# Turborepo
+.turbo

@@ -18,7 +18,7 @@ export class AttentionRequesterModel {
   #active = $state(false);
   #paused = $state(false);
   #cancelled = $state(false);
-  #animation = $state<AttentionRequesterAnimation | null>(null);
+  #animation = $state.raw<AttentionRequesterAnimation | null>(null);
   #reducedMotion = $state(false);
 
   readonly isActive = $derived(this.#active);

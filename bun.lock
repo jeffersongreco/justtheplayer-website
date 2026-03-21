@@ -61,9 +61,11 @@
       "name": "@headless-uai/movable",
       "version": "0.0.1",
       "devDependencies": {
+        "@size-limit/file": "^12.0.1",
         "@sveltejs/package": "^2.3.7",
         "@sveltejs/vite-plugin-svelte": "^6.2.1",
         "@vitest/coverage-v8": "^4.1.0",
+        "size-limit": "^12.0.1",
         "svelte": "^5.43.8",
         "svelte-check": "^4.3.4",
         "typescript": "^5.9.3",

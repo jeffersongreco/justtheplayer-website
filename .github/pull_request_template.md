@@ -11,7 +11,7 @@
 
 ## Checklist
 
-- [ ] No new `console.warn`/`console.error` in production paths (use `import.meta.env.DEV` guard)
+- [ ] No new `console.warn`/`console.error` in production paths (use `DEV` from `esm-env` guard)
 - [ ] Public API (`index.ts` exports) unchanged — or breaking change documented below
 - [ ] Accessibility not regressed (if touching View/Controller)
 

@@ -4,9 +4,7 @@
   import { AttentionRequester, DoubleBounce, PhysicsBounce } from "../lib";
   import type { QAStep, QASuite } from "./qa-types.js";
 
-  // biome-ignore lint/suspicious/noUnassignedVariables: assigned via bind:this before onMount
   let attentionDiscard: AttentionRequesterType;
-  // biome-ignore lint/suspicious/noUnassignedVariables: assigned via bind:this before onMount
   let attentionResume: AttentionRequesterType;
 
   const animationDiscard = PhysicsBounce({

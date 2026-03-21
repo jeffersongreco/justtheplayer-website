@@ -10,10 +10,12 @@ Logs ficam **permanentemente** no código-fonte. Nunca se adiciona e remove logs
 
 ### Eliminação em Produção
 
-Logs de debug são guardados por `import.meta.env.DEV` — o Vite substitui em build time e o minifier elimina o bloco inteiro. Zero bytes no bundle de produção, zero custo.
+Logs de debug são guardados pela constante `DEV` do pacote `esm-env` — o bundler substitui em build time e o minifier elimina o bloco inteiro. Zero bytes no bundle de produção, zero custo.
 
 ```ts
-if (import.meta.env.DEV) {
+import { DEV } from 'esm-env';
+
+if (DEV) {
   console.debug('[AR:Model] State transition', { from: 'idle', to: 'animating' });
 }
 ```
@@ -28,7 +30,7 @@ if (import.meta.env.DEV) {
 
 ### Namespacing
 
-Todos os logs usam prefixo `[Package:Layer]` para filtragem no DevTools (ex: `[AR:Model]`, `[AR:Controller]`, `[Movable:Interaction]`).
+Todos os logs usam prefixo `[Package:Layer]` para filtragem no DevTools (ex: `[AR:Model]`, `[AR:Coordinator]`, `[Movable:Interaction]`).
 
 ### Onde Logar
 
@@ -37,7 +39,7 @@ Todos os logs usam prefixo `[Package:Layer]` para filtragem no DevTools (ex: `[A
 
 ### Sem Biblioteca Externa
 
-Para component libraries, `import.meta.env.DEV` + prefixos string é suficiente. Bibliotecas de logging não se justificam pelo overhead de dependência e bundle size.
+Para component libraries, `DEV` do `esm-env` + prefixos string é suficiente. Bibliotecas de logging não se justificam pelo overhead de dependência e bundle size.
 
 ### Instrumentação de Animações
 

@@ -8,9 +8,7 @@
   } from "@headless-uai/attention-requester";
   import { onMount } from "svelte";
 
-  // biome-ignore lint/suspicious/noUnassignedVariables: atribuído via bind:this antes do onMount
   let attentionDiscard: AttentionRequesterType;
-  // biome-ignore lint/suspicious/noUnassignedVariables: atribuído via bind:this antes do onMount
   let attentionResume: AttentionRequesterType;
 
   const animationDiscard = PhysicsBounce({

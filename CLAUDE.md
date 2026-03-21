@@ -93,6 +93,46 @@ Core principles, patterns, and conventions live in `packages/Svelte Model View A
 - `chore/<short-desc>` — non-functional (CI, docs, tooling)
 - Always branch for package source code changes; optional for docs-only on `dev`
 
+## Svelte Code Quality (MCP Plugin)
+
+This project uses the **official Svelte MCP server**. It **must** be used whenever working with `.svelte` or `.svelte.ts`/`.svelte.js` files:
+
+1. **Writing/editing Svelte code** — after writing or modifying a component or module, run `svelte-autofixer` on the final code to catch issues before delivering it. Fix any reported problems and re-run until clean.
+2. **Looking up Svelte/SvelteKit docs** — when you need documentation on runes, lifecycle, routing, or any Svelte/SvelteKit API, use `list-sections` first to find relevant sections, then `get-documentation` to fetch them. Prefer this over relying on training data alone.
+3. **Svelte file editor agent** — when creating or editing `.svelte` files, prefer using the `svelte:svelte-file-editor` agent, which integrates documentation lookup and autofixer validation automatically.
+
+## Svelte Code Quality (Official Svelte MCP Plugin)
+
+This project has the **official Svelte MCP server** installed. It **must** be used whenever working with `.svelte` or `.svelte.ts`/`.svelte.js` files.
+
+### Tools (MCP)
+
+| Tool | When to use |
+|---|---|
+| `list-sections` | **First step** for any doc lookup — lists all Svelte 5 / SvelteKit sections with use-case keywords |
+| `get-documentation` | Fetch full content for sections found via `list-sections`. Prefer this over training data for APIs, runes, routing, etc. |
+| `svelte-autofixer` | **After writing/editing** any Svelte component or module — validates code and returns fix suggestions. Re-run until clean. |
+| `playground-link` | Generate a Svelte playground link for code snippets (only when code is NOT written to a file) |
+
+### Skills
+
+| Skill | When to use |
+|---|---|
+| `svelte:svelte-code-writer` | When creating, editing, or analyzing any `.svelte` / `.svelte.ts` / `.svelte.js` file — provides doc lookup and code analysis |
+| `svelte:svelte-core-bestpractices` | When writing or reviewing Svelte code — covers reactivity, event handling, styling, library integration |
+
+### Agent
+
+| Agent | When to use |
+|---|---|
+| `svelte:svelte-file-editor` | **Preferred agent** for creating/editing `.svelte` and `.svelte.ts`/`.svelte.js` files — integrates documentation fetch and autofixer validation automatically |
+
+### Workflow
+
+1. When creating or editing Svelte files, use the `svelte-file-editor` agent when possible — it handles doc lookup and validation in one step.
+2. If working outside the agent, always run `svelte-autofixer` on the final code before delivering. Fix issues and re-run until clean.
+3. For documentation needs, call `list-sections` → `get-documentation` instead of relying solely on training data.
+
 ## Code Style
 
 - Write code, comments, variable names, and commits in **English**

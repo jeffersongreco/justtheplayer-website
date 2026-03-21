@@ -1,4 +1,0 @@
-- [x] Refatorar o `Architecture.md` em arquivos separados.
-- [x] Pensar sobre a UI/UX, template, de páginas Dev dedicadas dos pacotes.
-- [ ] Estudar o uso de `untrack()` que está acontecendo, é certo ou remendo?
-- [ ] Mudar o linting e formatting para o `eslint` e `prettier` respectivamente, usando as configs do `svelte-add`, motivo: suporte completo e recomendação oficial. Estudar se aplica isso só para os arquivos `.svelte` ou para todos os arquivos do projeto. Os Oxlint já faz "Framework files (.vue, .svelte, .astro) by linting only their <script> blocks", não sei se o Biome faz isso.

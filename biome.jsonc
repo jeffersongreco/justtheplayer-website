@@ -61,8 +61,10 @@
             "noUnknownPseudoClass": "off"
           },
           // Svelte templates use {(x = y, '')} to capture snippet params — idiomatic pattern
+          // bind:this assigns variables that Biome can't see in the template — false positive
           "suspicious": {
-            "noAssignInExpressions": "off"
+            "noAssignInExpressions": "off",
+            "noUnassignedVariables": "off"
           },
           "complexity": {
             "noCommaOperator": "off"

@@ -12,7 +12,6 @@
 
   let { isHeroSubtle }: { isHeroSubtle: boolean } = $props();
 
-  // biome-ignore lint/suspicious/noUnassignedVariables: atribuído via bind:this antes do onMount
   let attention: AttentionRequester;
   const animation = PhysicsBounce({
     direction: "up",
