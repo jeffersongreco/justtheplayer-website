@@ -7,7 +7,7 @@ export type {
   BounceConfig as PhysicsBounceConfig,
   BounceDirection,
   CardinalDirection,
-  Vector3D,
+  ThreeAxisDirection,
 } from "../Bounce/BounceARAnimationShared";
 
 export const PhysicsBounce = defineBounceAnimation({

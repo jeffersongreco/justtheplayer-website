@@ -13,13 +13,13 @@ export type CardinalDirection =
   | "forward"
   | "backward";
 
-export interface Vector3D {
+export interface ThreeAxisDirection {
   x: number;
   y: number;
   z: number;
 }
 
-export type BounceDirection = CardinalDirection | Partial<Vector3D>;
+export type BounceDirection = CardinalDirection | Partial<ThreeAxisDirection>;
 
 interface BounceConfigBase {
   direction?: BounceDirection;
@@ -48,9 +48,9 @@ export interface ResolvedBounceParams {
   dz: number;
 }
 
-export function normalizeDirection(dir: BounceDirection): Vector3D {
+export function normalizeDirection(dir: BounceDirection): ThreeAxisDirection {
   if (typeof dir === "string") {
-    const map: Record<CardinalDirection, Vector3D> = {
+    const map: Record<CardinalDirection, ThreeAxisDirection> = {
       up: { x: 0, y: -1, z: 0 },
       down: { x: 0, y: 1, z: 0 },
       left: { x: -1, y: 0, z: 0 },
