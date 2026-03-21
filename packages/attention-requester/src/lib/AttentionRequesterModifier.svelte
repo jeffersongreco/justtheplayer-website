@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { MediaQuery } from "svelte/reactivity";
   import type {
     AttentionRequesterAnimation,
     AttentionRequesterProps,
@@ -9,17 +10,9 @@
   let { paused = false, children, asChild }: AttentionRequesterProps = $props();
 
   const model = new AttentionRequesterModel();
+  const reducedMotion = new MediaQuery("prefers-reduced-motion: reduce");
 
-  $effect(() => {
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    model.setReducedMotion(mql.matches);
-
-    const onChange = (e: MediaQueryListEvent) =>
-      model.setReducedMotion(e.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  });
-
+  $effect(() => model.setReducedMotion(reducedMotion.current));
   $effect(() => (paused ? model.pause() : model.resume()));
 
   function attach(el: HTMLElement) {
