@@ -89,7 +89,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Code review via CodeRabbit (`/coderabbit:review`) executado no terminal antes de abrir o PR
 
 ### Logging (§11)
-- [ ] Logs de debug permanentes no código, guardados por `import.meta.env.DEV`
+- [ ] Logs de debug permanentes no código, guardados por `DEV` do `esm-env`
 - [ ] `console.warn` para uso incorreto da API e auto-correções (sempre presente)
 - [ ] `console.error` para falhas inesperadas (sempre presente)
 - [ ] Prefixo `[Package:Layer]` em todos os logs
