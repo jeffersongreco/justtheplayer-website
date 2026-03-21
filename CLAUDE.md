@@ -93,6 +93,26 @@ Core principles, patterns, and conventions live in `packages/Svelte Model View A
 - `chore/<short-desc>` — non-functional (CI, docs, tooling)
 - Always branch for package source code changes; optional for docs-only on `dev`
 
+### Claude Git Workflow
+
+**Branch first, always.** Before making any code changes, create and checkout the appropriate branch. Never start editing files while still on `dev` or `main`.
+
+**Workflow:**
+1. Determine the branch name based on the task type (`feat/`, `fix/`, `chore/`)
+2. Create and checkout the branch from `dev`
+3. Only then start making changes and committing
+
+**Multiple commits per PR are normal.** Each commit represents one logical boundary (one behavior + tests passing). Never squash, amend, or rebase to collapse commits. If a commit needs correction, make a new fix commit.
+
+**Prohibited operations:**
+- `git rebase -i` (interactive rebase)
+- `git reset --hard`
+- `git push --force` / `--force-with-lease`
+- `git commit --amend` (on already-pushed commits)
+- Squash merge on GitHub
+
+These destroy history and break CalVer commit counting.
+
 ## Svelte Code Quality (MCP Plugin)
 
 This project uses the **official Svelte MCP server**. It **must** be used whenever working with `.svelte` or `.svelte.ts`/`.svelte.js` files:
