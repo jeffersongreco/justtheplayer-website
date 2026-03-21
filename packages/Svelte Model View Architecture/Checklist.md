@@ -27,6 +27,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Instanciado dentro de `$effect` no `<script>` do componente (ownership reativo garantido)
 - [ ] Nenhum `$effect` no template roteia estado do Model para o Controller — o Controller observa o Model internamente
 - [ ] `destroy()` trata apenas cleanup imperativo (WAAPI, rAF, observers, timers); cleanup reativo é automático
+- [ ] Primitivos reativos justificados: todo `$effect` é side effect de DOM ou sync com sistema externo (nunca derivação de estado); `untrack()` tem comentário explicando por que o valor não é dependência; `$effect.root` tem `destroy()` chamado no método `destroy()` do objeto dono; efeitos aninhados não criam ciclos de leitura/escrita na mesma dependência
 
 ### Interaction (§4)
 - [ ] Responsabilidade única: traduzir hardware em comandos para o Model

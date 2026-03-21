@@ -216,6 +216,57 @@ A Svelte action captura a referência ao `HTMLElement`. Ela **não** é dona do 
 
 O template `<script>` contém apenas: (1) `$effect` que roteia props para o Model, (2) `$effect` que cria e destrói o Controller, (3) a action para captura do node. Nenhum `$effect` no template roteia estado do Model para o Controller — o Controller trata disso internamente.
 
+### Disciplina de Primitivos Reativos
+
+`$effect` é um escape hatch — os próprios docs do Svelte descrevem assim. Toda ocorrência no código de aplicação precisa ser justificável por uma de duas razões:
+
+1. **Side effect de DOM** — algo que deve acontecer *depois* das atualizações do DOM (animação, foco, medição).
+2. **Sincronização com sistema externo** — integração com algo fora do grafo reativo do Svelte (WebSocket, WAAPI, `ResizeObserver`, `requestAnimationFrame`).
+
+Se um `$effect` está sendo usado para *derivar* ou *sincronizar estado*, a lógica pertence a `$derived` ou `$derived.by`.
+
+#### `untrack()`
+
+`untrack(fn)` impede que leituras de `$state` dentro de `fn` sejam registradas como dependências do `$effect` ou `$derived` envolvente. É uma API oficial do Svelte — não uma gambiarra.
+
+```ts
+import { untrack } from 'svelte';
+
+$effect(() => {
+  // re-executa quando `data` muda, NÃO quando `time` muda
+  save(data, { timestamp: untrack(() => time) });
+});
+```
+
+**Quando é correto:** quando se precisa de um *snapshot* de um valor no momento em que o effect executa, mas mudanças nesse valor não devem re-disparar o effect.
+
+**Quando é sinal de problema:** se o valor envolto em `untrack` logicamente *deveria* disparar uma re-execução, a estrutura do grafo reativo está errada. `untrack` quebra uma dependência que genuinamente não se quer — não suprime re-runs inconvenientes.
+
+**Regra:** toda chamada a `untrack` merece um comentário explicando *por que* o valor não deve ser uma dependência. Sem o comentário, leitores futuros não conseguem distinguir design intencional de supressão acidental.
+
+#### `$effect.root`
+
+Cria um escopo reativo **não rastreado, sem auto-cleanup**. Retorna uma função `destroy()` que deve ser chamada manualmente.
+
+```ts
+const destroy = $effect.root(() => {
+  $effect(() => { /* trabalho reativo */ });
+  return () => { /* cleanup */ };
+});
+```
+
+É o mecanismo correto quando efeitos precisam existir **fora do ciclo de vida de um componente** — por exemplo, dentro de um Model ou Controller instanciado como classe. Permite que effects sejam criados fora da fase de inicialização do componente.
+
+**Obrigação de ciclo de vida:** como não há auto-cleanup, o `destroy()` retornado deve ser chamado no método `destroy()` do objeto dono. Esquecer é um memory leak — subscriptions reativas continuam ativas, referências ao DOM são mantidas. Tratar como obrigação de primeira classe, não detalhe de implementação.
+
+#### Efeitos Aninhados
+
+Svelte permite `$effect` dentro de outro `$effect`, desde que o effect filho seja criado enquanto o pai está executando. O ciclo de vida do filho é **atrelado ao pai**: o filho é destruído e recriado toda vez que o pai re-executa.
+
+Isso é legítimo, mas tem custo oculto: se o pai tem dependências de granularidade grossa e o setup do filho é custoso (cria listeners, inicia animações, aloca recursos), o custo de reconstrução é pago em cada re-execução do pai. Preferir narrowing das dependências do pai ou elevar o effect filho para um escopo mais estável.
+
+**Anti-padrão:** pai e filho lendo/escrevendo a mesma dependência cria ciclos de atualização infinitos.
+
 ---
 
 ## 4. Interaction
