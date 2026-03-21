@@ -1,9 +1,4 @@
-import type {
-  ARAnimationLoop,
-  ARAnimationOneShot,
-  AttentionInterruptBehavior,
-} from "../../AttentionRequester.types";
-import { createARAnimation } from "../createARAnimation";
+import type { AttentionInterruptBehavior } from "../../AttentionRequester.types";
 
 export type CardinalDirection =
   | "up"
@@ -80,54 +75,4 @@ export function readCurrentTranslate(el: HTMLElement): {
     cy: parts[1] ?? 0,
     cz: parts[2] ?? 0,
   };
-}
-
-type KeyframeBuilder = (params: ResolvedBounceParams) => Keyframe[];
-
-interface BounceAnimationOptions {
-  defaultDuration?: number;
-  keyframeBuilder: KeyframeBuilder;
-  namePrefix: string;
-}
-
-export function defineBounceAnimation(options: BounceAnimationOptions) {
-  function factory(config: BounceConfigLoop): ARAnimationLoop;
-  function factory(config?: BounceConfigOneShot): ARAnimationOneShot;
-  function factory(config: BounceConfig = {}) {
-    const distance = config.distance ?? 100;
-    const direction = config.direction ?? "up";
-    const duration = config.duration ?? options.defaultDuration ?? 1000;
-
-    const { x, y, z } = normalizeDirection(direction);
-    const dx = x * distance;
-    const dy = y * distance;
-    const dz = z * distance;
-
-    const keyframes = (el: HTMLElement): Keyframe[] => {
-      const { cx, cy, cz } = readCurrentTranslate(el);
-      return options.keyframeBuilder({ cx, cy, cz, dx, dy, dz });
-    };
-
-    const name = `${options.namePrefix}-${direction}-${distance}`;
-
-    if (config.loop) {
-      return createARAnimation({
-        name,
-        duration,
-        loop: true,
-        interval: config.restDuration ?? 3000,
-        onInterrupt: config.onInterrupt,
-        keyframes,
-      });
-    }
-
-    return createARAnimation({
-      name,
-      duration,
-      onInterrupt: config.onInterrupt,
-      keyframes,
-    });
-  }
-
-  return factory;
 }
