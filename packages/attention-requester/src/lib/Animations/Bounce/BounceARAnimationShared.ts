@@ -67,6 +67,21 @@ export function makeTranslate(x: number, y: number, z: number): string {
   return `${x}px ${y}px ${z}px`;
 }
 
+export function readCurrentTranslate(el: HTMLElement): {
+  cx: number;
+  cy: number;
+  cz: number;
+} {
+  const raw = getComputedStyle(el).translate;
+  const parts =
+    raw === "none" ? [0, 0, 0] : raw.split(" ").map(Number.parseFloat);
+  return {
+    cx: parts[0] ?? 0,
+    cy: parts[1] ?? 0,
+    cz: parts[2] ?? 0,
+  };
+}
+
 type KeyframeBuilder = (params: ResolvedBounceParams) => Keyframe[];
 
 interface BounceAnimationOptions {
@@ -89,14 +104,7 @@ export function defineBounceAnimation(options: BounceAnimationOptions) {
     const dz = z * distance;
 
     const keyframes = (el: HTMLElement): Keyframe[] => {
-      const computed = getComputedStyle(el);
-      const raw = computed.translate;
-      const parts =
-        raw === "none" ? [0, 0, 0] : raw.split(" ").map(Number.parseFloat);
-      const cx = parts[0] ?? 0;
-      const cy = parts[1] ?? 0;
-      const cz = parts[2] ?? 0;
-
+      const { cx, cy, cz } = readCurrentTranslate(el);
       return options.keyframeBuilder({ cx, cy, cz, dx, dy, dz });
     };
 
