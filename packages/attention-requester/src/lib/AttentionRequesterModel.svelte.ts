@@ -18,22 +18,33 @@ export class AttentionRequesterModel {
   #active = $state(false);
   #paused = $state(false);
   #cancelled = $state(false);
-  #animation = $state.raw<AttentionRequesterAnimation | null>(null);
+  #primaryAnimation = $state.raw<AttentionRequesterAnimation | null>(null);
+  #reducedMotionAnimation = $state.raw<AttentionRequesterAnimation | null>(
+    null
+  );
   #reducedMotion = $state(false);
 
   readonly isActive = $derived(this.#active);
   readonly isPaused = $derived(this.#paused);
-  readonly animation = $derived(this.#animation);
+  readonly animation = $derived(
+    this.#reducedMotion && this.#reducedMotionAnimation
+      ? this.#reducedMotionAnimation
+      : this.#primaryAnimation
+  );
   readonly reducedMotion = $derived(this.#reducedMotion);
   readonly interruptResolution = $derived<InterruptResolution>(
-    resolveInterruptResolution(this.#animation)
+    resolveInterruptResolution(this.animation)
   );
 
-  configure(animation: AttentionRequesterAnimation) {
+  configure(
+    animation: AttentionRequesterAnimation,
+    reducedMotionAnimation?: AttentionRequesterAnimation
+  ) {
     if (DEV) {
       console.log(`[AR:Model] configure → ${animation.name}`);
     }
-    this.#animation = animation;
+    this.#primaryAnimation = animation;
+    this.#reducedMotionAnimation = reducedMotionAnimation ?? null;
   }
 
   setReducedMotion(value: boolean) {
@@ -41,10 +52,13 @@ export class AttentionRequesterModel {
   }
 
   request() {
-    if (this.#reducedMotion || this.#active) {
-      if (DEV && this.#reducedMotion) {
+    if (this.#reducedMotion && !this.#reducedMotionAnimation) {
+      if (DEV) {
         console.log("[AR:Model] request suppressed (reduced-motion)");
       }
+      return;
+    }
+    if (this.#active) {
       return;
     }
     if (DEV) {
@@ -59,7 +73,7 @@ export class AttentionRequesterModel {
     if (!this.#active) {
       return;
     }
-    if (this.#cancelled || !this.#animation?.loop) {
+    if (this.#cancelled || !this.animation?.loop) {
       if (DEV) {
         console.log(
           `[AR:Model] animating → idle (${this.#cancelled ? "cancelled" : "finished"})`
@@ -71,7 +85,7 @@ export class AttentionRequesterModel {
   }
 
   cancel() {
-    if (!this.#animation) {
+    if (!this.animation) {
       return;
     }
     if (DEV) {

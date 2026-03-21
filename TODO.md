@@ -10,9 +10,10 @@
 
 ### `packages/attention-requester/`
 
-- [ ] Ainda não estou satisfeito com o worflow de criação de animações.
-- [ ] Pensar em Motion sensitivity. Ideia atual de forma de chamar a atenção sem animar o componente: um tooltip aparecendo sem animação. (Verificar o que o macOS faz nesse caso).
 - [ ] Escrever o README que explica o que é, quais os comportamentos, como usar, etc. Tudo próprio para IA.
+
+- [ ] Ainda não estou satisfeito com o workflow de criação de animações.
+
 - [ ] **registry.json** — shadcn-style machine-readable install manifest per package
 
 ### `packages/movable/`

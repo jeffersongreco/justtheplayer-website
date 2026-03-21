@@ -325,7 +325,7 @@ describe("§5 Behavioral Invariants", { tags: ["unit"] }, () => {
 // ===========================================================================
 
 describe("§7.1 Reduced Motion Suppresses Animation", { tags: ["unit"] }, () => {
-  it("request() is a no-op when reduced motion is active", () => {
+  it("request() is a no-op when reduced motion is active and no alternative provided", () => {
     const model = new AttentionRequesterModel();
     model.setReducedMotion(true);
     requestAnimation(model, oneShot());
@@ -338,10 +338,52 @@ describe("§7.1 Reduced Motion Suppresses Animation", { tags: ["unit"] }, () => 
     expect(model.isActive).toBe(false);
     expect(model.isPaused).toBe(false);
   });
+
+  it("request() plays the reduced-motion alternative when provided", () => {
+    const model = new AttentionRequesterModel();
+    model.setReducedMotion(true);
+    const primary = oneShot({ name: "bounce" });
+    const reduced = oneShot({ name: "fade", duration: 200 });
+    model.configure(primary, reduced);
+    model.request();
+    expect(model.isActive).toBe(true);
+    expect(model.animation?.name).toBe("fade");
+  });
+
+  it("uses primary animation when reduced motion is inactive even if alternative provided", () => {
+    const model = new AttentionRequesterModel();
+    model.setReducedMotion(false);
+    const primary = oneShot({ name: "bounce" });
+    const reduced = oneShot({ name: "fade" });
+    model.configure(primary, reduced);
+    model.request();
+    expect(model.isActive).toBe(true);
+    expect(model.animation?.name).toBe("bounce");
+  });
+
+  it("reduced-motion alternative respects loop/one-shot contract", () => {
+    const model = new AttentionRequesterModel();
+    model.setReducedMotion(true);
+    const primary = looping({ name: "bounce-loop" });
+    const reduced = oneShot({ name: "fade-once" });
+    model.configure(primary, reduced);
+    model.request();
+    model.onCycleFinished();
+    expect(model.isActive).toBe(false);
+  });
+
+  it("interruptResolution reflects the reduced-motion animation when active", () => {
+    const model = new AttentionRequesterModel();
+    model.setReducedMotion(true);
+    const primary = looping({ onInterrupt: "discard", interval: 500 });
+    const reduced = oneShot({ name: "fade", onInterrupt: "resume" });
+    model.configure(primary, reduced);
+    expect(model.interruptResolution).toEqual({ strategy: "resume" });
+  });
 });
 
 describe("§7.2 Reduced Motion Dynamic Changes", { tags: ["unit"] }, () => {
-  it("activating reduced motion suppresses future requests", () => {
+  it("activating reduced motion suppresses future requests without alternative", () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, oneShot());
     model.onCycleFinished();
@@ -360,6 +402,33 @@ describe("§7.2 Reduced Motion Dynamic Changes", { tags: ["unit"] }, () => {
     model.setReducedMotion(false);
     requestAnimation(model, oneShot());
     expect(model.isActive).toBe(true);
+  });
+
+  it("activating reduced motion switches to alternative for future requests", () => {
+    const model = new AttentionRequesterModel();
+    const primary = oneShot({ name: "bounce" });
+    const reduced = oneShot({ name: "fade" });
+    model.configure(primary, reduced);
+    model.request();
+    model.onCycleFinished();
+
+    model.setReducedMotion(true);
+    model.request();
+    expect(model.isActive).toBe(true);
+    expect(model.animation?.name).toBe("fade");
+  });
+
+  it("deactivating reduced motion switches back to primary", () => {
+    const model = new AttentionRequesterModel();
+    const primary = oneShot({ name: "bounce" });
+    const reduced = oneShot({ name: "fade" });
+    model.configure(primary, reduced);
+
+    model.setReducedMotion(true);
+    expect(model.animation?.name).toBe("fade");
+
+    model.setReducedMotion(false);
+    expect(model.animation?.name).toBe("bounce");
   });
 });
 
