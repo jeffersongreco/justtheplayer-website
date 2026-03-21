@@ -3,7 +3,7 @@
     AttentionRequesterAnimation,
     AttentionRequesterProps,
   } from "./AttentionRequester.types";
-  import { AttentionRequesterController } from "./AttentionRequesterController.svelte";
+  import { AttentionRequesterCoordinator } from "./AttentionRequesterCoordinator.svelte";
   import { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 
   let { paused = false, children, asChild }: AttentionRequesterProps = $props();
@@ -23,8 +23,8 @@
   $effect(() => (paused ? model.pause() : model.resume()));
 
   function attach(el: HTMLElement) {
-    const ctrl = new AttentionRequesterController(el, model);
-    return () => ctrl.destroy();
+    const coordinator = new AttentionRequesterCoordinator(el, model);
+    return () => coordinator.destroy();
   }
 
   export function request(animation: AttentionRequesterAnimation) {

@@ -22,16 +22,17 @@ A motivação central é que um desenvolvedor Apple — ou que goste de desenvol
 
 ### Princípios Fundacionais
 
-- **Responsabilidade única é imperativo.** Cada unidade faz uma coisa. O Movable tem uma Interaction que lida com a observação de eventos do usuário — essa lógica não vive dentro do Controller.
-- **Tudo é plugável e agnóstico sempre que possível.** O Attention Requester é agnóstico de qual animação irá receber. O Controller do Movable é agnóstico de qual Interaction irá receber.
+- **Responsabilidade única é imperativo.** Cada unidade faz uma coisa. O Movable tem uma Interaction que lida com a observação de eventos do usuário — essa lógica não vive dentro do Coordinator.
+- **Tudo é plugável e agnóstico sempre que possível.** O Attention Requester é agnóstico de qual animação irá receber. O Coordinator do Movable é agnóstico de qual Interaction irá receber.
 - **TDD não é arquitetura, mas é pressuposto como prática a ser adotada junto com ela.** Testes clássicos (Detroit School), sem mocks desnecessários, testando comportamento real pela API pública.
 
 ### Não é MVC
 
-Há Controller, mas **não é MVC**. Aqui o Controller é apenas uma "refatoração" para manter o Model abstrato:
-- O **Model** sabe as regras de negócio. O Controller não.
-- O **Controller** sabe manipular o DOM (ou outro sistema externo). O Model não.
-- O Controller é um **agente do Model**, que obedece suas ordens — não um "mediador" como no MVC clássico.
+Há Coordinator, mas **não é MVC**. O nome vem diretamente do `UIViewRepresentable.Coordinator` do SwiftUI — o objeto que faz bridge entre o mundo declarativo (SwiftUI) e o imperativo (UIKit/AppKit). O Coordinator desta arquitetura faz o mesmo papel: bridge entre o Model declarativo e o DOM imperativo. Ele não decide — ele obedece.
+
+- O **Model** sabe as regras de negócio. O Coordinator não.
+- O **Coordinator** sabe manipular o DOM (ou outro sistema externo). O Model não.
+- O Coordinator é um **agente do Model**, que obedece suas ordens — não um "mediador" como no MVC clássico.
 
 ---
 
@@ -69,7 +70,7 @@ A View consome o estado como somente-leitura e o interpreta para fins visuais. E
 
 ### Fonte Única da Verdade
 
-Os Models contêm tanto o **estado** da aplicação quanto as **regras de negócio** que modificam esse estado. O Model é o único lugar onde regras de negócio vivem. O Controller nunca toma decisões — ele executa ordens.
+Os Models contêm tanto o **estado** da aplicação quanto as **regras de negócio** que modificam esse estado. O Model é o único lugar onde regras de negócio vivem. O Coordinator nunca toma decisões — ele executa ordens.
 
 
 ### Encapsulamento de Estado
@@ -93,15 +94,15 @@ Mudar a implementação interna nunca quebra consumidores externos.
 Quando um estado pode resultar em **comportamentos qualitativamente diferentes**, o Model expõe uma **union discriminada** em vez de um boolean:
 
 ```ts
-// ❌ Boolean — o Controller precisa inferir o que fazer
+// ❌ Boolean — o Coordinator precisa inferir o que fazer
 readonly isPaused = $derived(...)
 
-// ✅ Intenção tipada — o Controller recebe a ordem completa
+// ✅ Intenção tipada — o Coordinator recebe a ordem completa
 readonly pauseIntent = $derived<PauseIntent>(...)
 // PauseIntent = { action: 'freeze' } | { action: 'resume', interval: number } | { action: 'discard' }
 ```
 
-O Controller recebe a ordem completa, incluindo parâmetros (`interval`), sem precisar inferir nada.
+O Coordinator recebe a ordem completa, incluindo parâmetros (`interval`), sem precisar inferir nada.
 
 ### Sem Singletons Globais
 
@@ -167,7 +168,7 @@ Objetos que são **substituídos por inteiro** (nunca mutados internamente) deve
 
 **"Serviço"** é o termo interno para classes que orbitam o Model — recebem ordens dele ou interagem com ambientes externos, ouvindo e trazendo informações de volta para o Model. Os serviços atuais da arquitetura são:
 
-- **Controllers** — gerenciam o ciclo de vida e integridade do elemento no DOM (§3)
+- **Coordinators** — gerenciam o ciclo de vida e integridade do elemento no DOM (§3)
 - **Interactions** — traduzem eventos de hardware em comandos para o Model (§4)
 
 **"Util"** é uma extração de lógica pura — matemática, cálculos, funções auxiliares — que não tem estado próprio nem interage com o ambiente. Exemplos:
@@ -178,11 +179,11 @@ A distinção: um Serviço tem **ciclo de vida e dependências**; um Util é uma
 
 ---
 
-## 3. Controller
+## 3. Coordinator
 
 ### O Gerente de Integridade
 
-O Controller é o **dono da existência do elemento no espaço**. Ele é persistente — vive enquanto o componente existir.
+O Coordinator é o **dono da existência do elemento no espaço**. Ele é persistente — vive enquanto o componente existir.
 
 **Responsabilidades:**
 - Manter o estado local do DOM (`x`, `y`, dimensões)
@@ -190,48 +191,62 @@ O Controller é o **dono da existência do elemento no espaço**. Ele é persist
 - Fazer atualizações quando receber notificações do ambiente (`ResizeObserver`)
 - Garantir a integridade estrutural (validar se o pai é o Context correto)
 
-**O que o Controller NÃO faz:**
+**O que o Coordinator NÃO faz:**
 - Tomar decisões de negócio
 - Decidir comportamento com base em estado — ele recebe intenções tipadas do Model e faz `switch`
 
 ### Resolução Lazy do Alvo
 
-O wrapper do componente pode ser `display: contents` — sem caixa de layout. O Controller **não anima o wrapper**; anima `wrapper.children[0]`. A resolução é feita na **primeira operação**, não na construção, porque o slot pode não estar populado no momento em que o Controller é instanciado.
+O wrapper do componente pode ser `display: contents` — sem caixa de layout. O Coordinator **não anima o wrapper**; anima `wrapper.children[0]`. A resolução é feita na **primeira operação**, não na construção, porque o slot pode não estar populado no momento em que o Coordinator é instanciado.
 
 ### Reatividade no Componente
 
-Se uma variável como `controller` ou `el` precisa disparar `$effect`, ela **deve** ser declarada com `$state`. Declarar sem `$state` cria uma dependência silenciosa que nunca reexecuta.
+Se uma variável como `coordinator` ou `el` precisa disparar `$effect`, ela **deve** ser declarada com `$state`. Declarar sem `$state` cria uma dependência silenciosa que nunca reexecuta.
 
-### Comunicação Model→Controller
+### Comunicação Model→Coordinator
 
-Toda comunicação Model→Controller segue o paradigma de **observação de estado** (state-observation). O Controller observa o estado reativo do Model (`$state`, `$derived`) e reage via `$effect`. O Model nunca mantém referências a Controllers, nunca chama métodos de Controllers e não tem conhecimento da existência deles.
+Toda comunicação Model→Coordinator segue o paradigma de **observação de estado** (state-observation). O Coordinator observa o estado reativo do Model (`$state`, `$derived`) e reage via `$effect`. O Model nunca mantém referências a Coordinators, nunca chama métodos de Coordinators e não tem conhecimento da existência deles.
 
-O Model expõe fatos — estado e intenções tipadas. O Controller interpreta esses fatos e executa side effects no DOM. Múltiplos Controllers podem observar o mesmo Model independentemente.
+O Model expõe fatos — estado e intenções tipadas. O Coordinator interpreta esses fatos e executa side effects no DOM. Múltiplos Coordinators podem observar o mesmo Model independentemente.
 
-APIs imperativas expostas ao consumidor (ex: `request(animation)` via `bind:this`) são inputs externos do consumidor para o Model — não constituem comunicação Model→Controller. Command-dispatch direto (`controller.fazerAlgo()`) é reservado exclusivamente para a API imperativa do consumidor (§5), nunca para o fluxo interno Model→Controller.
+APIs imperativas expostas ao consumidor (ex: `request(animation)` via `bind:this`) são inputs externos do consumidor para o Model — não constituem comunicação Model→Coordinator. Command-dispatch direto (`coordinator.fazerAlgo()`) é reservado exclusivamente para a API imperativa do consumidor (§5), nunca para o fluxo interno Model→Coordinator.
 
 ### Ciclo de Vida e Ownership Reativo
 
-Controllers são classes `.svelte.ts` que observam o estado do Model diretamente via `$effect` no seu construtor. São sempre instanciados via `{@attach ...}` no template do componente:
+Coordinators são classes `.svelte.ts` que observam o estado do Model diretamente via `$effect` no seu construtor. São sempre instanciados via `{@attach ...}` no template do componente:
 
 ```svelte
 <div {@attach (el) => {
-  const controller = new SomeController(el, model);
-  return () => controller.destroy();
+  const coordinator = new SomeCoordinator(el, model);
+  return () => coordinator.destroy();
 }}>...</div>
 ```
 
-Este padrão é universal — componentes autocontidos e componentes baseados em Context seguem a mesma estrutura. O attachment é totalmente reativo: se `model` mudar, a função re-executa (destruindo o Controller anterior e criando um novo). O cleanup retornado é chamado automaticamente no unmount ou na re-execução.
+Este padrão é universal — componentes autocontidos e componentes baseados em Context seguem a mesma estrutura. O attachment é totalmente reativo: se `model` mudar, a função re-executa (destruindo o Coordinator anterior e criando um novo). O cleanup retornado é chamado automaticamente no unmount ou na re-execução.
 
-> **`{@attach ...}` sobre `use:action`:** A partir do Svelte 5.29, `{@attach ...}` é a API oficial para associar lógica a elementos DOM. Ao contrário de `use:action`, attachments são totalmente reativos — re-executam quando suas dependências mudam. O padrão anterior com `use:action` + `$state<HTMLElement | null>` + `$effect` para captura de node é substituído por uma única expressão `{@attach}` que unifica captura do elemento e ciclo de vida do Controller no mesmo lugar, eliminando o estado intermediário.
+> **`{@attach ...}` sobre `use:action`:** A partir do Svelte 5.29, `{@attach ...}` é a API oficial para associar lógica a elementos DOM. Ao contrário de `use:action`, attachments são totalmente reativos — re-executam quando suas dependências mudam. O padrão anterior com `use:action` + `$state<HTMLElement | null>` + `$effect` para captura de node é substituído por uma única expressão `{@attach}` que unifica captura do elemento e ciclo de vida do Coordinator no mesmo lugar, eliminando o estado intermediário.
 
-O método `destroy()` do Controller trata apenas cleanup imperativo: animações WAAPI, `requestAnimationFrame`, `ResizeObserver`, timers. O cleanup reativo dos `$effect` internos é automático via ownership do Svelte.
+O método `destroy()` do Coordinator trata apenas cleanup imperativo: animações WAAPI, `requestAnimationFrame`, `ResizeObserver`, timers. O cleanup reativo dos `$effect` internos é automático via ownership do Svelte.
 
-**Regra:** O componente que cria o Controller é responsável por garantir que nada vaze quando ele desmontar. Sem exceções.
+**Regra:** O componente que cria o Coordinator é responsável por garantir que nada vaze quando ele desmontar. Sem exceções.
 
-**Escape hatch:** Se um Controller precisar ser criado fora de um contexto reativo, ele usa `$effect.root` internamente e o `destroy()` é obrigatório. Esta é a exceção, não o padrão.
+**Escape hatch:** Se um Coordinator precisar ser criado fora de um contexto reativo, ele usa `$effect.root` internamente e o `destroy()` é obrigatório. Esta é a exceção, não o padrão.
 
-O template `<script>` contém apenas: (1) `$effect` que roteia props para o Model. O ciclo de vida do Controller é declarado no template via `{@attach}`. Nenhum `$effect` no template roteia estado do Model para o Controller — o Controller trata disso internamente.
+O template `<script>` contém apenas: (1) `$effect` que roteia props para o Model. O ciclo de vida do Coordinator é declarado no template via `{@attach}`. Nenhum `$effect` no template roteia estado do Model para o Coordinator — o Coordinator trata disso internamente.
+
+### Gerenciamento de Lifetime: `$effect` como Structured Concurrency
+
+JavaScript no browser é single-threaded — não existe concorrência real. O problema que o Swift Structured Concurrency resolve — garantir que trabalho assíncrono não vaza além do seu escopo de vida — existe em JS, mas é resolvido por um mecanismo diferente.
+
+Para esta arquitetura, **`$effect` + cleanup é o equivalente funcional e suficiente**. A garantia é a mesma:
+
+| Swift Structured Concurrency | Svelte `$effect` + cleanup |
+|---|---|
+| `Task` cancellation ao sair do escopo | `return () => destroy()` no `$effect` |
+| Trabalho não sobrevive ao seu contexto | Observers/animações não sobrevivem ao unmount |
+| Hierarquia de cancelamento automática | Cadeia de cleanup composta em `$effect`s aninhados |
+
+Para uma lib de componentes, a regra é simples: **nenhum trabalho assíncrono iniciado por um Coordinator sobrevive ao seu unmount**. O `$effect` cleanup enforça isso automaticamente — não é uma limitação do ecossistema, é o padrão correto e completo para este contexto.
 
 ### Disciplina de Primitivos Reativos
 
@@ -272,7 +287,7 @@ const destroy = $effect.root(() => {
 });
 ```
 
-É o mecanismo correto quando efeitos precisam existir **fora do ciclo de vida de um componente** — por exemplo, dentro de um Model ou Controller instanciado como classe. Permite que effects sejam criados fora da fase de inicialização do componente.
+É o mecanismo correto quando efeitos precisam existir **fora do ciclo de vida de um componente** — por exemplo, dentro de um Model ou Coordinator instanciado como classe. Permite que effects sejam criados fora da fase de inicialização do componente.
 
 **Obrigação de ciclo de vida:** como não há auto-cleanup, o `destroy()` retornado deve ser chamado no método `destroy()` do objeto dono. Esquecer é um memory leak — subscriptions reativas continuam ativas, referências ao DOM são mantidas. Tratar como obrigação de primeira classe, não detalhe de implementação.
 
@@ -305,11 +320,11 @@ Em vez de misturar lógica imperativa (DOM) com declarativa (Model), a Interacti
 
 ### Fluxo de Dados
 
-A Interaction comunica-se exclusivamente com o Model. Traduz eventos de hardware (pointer, keyboard, touch) em chamadas de método no Model (`model.beginMove()`, `model.updatePosition()`, `model.endMove()`). Nunca mantém referência ao Controller e nunca chama métodos do Controller.
+A Interaction comunica-se exclusivamente com o Model. Traduz eventos de hardware (pointer, keyboard, touch) em chamadas de método no Model (`model.beginMove()`, `model.updatePosition()`, `model.endMove()`). Nunca mantém referência ao Coordinator e nunca chama métodos do Coordinator.
 
-O Controller observa as mudanças de estado resultantes no Model e aplica-as ao DOM. O fluxo de dados é sempre: **Interaction → Model → Controller**.
+O Coordinator observa as mudanças de estado resultantes no Model e aplica-as ao DOM. O fluxo de dados é sempre: **Interaction → Model → Coordinator**.
 
-Concerns de DOM que não são intenção do usuário (ex: promoção de GPU layer no hover, mudanças de cursor) são responsabilidade do próprio Controller. O Controller pode observar eventos DOM diretamente no seu elemento para esses fins, da mesma forma que observa `ResizeObserver`. Estes não são concerns da Interaction.
+Concerns de DOM que não são intenção do usuário (ex: promoção de GPU layer no hover, mudanças de cursor) são responsabilidade do próprio Coordinator. O Coordinator pode observar eventos DOM diretamente no seu elemento para esses fins, da mesma forma que observa `ResizeObserver`. Estes não são concerns da Interaction.
 
 ### Integração Reativa com `createSubscriber`
 
@@ -342,14 +357,31 @@ class DragInteraction {
 
 A integração com sistemas externos fica declarativa e o teardown é automático quando nenhum effect lê o getter. Interactions que hoje dependem de `$effect.root` ou `addEventListener` explícito para setup/teardown de listeners podem ser simplificadas com `createSubscriber`, tornando o código mais idiomático e a natureza plugável da Interaction mais evidente.
 
-### Diferenciação: Controller vs. Interaction
+### Diferenciação: Coordinator vs. Interaction
 
-| | Controller | Interaction |
+| | Coordinator | Interaction |
 |---|---|---|
 | **Papel** | Gerente de integridade | Tradutor de hardware |
 | **Sabe sobre** | DOM, CSS, coordenadas, ciclo de vida | Eventos brutos (pointer, keyboard) |
 | **Natureza** | Persistente (vive com o componente) | Plugável (substituível sem refatorar) |
-| **Exemplo** | `MovableItemController` | `MovableDragInteraction` |
+| **Exemplo** | `MovableItemCoordinator` | `MovableDragInteraction` |
+
+### Contratos de Interface: A Porta, não a Chave
+
+Quando a Interaction é plugável, o contrato tipado deve ser **definido pelo consumidor da interface — não pelo fornecedor**. O Model declara o que ele precisa; as implementações se conformam a isso.
+
+```ts
+// ✅ O contrato vive no módulo Movable — definido pelo que MovableModel precisa
+interface MovableInteraction {
+  began(point: Point): void
+  changed(point: Point): void
+  ended(): void
+}
+```
+
+`DragInteraction` e `KeyboardInteraction` implementam `MovableInteraction` — mas a interface não sabe disso, nem precisa. Cada pacote define sua própria interface de Interaction, mínima e local ao módulo que a consome. Não existe um tipo global `Interaction` compartilhado entre pacotes — isso criaria acoplamento desnecessário e forçaria interfaces mais genéricas do que o necessário.
+
+**Analogia Swift:** protocols são definidos pelo *consumidor* — `protocol MovableInteraction` vive no módulo `Movable`, não no módulo `DragInteraction`. A conformação é retroativa: `DragInteraction` pode ser escrita sem saber que `MovableModel` existe.
 
 ---
 
@@ -369,6 +401,17 @@ O Modifier fornecido pelo componente não é uma "caixa" — é o equivalente de
 
 - **`display: contents` por padrão:** O Modifier é invisível no layout — não afeta CSS selectors nem a estrutura visual do filho. O desenvolvedor pode escrever CSS como se o Modifier não existisse. Modifiers que precisam de uma caixa de layout real (ex: ponto de ancoragem com `position: relative`, `overflow: hidden`) devem explicitamente optar por `display: flex; width: max-content` e documentar o motivo.
 - **Sintaxe vs. Realidade:** O fato de uma View ser escrita "dentro" do componente (ex: `<MovableItem> <MinhaView /> </MovableItem>`) é exigência sintática do Svelte/HTML. Na prática, não existe relação de aprisionamento — a View **absorve** as capacidades do Modifier.
+
+### Modifiers Comportamentais vs. Estruturais
+
+A distinção determina a implementação correta:
+
+| Tipo | Precisa de filhos? | Implementação | Custo |
+|---|---|---|---|
+| **Comportamental** — apenas afeta o elemento host | Não | `{@attach}` (action) | Zero — sem instância de componente |
+| **Estrutural** — envolve filhos ou provê Context | Sim | Componente `.svelte` com `display: contents` | Mínimo — lifecycle, sem custo de DOM |
+
+Modifiers comportamentais (que observam ou modificam apenas o elemento host sem precisar envolver filhos) devem ser implementados como funções `{@attach}`, não como componentes. Isso elimina completamente o overhead de lifecycle de componente — não existe instância, não existe mount/destroy separado. Modifiers estruturais — que precisam de slot/snippet para envolver filhos ou injetar Context — precisam ser componentes, com `display: contents` como padrão para minimizar impacto no layout.
 
 ### Padrão Polimórfico (`asChild`): Abertura Progressiva
 
@@ -452,7 +495,7 @@ O componente é agnóstico de animações. Uma animação declara `name`, `durat
 
 ### Keyframes como Funções
 
-Quando uma animação precisa de contexto do elemento no momento do disparo (posição atual, dimensões), `keyframes` é declarado como `(el: HTMLElement) => Keyframe[]`. O Controller invoca a função imediatamente antes de `element.animate()`. Isso permite animações que partem do estado atual do elemento — necessário para o modo `discard`.
+Quando uma animação precisa de contexto do elemento no momento do disparo (posição atual, dimensões), `keyframes` é declarado como `(el: HTMLElement) => Keyframe[]`. O Coordinator invoca a função imediatamente antes de `element.animate()`. Isso permite animações que partem do estado atual do elemento — necessário para o modo `discard`.
 
 ### Contrato de Loop Tipado
 
@@ -480,7 +523,23 @@ Quando um tipo tem variantes com contratos incompatíveis (parâmetros obrigató
 
 ## 7. Filosofia Fail-Safe
 
-Ao contrário da postura de "Falha Rápida" comum na web, a arquitetura adota a filosofia **Apple/Cocoa de Resiliência Silenciosa**:
+### Três Camadas de Strictness
+
+A postura defensiva segue a detectabilidade do erro:
+
+| Camada | Postura | Exemplos |
+|---|---|---|
+| **Contrato de API (detectável em compile time)** | Strict — erro de tipo, não compila | Props com tipo errado, interface de Interaction incompleta, Model sem Context injetado |
+| **Configuração visual/CSS (runtime, controlável pelo usuário)** | Resiliente — `console.warn` + fallback | `duration` negativo, `keyframes` vazio, pai sem `position: relative` |
+| **Invariante interno (nunca deveria acontecer)** | Strict — `throw` com mensagem clara | Estado interno inconsistente indicando bug da lib, não erro do consumidor |
+
+A filosofia Apple pós-Swift 6: *"Se TypeScript consegue detectar em compile time, não se deve transformar em `console.warn` em runtime."* O consumidor que configurar a API incorretamente deve receber um erro de tipo — não um warning obscuro em produção.
+
+As seções abaixo descrevem a postura resiliente da camada intermediária — que continua válida para configuração visual e CSS.
+
+---
+
+Ao contrário da postura de "Falha Rápida" comum na web, a arquitetura adota a filosofia **Apple/Cocoa de Resiliência Silenciosa** para a camada de configuração visual:
 
 ### Auto-Correção
 
@@ -500,7 +559,7 @@ A **continuidade da experiência do usuário final** está acima da pureza técn
 
 `<svelte:boundary>` (Svelte 5.3+) é o mecanismo oficial de error boundary. Captura erros durante renderização e em efeitos, renderizando UI alternativa via snippet `failed` ou chamando `onerror` para logging.
 
-A filosofia Fail-Safe descrita acima opera *dentro* dos componentes (lógica defensiva, guards, auto-correção). `<svelte:boundary>` adiciona uma camada de contenção *em torno* dos componentes — se um Modifier, Controller ou Context lançar um erro inesperado em produção, o boundary impede que a árvore inteira desmonte. Isso **complementa**, não substitui, a lógica defensiva interna.
+A filosofia Fail-Safe descrita acima opera *dentro* dos componentes (lógica defensiva, guards, auto-correção). `<svelte:boundary>` adiciona uma camada de contenção *em torno* dos componentes — se um Modifier, Coordinator ou Context lançar um erro inesperado em produção, o boundary impede que a árvore inteira desmonte. Isso **complementa**, não substitui, a lógica defensiva interna.
 
 **Diretriz:** Envolver os componentes Modifier/Context de cada package num `<svelte:boundary>` no nível da aplicação consumidora. O snippet `failed` pode renderizar o conteúdo filho sem os superpoderes do Modifier — **degradação graciosa real**:
 
@@ -577,11 +636,11 @@ O Modifier invisível controlado pelo JS lida com as coordenadas (física via `t
 Arquivos são prefixados com o nome do domínio do pacote para namespace safety e discoverability via Cmd+P:
 
 ```
-AttentionRequesterModel.svelte.ts      — Model (estado + lógica de negócio)
-AttentionRequesterController.svelte.ts — Controller (ciclo de vida DOM + execução)
-AttentionRequesterModifier.svelte      — Modifier (View Modifier — concede capacidades ao filho)
-AttentionRequester.types.ts            — Types e interfaces
-index.ts                               — API pública (exports)
+AttentionRequesterModel.svelte.ts       — Model (estado + lógica de negócio)
+AttentionRequesterCoordinator.svelte.ts — Coordinator (ciclo de vida DOM + execução)
+AttentionRequesterModifier.svelte       — Modifier (View Modifier — concede capacidades ao filho)
+AttentionRequester.types.ts             — Types e interfaces
+index.ts                                — API pública (exports)
 ```
 
 > **`index.ts` é a exceção:** O bundler resolve `index.ts` automaticamente ao importar um diretório. Renomear para `[domain].index.ts` quebraria essa resolução. O path já desambigua (`Movable/index.ts` vs `AttentionRequester/index.ts`).

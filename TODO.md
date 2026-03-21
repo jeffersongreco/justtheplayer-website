@@ -2,7 +2,7 @@
 
 ## `packages/`
 
-- [ ] Usar o plugin do Svelte para fazer um review das práticas do attention
+
 
 ### `packages/Svelte Model View Architecture/`
 
@@ -10,8 +10,8 @@
 
 ### `packages/attention-requester/`
 
-- [ ] Fazer review do item `Primitivos reativos justificados` da Checklist
 - [ ] Verificar se o target fallback não é um erro, se esse mecanismo deveria mesmo existir.
+- [ ] Ainda não estou satisfeito com o worflow de criação de animações.
 - [ ] Pensar em Motion sensitivity. Ideia atual de forma de chamar a atenção sem animar o componente: um tooltip aparecendo sem animação. (Verificar o que o macOS faz nesse caso).
 - [ ] Escrever o README que explica o que é, quais os comportamentos, como usar, etc. Tudo próprio para IA.
 - [ ] **registry.json** — shadcn-style machine-readable install manifest per package

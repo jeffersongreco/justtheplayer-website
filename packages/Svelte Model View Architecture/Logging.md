@@ -30,7 +30,7 @@ if (DEV) {
 
 ### Namespacing
 
-Todos os logs usam prefixo `[Package:Layer]` para filtragem no DevTools (ex: `[AR:Model]`, `[AR:Controller]`, `[Movable:Interaction]`).
+Todos os logs usam prefixo `[Package:Layer]` para filtragem no DevTools (ex: `[AR:Model]`, `[AR:Coordinator]`, `[Movable:Interaction]`).
 
 ### Onde Logar
 

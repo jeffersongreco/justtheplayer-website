@@ -46,7 +46,7 @@ function requestAnimation(
 // §2.1 Idle → Animating
 // ===========================================================================
 
-describe("§2.1 Idle → Animating", () => {
+describe("§2.1 Idle → Animating", { tags: ["unit"] }, () => {
   it("starts idle: isActive is false, isPaused is false", () => {
     const model = new AttentionRequesterModel();
     expect(model.isActive).toBe(false);
@@ -64,7 +64,7 @@ describe("§2.1 Idle → Animating", () => {
 // §2.2 Cycle Completion
 // ===========================================================================
 
-describe("§2.2 Cycle Completion", () => {
+describe("§2.2 Cycle Completion", { tags: ["unit"] }, () => {
   it("one-shot: onCycleFinished returns to idle", () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, oneShot());
@@ -93,7 +93,7 @@ describe("§2.2 Cycle Completion", () => {
 // §2.3 Cancellation
 // ===========================================================================
 
-describe("§2.3 Cancellation", () => {
+describe("§2.3 Cancellation", { tags: ["unit"] }, () => {
   it("cancel sets graceful stop: still active until cycle finishes", () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, looping());
@@ -131,7 +131,7 @@ describe("§2.3 Cancellation", () => {
 // §2.4 Re-entrancy
 // ===========================================================================
 
-describe("§2.4 Re-entrancy", () => {
+describe("§2.4 Re-entrancy", { tags: ["unit"] }, () => {
   it("request() while already active does not crash", () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, oneShot());
@@ -151,7 +151,7 @@ describe("§2.4 Re-entrancy", () => {
 // §3.1 Pause/Resume — Resume Strategy (default)
 // ===========================================================================
 
-describe("§3.1 Pause/Resume — Resume Strategy", () => {
+describe("§3.1 Pause/Resume — Resume Strategy", { tags: ["unit"] }, () => {
   it("pause() sets isPaused to true, stays active", () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, oneShot());
@@ -179,7 +179,7 @@ describe("§3.1 Pause/Resume — Resume Strategy", () => {
 // §3.2 Pause/Resume — Discard Strategy
 // ===========================================================================
 
-describe("§3.2 Pause/Resume — Discard Strategy", () => {
+describe("§3.2 Pause/Resume — Discard Strategy", { tags: ["unit"] }, () => {
   it('interruptResolution reflects "discard" with discard strategy', () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, looping({ onInterrupt: "discard" }));
@@ -215,7 +215,7 @@ describe("§3.2 Pause/Resume — Discard Strategy", () => {
 // §3.3 Pause Edge Cases
 // ===========================================================================
 
-describe("§3.3 Pause Edge Cases", () => {
+describe("§3.3 Pause Edge Cases", { tags: ["unit"] }, () => {
   it("pause when idle: no-op", () => {
     const model = new AttentionRequesterModel();
     model.pause();
@@ -253,7 +253,7 @@ describe("§3.3 Pause Edge Cases", () => {
 // §4 Pluggable Animations
 // ===========================================================================
 
-describe("§4 Pluggable Animations", () => {
+describe("§4 Pluggable Animations", { tags: ["unit"] }, () => {
   it("animation data is stored as-is from configure()", () => {
     const model = new AttentionRequesterModel();
     const anim = oneShot();
@@ -297,7 +297,7 @@ describe("§4 Pluggable Animations", () => {
 // §5 Behavioral Invariants
 // ===========================================================================
 
-describe("§5 Behavioral Invariants", () => {
+describe("§5 Behavioral Invariants", { tags: ["unit"] }, () => {
   it("state consistency: isActive matches actual state through transitions", () => {
     const model = new AttentionRequesterModel();
     expect(model.isActive).toBe(false);
@@ -324,7 +324,7 @@ describe("§5 Behavioral Invariants", () => {
 // §7 Reduced Motion
 // ===========================================================================
 
-describe("§7.1 Reduced Motion Suppresses Animation", () => {
+describe("§7.1 Reduced Motion Suppresses Animation", { tags: ["unit"] }, () => {
   it("request() is a no-op when reduced motion is active", () => {
     const model = new AttentionRequesterModel();
     model.setReducedMotion(true);
@@ -340,7 +340,7 @@ describe("§7.1 Reduced Motion Suppresses Animation", () => {
   });
 });
 
-describe("§7.2 Reduced Motion Dynamic Changes", () => {
+describe("§7.2 Reduced Motion Dynamic Changes", { tags: ["unit"] }, () => {
   it("activating reduced motion suppresses future requests", () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, oneShot());
@@ -363,7 +363,9 @@ describe("§7.2 Reduced Motion Dynamic Changes", () => {
   });
 });
 
-describe("§7.3 Reduced Motion Does Not Affect Active Animation", () => {
+describe("§7.3 Reduced Motion Does Not Affect Active Animation", {
+  tags: ["unit"],
+}, () => {
   it("active animation continues when reduced motion is enabled", () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, oneShot());
@@ -388,7 +390,7 @@ describe("§7.3 Reduced Motion Does Not Affect Active Animation", () => {
 // §6 Multiple Instances
 // ===========================================================================
 
-describe("§6 Multiple Instances", () => {
+describe("§6 Multiple Instances", { tags: ["unit"] }, () => {
   it("two models operate independently", () => {
     const a = new AttentionRequesterModel();
     const b = new AttentionRequesterModel();
@@ -421,7 +423,7 @@ describe("§6 Multiple Instances", () => {
 // resolveInterruptResolution (pure function)
 // ===========================================================================
 
-describe("resolveInterruptResolution", () => {
+describe("resolveInterruptResolution", { tags: ["unit"] }, () => {
   it("returns resume when animation is null", () => {
     expect(resolveInterruptResolution(null)).toEqual({ strategy: "resume" });
   });

@@ -10,6 +10,13 @@ export default mergeConfig(
       conditions: ["browser"],
     },
     test: {
+      allowOnly: true,
+      tags: [
+        { name: "unit" },
+        { name: "integration" },
+        { name: "benchmark" },
+        { name: "slow" },
+      ],
       include: ["src/**/*.test.ts"],
       coverage: {
         provider: "v8",

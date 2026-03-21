@@ -80,7 +80,9 @@ const AXE_OPTIONS: axe.RunOptions = {
 // axe-core audit — children mode (default)
 // ===========================================================================
 
-describe("Attention Requester — axe-core audit", () => {
+describe("Attention Requester — axe-core audit", {
+  tags: ["integration"],
+}, () => {
   it("children mode: no accessibility violations", async () => {
     mountFixture();
 

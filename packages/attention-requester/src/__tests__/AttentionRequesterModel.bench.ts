@@ -23,7 +23,7 @@ function looping(): ARAnimationLoop {
   };
 }
 
-describe("Model throughput", () => {
+describe("Model throughput", { tags: ["benchmark"] }, () => {
   bench("request → onCycleFinished (one-shot cycle)", () => {
     const model = new AttentionRequesterModel();
     model.configure(oneShot());
