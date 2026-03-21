@@ -154,6 +154,35 @@ jobs:
 
       - run: bunx turbo build --filter=@headless-uai/movable
 
+  # ── Required status check aggregators ─────────────────────────────
+  required-lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: [lint-attention-requester, lint-movable]
+    steps:
+      - run: echo "All lint checks passed"
+
+  required-type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    needs: [check-attention-requester, check-movable]
+    steps:
+      - run: echo "All type checks passed"
+
+  required-test-coverage:
+    name: Test + Coverage
+    runs-on: ubuntu-latest
+    needs: [test-attention-requester, test-movable]
+    steps:
+      - run: echo "All test checks passed"
+
+  required-build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [build-attention-requester, build-movable]
+    steps:
+      - run: echo "All build checks passed"
+
   # ── Size Limit (push to dev) ───────────────────────────────────────
   size:
     name: Size Limit
