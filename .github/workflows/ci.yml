@@ -3,13 +3,6 @@ name: CI — Packages
 on:
   pull_request:
     branches: [dev, main]
-    paths:
-      - "packages/**/src/**"
-      - "packages/**/package.json"
-      - "packages/**/*.json"
-      - "turbo.json"
-      - "biome.jsonc"
-      - "bun.lock"
   push:
     branches: [dev]
     paths:
@@ -29,10 +22,33 @@ env:
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 jobs:
+  # ── Path filter ────────────────────────────────────────────────────
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.filter.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            packages:
+              - "packages/**/src/**"
+              - "packages/**/package.json"
+              - "packages/**/*.json"
+              - "turbo.json"
+              - "biome.jsonc"
+              - "bun.lock"
+
   # ── Attention Requester ────────────────────────────────────────────
   lint-attention-requester:
     name: "Lint — attention-requester"
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +63,8 @@ jobs:
   check-attention-requester:
     name: "Type Check — attention-requester"
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -61,6 +79,8 @@ jobs:
   test-attention-requester:
     name: "Test + Coverage — attention-requester"
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -77,10 +97,12 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       [
+        changes,
         lint-attention-requester,
         check-attention-requester,
         test-attention-requester,
       ]
+    if: needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -98,6 +120,8 @@ jobs:
   lint-movable:
     name: "Lint — movable"
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -112,6 +136,8 @@ jobs:
   check-movable:
     name: "Type Check — movable"
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -126,6 +152,8 @@ jobs:
   test-movable:
     name: "Test + Coverage — movable"
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -140,7 +168,8 @@ jobs:
   build-movable:
     name: "Build — movable"
     runs-on: ubuntu-latest
-    needs: [lint-movable, check-movable, test-movable]
+    needs: [changes, lint-movable, check-movable, test-movable]
+    if: needs.changes.outputs.packages == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -155,33 +184,65 @@ jobs:
       - run: bunx turbo build --filter=@headless-uai/movable
 
   # ── Required status check aggregators ─────────────────────────────
+  #
+  # These jobs always run (if: always()) so they report a status even
+  # when the work jobs were skipped due to no package changes.
+  # They fail only if a dependency actually failed (not skipped).
   required-lint:
     name: Lint
     runs-on: ubuntu-latest
+    if: always()
     needs: [lint-attention-requester, lint-movable]
     steps:
-      - run: echo "All lint checks passed"
+      - name: Check result
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more lint jobs failed"
+            exit 1
+          fi
+          echo "Lint passed (or skipped — no package changes)"
 
   required-type-check:
     name: Type Check
     runs-on: ubuntu-latest
+    if: always()
     needs: [check-attention-requester, check-movable]
     steps:
-      - run: echo "All type checks passed"
+      - name: Check result
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more type-check jobs failed"
+            exit 1
+          fi
+          echo "Type check passed (or skipped — no package changes)"
 
   required-test-coverage:
     name: Test + Coverage
     runs-on: ubuntu-latest
+    if: always()
     needs: [test-attention-requester, test-movable]
     steps:
-      - run: echo "All test checks passed"
+      - name: Check result
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more test jobs failed"
+            exit 1
+          fi
+          echo "Tests passed (or skipped — no package changes)"
 
   required-build:
     name: Build
     runs-on: ubuntu-latest
+    if: always()
     needs: [build-attention-requester, build-movable]
     steps:
-      - run: echo "All build checks passed"
+      - name: Check result
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more build jobs failed"
+            exit 1
+          fi
+          echo "Build passed (or skipped — no package changes)"
 
   # ── Size Limit (push to dev) ───────────────────────────────────────
   size:
@@ -207,7 +268,7 @@ jobs:
     name: "Size Limit (${{ matrix.package }})"
     runs-on: ubuntu-latest
     needs: [build-attention-requester, build-movable]
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && needs.build-attention-requester.result == 'success' && needs.build-movable.result == 'success'
     permissions:
       contents: read
       pull-requests: write
