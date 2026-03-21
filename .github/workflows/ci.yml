@@ -4,14 +4,18 @@ on:
   pull_request:
     branches: [dev, main]
     paths:
-      - "packages/**"
+      - "packages/**/src/**"
+      - "packages/**/package.json"
+      - "packages/**/*.json"
       - "turbo.json"
       - "biome.jsonc"
       - "bun.lock"
   push:
     branches: [dev]
     paths:
-      - "packages/**"
+      - "packages/**/src/**"
+      - "packages/**/package.json"
+      - "packages/**/*.json"
       - "turbo.json"
       - "biome.jsonc"
       - "bun.lock"
@@ -20,9 +24,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
 jobs:
-  lint:
-    name: Lint
+  # ── Attention Requester ────────────────────────────────────────────
+  lint-attention-requester:
+    name: "Lint — attention-requester"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,10 +42,10 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - run: bunx turbo lint --filter='./packages/*'
+      - run: bunx turbo lint --filter=@headless-uai/attention-requester
 
-  check:
-    name: Type Check
+  check-attention-requester:
+    name: "Type Check — attention-requester"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,10 +56,10 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - run: bunx turbo check --filter='./packages/*'
+      - run: bunx turbo check --filter=@headless-uai/attention-requester
 
-  test:
-    name: Test + Coverage
+  test-attention-requester:
+    name: "Test + Coverage — attention-requester"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,12 +70,17 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - run: bunx turbo test:coverage --filter='./packages/*'
+      - run: bunx turbo test:coverage --filter=@headless-uai/attention-requester
 
-  build:
-    name: Build
+  build-attention-requester:
+    name: "Build — attention-requester"
     runs-on: ubuntu-latest
-    needs: [lint, check, test]
+    needs:
+      [
+        lint-attention-requester,
+        check-attention-requester,
+        test-attention-requester,
+      ]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -78,12 +92,73 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - run: bunx turbo build --filter='./packages/*'
+      - run: bunx turbo build --filter=@headless-uai/attention-requester
 
+  # ── Movable ────────────────────────────────────────────────────────
+  lint-movable:
+    name: "Lint — movable"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.5"
+
+      - run: bun install --frozen-lockfile
+
+      - run: bunx turbo lint --filter=@headless-uai/movable
+
+  check-movable:
+    name: "Type Check — movable"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.5"
+
+      - run: bun install --frozen-lockfile
+
+      - run: bunx turbo check --filter=@headless-uai/movable
+
+  test-movable:
+    name: "Test + Coverage — movable"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.5"
+
+      - run: bun install --frozen-lockfile
+
+      - run: bunx turbo test:coverage --filter=@headless-uai/movable
+
+  build-movable:
+    name: "Build — movable"
+    runs-on: ubuntu-latest
+    needs: [lint-movable, check-movable, test-movable]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.5"
+
+      - run: bun install --frozen-lockfile
+
+      - run: bunx turbo build --filter=@headless-uai/movable
+
+  # ── Size Limit (push to dev) ───────────────────────────────────────
   size:
     name: Size Limit
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build-attention-requester, build-movable]
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
@@ -98,35 +173,22 @@ jobs:
 
       - run: bunx turbo size --filter='./packages/*'
 
+  # ── Size Limit PR Comment (per package) ────────────────────────────
   size-pr:
     name: "Size Limit (${{ matrix.package }})"
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build-attention-requester, build-movable]
     if: github.event_name == 'pull_request'
-<<<<<<< HEAD
-=======
     permissions:
       contents: read
       pull-requests: write
->>>>>>> 09316c2c494d6e8e20ad0e30807f9c6bdaf8bc34
     strategy:
       matrix:
         include:
           - package: attention-requester
             path: packages/attention-requester
-<<<<<<< HEAD
           - package: movable
             path: packages/movable
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: andresz1/size-limit-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          directory: ${{ matrix.path }}
-          build_script: "build"
-          package_manager: "bun"
-=======
     steps:
       - uses: actions/checkout@v4
 
@@ -213,20 +275,14 @@ jobs:
                 body: commentBody,
               });
             }
->>>>>>> 09316c2c494d6e8e20ad0e30807f9c6bdaf8bc34
 
+  # ── Security ───────────────────────────────────────────────────────
   security:
     name: Security Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-<<<<<<< HEAD
-      - uses: google/osv-scanner-action/osv-scanner-action@v1
-        with:
-          scan-args: |-
-            --lockfile=bun.lock
-=======
       - name: Install osv-scanner
         run: |
           go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
@@ -234,4 +290,3 @@ jobs:
 
       - name: Scan lockfile
         run: osv-scanner --config=osv-scanner.toml --lockfile=bun.lock
->>>>>>> 09316c2c494d6e8e20ad0e30807f9c6bdaf8bc34
