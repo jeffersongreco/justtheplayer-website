@@ -8,7 +8,7 @@ import {
   makeTranslate,
   normalizeDirection,
   readCurrentTranslate,
-} from "./Bounce/BounceARAnimationShared";
+} from "./helpers/bounce-helpers";
 
 export function DoubleBounce(config: BounceConfigLoop): ARAnimationLoop;
 export function DoubleBounce(config?: BounceConfigOneShot): ARAnimationOneShot;

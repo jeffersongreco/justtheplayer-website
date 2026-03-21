@@ -8,14 +8,14 @@ import {
   makeTranslate,
   normalizeDirection,
   readCurrentTranslate,
-} from "./Bounce/BounceARAnimationShared";
+} from "./helpers/bounce-helpers";
 
 export type {
   BounceConfig as PhysicsBounceConfig,
   BounceDirection,
   CardinalDirection,
   ThreeAxisDirection,
-} from "./Bounce/BounceARAnimationShared";
+} from "./helpers/bounce-helpers";
 
 export function PhysicsBounce(config: BounceConfigLoop): ARAnimationLoop;
 export function PhysicsBounce(config?: BounceConfigOneShot): ARAnimationOneShot;
