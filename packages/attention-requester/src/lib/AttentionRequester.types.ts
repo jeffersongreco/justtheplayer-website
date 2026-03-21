@@ -26,7 +26,10 @@ export type AttentionRequesterAnimation = ARAnimationLoop | ARAnimationOneShot;
 
 export interface AttentionRequester {
   cancel: () => void;
-  request: (animation: AttentionRequesterAnimation) => void;
+  request: (
+    animation: AttentionRequesterAnimation,
+    reducedMotionAnimation?: AttentionRequesterAnimation
+  ) => void;
 }
 
 export type AttentionRequesterProps = {

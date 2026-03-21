@@ -111,16 +111,19 @@ These are properties that must hold at **all times**, regardless of state:
 
 When the user has indicated a preference for reduced motion, the component must respect that preference.
 
-### 7.1 Reduced Motion Suppresses Animation
+### 7.1 Reduced Motion Animation Selection
 
-- When reduced motion is active, requesting attention does nothing — the component stays idle.
-- The component does not play any animation, not even a simplified alternative.
+- When reduced motion is active and no alternative animation was provided, requesting attention does nothing — the component stays idle.
+- When reduced motion is active and an alternative animation was provided, requesting attention plays the alternative animation instead of the primary one.
+- The alternative animation follows all the same rules as a primary animation (loop contract, interruption strategy, cancellation, etc.).
+- When reduced motion is inactive, the primary animation is always used, even if an alternative was provided.
 
 ### 7.2 Dynamic Changes
 
-- If reduced motion becomes active while the component is idle, subsequent requests are suppressed.
-- If reduced motion is deactivated, the component resumes normal behavior — future requests work as expected.
+- If reduced motion becomes active while the component is idle, subsequent requests without an alternative are suppressed; requests with an alternative use the alternative.
+- If reduced motion is deactivated, the component resumes normal behavior — future requests use the primary animation.
+- Toggling reduced motion dynamically switches which animation — primary or alternative — the component exposes.
 
 ### 7.3 Reduced Motion Does Not Affect Active Animation
 
-- If an animation is already running when reduced motion becomes active, the current animation is not interrupted — it finishes normally. Only future requests are suppressed.
+- If an animation is already running when reduced motion becomes active, the current animation is not interrupted — it finishes normally. Only future requests are affected.

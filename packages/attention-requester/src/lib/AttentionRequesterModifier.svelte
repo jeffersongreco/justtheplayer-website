@@ -20,8 +20,11 @@
     return () => coordinator.destroy();
   }
 
-  export function request(animation: AttentionRequesterAnimation) {
-    model.configure(animation);
+  export function request(
+    animation: AttentionRequesterAnimation,
+    reducedMotionAnimation?: AttentionRequesterAnimation
+  ) {
+    model.configure(animation, reducedMotionAnimation);
     model.request();
   }
 
