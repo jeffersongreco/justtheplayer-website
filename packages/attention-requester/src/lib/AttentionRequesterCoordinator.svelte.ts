@@ -17,6 +17,8 @@ export class AttentionRequesterCoordinator {
 
     $effect(() => {
       if (this.#model.isActive && !this.#anim) {
+        // untrack: startCycle reads animation config — changes to the config
+        // should not re-trigger this effect; only isActive/anim gate it.
         untrack(() => this.#startCycle());
       }
     });
@@ -25,6 +27,9 @@ export class AttentionRequesterCoordinator {
       if (this.#model.isPaused) {
         this.#anim?.pause();
       } else {
+        // untrack: applying the interrupt resolution is a one-time side effect
+        // in response to unpausing — it must not re-run when the resolution
+        // object itself changes.
         untrack(() =>
           this.#applyInterruptResolution(this.#model.interruptResolution)
         );
