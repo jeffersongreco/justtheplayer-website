@@ -124,6 +124,8 @@ When the user has indicated a preference for reduced motion, the component must 
 - If reduced motion is deactivated, the component resumes normal behavior — future requests use the primary animation.
 - Toggling reduced motion dynamically switches which animation — primary or alternative — the component exposes.
 
-### 7.3 Reduced Motion Does Not Affect Active Animation
+### 7.3 Reduced Motion Gracefully Stops Active Animation
 
-- If an animation is already running when reduced motion becomes active, the current animation is not interrupted — it finishes normally. Only future requests are affected.
+- If an animation is already running when reduced motion becomes active, the current cycle is not interrupted — it completes normally.
+- After the current cycle finishes, a looping animation does not start a new cycle — it returns to idle.
+- Only the current cycle is preserved; the loop does not continue.

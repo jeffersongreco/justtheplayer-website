@@ -52,6 +52,12 @@ export class AttentionRequesterModel {
   }
 
   request() {
+    if (!this.#primaryAnimation) {
+      console.error(
+        "[AR:Model] request() called before configure() — no animation to play."
+      );
+      return;
+    }
     if (this.#reducedMotion && !this.#reducedMotionAnimation) {
       if (DEV) {
         console.log("[AR:Model] request suppressed (reduced-motion)");
@@ -73,7 +79,7 @@ export class AttentionRequesterModel {
     if (!this.#active) {
       return;
     }
-    if (this.#cancelled || !this.animation?.loop) {
+    if (this.#cancelled || !this.animation?.loop || this.#reducedMotion) {
       if (DEV) {
         console.log(
           `[AR:Model] animating → idle (${this.#cancelled ? "cancelled" : "finished"})`

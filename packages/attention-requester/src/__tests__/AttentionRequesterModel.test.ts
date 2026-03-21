@@ -444,14 +444,16 @@ describe("§7.3 Reduced Motion Does Not Affect Active Animation", {
     expect(model.isActive).toBe(true);
   });
 
-  it("active looping animation finishes cycle normally", () => {
+  it("active looping animation completes current cycle then stops", () => {
     const model = new AttentionRequesterModel();
     requestAnimation(model, looping());
     model.setReducedMotion(true);
 
-    model.onCycleFinished();
-    // Loop continues because the animation was already active
+    // Still active during current cycle
     expect(model.isActive).toBe(true);
+    // Cycle finishes → goes idle (does not start next loop)
+    model.onCycleFinished();
+    expect(model.isActive).toBe(false);
   });
 });
 

@@ -61,6 +61,7 @@
       title: "Component lifecycle",
       description:
         "Tests request, pause, resume, and cancel on a single element (left stage).",
+      stages: ["discard"],
       steps: [
         {
           title: "Step 1 of 5: Initial state",
@@ -123,14 +124,16 @@
         {
           title: "Step 5 of 5: Cancel",
           instruction:
-            "Tap Cancel and verify the element stops immediately (discard mode).",
+            "Tap Cancel and verify the element completes its current cycle, then stops.",
           triggerLabel: "Cancel",
           trigger: () => {
             qaLog(5, "cancel() called");
             attentionDiscard.cancel();
           },
           expectedLogs: ["[AR][step:5] cancel() called"],
-          humanChecklist: ["Element stops immediately at its current position"],
+          humanChecklist: [
+            "Element completes current animation cycle, then returns to idle",
+          ],
         },
       ],
     },
@@ -139,6 +142,7 @@
       title: "Interrupt strategies",
       description:
         "Compares discard vs resume interrupt behavior when cancel is called mid-animation.",
+      stages: ["discard", "resume"],
       steps: [
         {
           title: "Step 1 of 2: Start both animations",
@@ -160,7 +164,7 @@
         {
           title: "Step 2 of 2: Cancel",
           instruction:
-            "Tap Cancel. Left (discard) stops immediately; right (resume) completes its current cycle first.",
+            "Tap Cancel. Both elements complete their current cycle, then stop (graceful cancellation).",
           triggerLabel: "Cancel",
           trigger: () => {
             qaLog(2, "cancel() on both");
@@ -169,8 +173,224 @@
           },
           expectedLogs: ["[AR][step:2] cancel() on both"],
           humanChecklist: [
-            "Left (discard): stops immediately at current position",
-            "Right (resume): completes current animation cycle before stopping",
+            "Both elements complete current animation cycle before stopping",
+            "No abrupt interruption — animation finishes naturally",
+          ],
+        },
+      ],
+    },
+    {
+      id: "keyboard-focus",
+      title: "Keyboard & Focus",
+      description:
+        "Verifies keyboard navigation, focus visibility, and interactivity during animation (a11y sections 2 + 5).",
+      stages: ["discard"],
+      steps: [
+        {
+          title: "Step 1 of 5: Tab through target content",
+          instruction:
+            "Press Tab repeatedly to move focus through the interactive elements inside the left target card.",
+          expectedLogs: [
+            "[a11y:discard] focus → button",
+            "[a11y:discard] focus → link",
+          ],
+          humanChecklist: [
+            "Focus ring visible on button, then on link",
+            "Tab order matches DOM order (button → link)",
+          ],
+        },
+        {
+          title: "Step 2 of 5: Start animation and re-tab",
+          instruction:
+            "Tap the button below to start the animation, then Tab through the target content again.",
+          triggerLabel: "Start animation",
+          trigger: () => {
+            qaLog(2, "request() called");
+            attentionDiscard.request(animationDiscard);
+          },
+          expectedLogs: [
+            "[AR][step:2] request() called",
+            "[a11y:discard] focus → button",
+          ],
+          humanChecklist: [
+            "Focus ring still visible on button and link during animation",
+            "Tab order not disrupted by the animation",
+          ],
+        },
+        {
+          title: "Step 3 of 5: Click button during animation",
+          instruction:
+            "While the element is animating, click the 'Click me' button inside the target card.",
+          expectedLogs: ["[a11y:discard] button clicked"],
+          humanChecklist: [
+            "Button responds to click during animation",
+            "No focus trap — Tab moves past the target normally",
+          ],
+        },
+        {
+          title: "Step 4 of 5: Click link during animation",
+          instruction:
+            "While the element is still animating, click the 'Sample link' inside the target card.",
+          expectedLogs: ["[a11y:discard] link clicked"],
+          humanChecklist: [
+            "Link responds to click during animation",
+            "Content is not obscured by the animation",
+          ],
+        },
+        {
+          title: "Step 5 of 5: Cancel and verify content",
+          instruction:
+            "Tap Cancel and verify the content is fully accessible after the animation stops.",
+          triggerLabel: "Cancel",
+          trigger: () => {
+            qaLog(5, "cancel() called");
+            attentionDiscard.cancel();
+          },
+          expectedLogs: ["[AR][step:5] cancel() called"],
+          humanChecklist: [
+            "Content fully readable after animation stops",
+            "No layout shift occurred",
+            "Element still interactive (button + link clickable)",
+          ],
+        },
+      ],
+    },
+    {
+      id: "screen-reader",
+      title: "Screen Reader (VoiceOver)",
+      description:
+        "Verifies VoiceOver announces content correctly and animation causes no spurious announcements (a11y section 3).",
+      stages: ["discard"],
+      steps: [
+        {
+          title: "Step 1 of 5: Enable VoiceOver",
+          instruction: "Press Cmd+F5 to enable VoiceOver.",
+          expectedLogs: [],
+          humanChecklist: [
+            "VoiceOver is active (you hear the VoiceOver cursor)",
+          ],
+        },
+        {
+          title: "Step 2 of 5: Navigate to target content",
+          instruction:
+            "Use VO+Right Arrow to navigate to the animated target area. Move through the button and link inside it.",
+          expectedLogs: [],
+          humanChecklist: [
+            "VoiceOver announces 'Click me, button'",
+            "VoiceOver announces 'Sample link, link'",
+            "Content text 'Content text' is announced",
+          ],
+        },
+        {
+          title: "Step 3 of 5: Start animation and re-navigate",
+          instruction:
+            "Tap the button below to start the animation, then navigate through the target content again with VoiceOver.",
+          triggerLabel: "Start animation",
+          trigger: () => {
+            qaLog(3, "request() called");
+            attentionDiscard.request(animationDiscard);
+          },
+          expectedLogs: ["[AR][step:3] request() called"],
+          humanChecklist: [
+            "No spurious announcements caused by the animation",
+            "Button and link are still announced correctly",
+            "Content text still readable by VoiceOver",
+          ],
+        },
+        {
+          title: "Step 4 of 5: Cancel and verify",
+          instruction: "Tap Cancel and navigate through the target again.",
+          triggerLabel: "Cancel",
+          trigger: () => {
+            qaLog(4, "cancel() called");
+            attentionDiscard.cancel();
+          },
+          expectedLogs: ["[AR][step:4] cancel() called"],
+          humanChecklist: [
+            "No spurious announcements on animation stop",
+            "Content still announced correctly",
+          ],
+        },
+        {
+          title: "Step 5 of 5: Disable VoiceOver",
+          instruction: "Press Cmd+F5 to disable VoiceOver.",
+          expectedLogs: [],
+          humanChecklist: ["VoiceOver is off"],
+        },
+      ],
+    },
+    {
+      id: "reduced-motion",
+      title: "Reduced Motion",
+      description:
+        "Verifies prefers-reduced-motion is respected: suppression, dynamic toggle, and mid-animation resilience (a11y section 4).",
+      stages: ["discard", "resume"],
+      steps: [
+        {
+          title: "Step 1 of 6: Check current setting",
+          instruction:
+            "Verify the inspector shows the current prefers-reduced-motion value.",
+          trigger: () => qaLog(1, `reducedMotion: ${reducedMotion}`),
+          expectedLogs: ["[AR][step:1] reducedMotion:"],
+          humanChecklist: [
+            "Inspector shows the correct reducedMotion value for your system setting",
+          ],
+        },
+        {
+          title: "Step 2 of 6: Enable reduced motion",
+          instruction:
+            "Open DevTools → Rendering tab → set 'Emulate CSS media feature prefers-reduced-motion' to 'reduce'.",
+          expectedLogs: [],
+          humanChecklist: [
+            "Inspector updates to reducedMotion: true without page reload",
+          ],
+        },
+        {
+          title: "Step 3 of 6: Request animation (should be suppressed)",
+          instruction: "Tap the button below. Neither element should animate.",
+          triggerLabel: "Request animation",
+          trigger: () => {
+            qaLog(3, "request() on both");
+            attentionDiscard.request(animationDiscard);
+            attentionResume.request(animationResume);
+          },
+          expectedLogs: ["[AR][step:3] request() on both"],
+          humanChecklist: [
+            "Neither element animates",
+            "Both inspectors show isAnimating: false",
+          ],
+        },
+        {
+          title: "Step 4 of 6: Disable reduced motion",
+          instruction:
+            "In DevTools → Rendering, remove the prefers-reduced-motion emulation (set to 'No emulation').",
+          expectedLogs: [],
+          humanChecklist: [
+            "Inspector updates to reducedMotion: false without page reload",
+          ],
+        },
+        {
+          title: "Step 5 of 6: Request animation (should work)",
+          instruction:
+            "Tap the button below. Both elements should animate normally.",
+          triggerLabel: "Request animation",
+          trigger: () => {
+            qaLog(5, "request() on both");
+            attentionDiscard.request(animationDiscard);
+            attentionResume.request(animationResume);
+          },
+          expectedLogs: ["[AR][step:5] request() on both"],
+          humanChecklist: ["Both elements animate normally"],
+        },
+        {
+          title: "Step 6 of 6: Mid-animation toggle",
+          instruction:
+            "While both elements are animating, re-enable reduced motion in DevTools (Rendering → prefers-reduced-motion: reduce).",
+          expectedLogs: [],
+          humanChecklist: [
+            "Running animation is NOT interrupted mid-cycle — current cycle completes",
+            "After current cycle finishes, loop does NOT continue (elements return to idle)",
+            "Inspector updates to reducedMotion: true",
           ],
         },
       ],
@@ -182,12 +402,7 @@
   );
   const step = $derived(suite ? suite.steps[currentStep] : null);
   const activeStages = $derived(
-    mode === "guided" && suite !== null
-      ? // biome-ignore lint/style/noNestedTernary: readable conditional stage selection
-        suite.id === "component"
-        ? ["discard"]
-        : ["discard", "resume"]
-      : []
+    mode === "guided" && suite !== null ? suite.stages : []
   );
 
   function startGuidedMode() {
@@ -264,7 +479,23 @@
         <AttentionRequester bind:this={attentionDiscard} paused={pausedDiscard}>
           {#snippet children({ isAnimating })}
             {(discardAnimating = isAnimating, '')}
-            <div class="target"></div>
+            <div class="target">
+              <button
+                type="button"
+                onclick={() => addLog("[a11y:discard] button clicked")}
+                onfocusin={() => addLog("[a11y:discard] focus → button")}
+              >
+                Click me
+              </button>
+              <a
+                href="#noop"
+                onclick={(e) => { e.preventDefault(); addLog("[a11y:discard] link clicked"); }}
+                onfocusin={() => addLog("[a11y:discard] focus → link")}
+              >
+                Sample link
+              </a>
+              <span>Content text</span>
+            </div>
           {/snippet}
         </AttentionRequester>
       </div>
@@ -295,7 +526,23 @@
         <AttentionRequester bind:this={attentionResume} paused={pausedResume}>
           {#snippet children({ isAnimating })}
             {(resumeAnimating = isAnimating, '')}
-            <div class="target"></div>
+            <div class="target">
+              <button
+                type="button"
+                onclick={() => addLog("[a11y:resume] button clicked")}
+                onfocusin={() => addLog("[a11y:resume] focus → button")}
+              >
+                Click me
+              </button>
+              <a
+                href="#noop"
+                onclick={(e) => { e.preventDefault(); addLog("[a11y:resume] link clicked"); }}
+                onfocusin={() => addLog("[a11y:resume] focus → link")}
+              >
+                Sample link
+              </a>
+              <span>Content text</span>
+            </div>
           {/snippet}
         </AttentionRequester>
       </div>
@@ -363,8 +610,12 @@
   {#if mode === "guided" && selectedSuiteIndex === null}
     <div class="suite-selector">
       <h2 class="suite-selector-title">Select test suite</h2>
+      <p class="axe-reminder">
+        Automated scan (axe-core) is covered by <code>bun run test</code>. Run
+        it before starting manual QA.
+      </p>
       <div class="suite-list">
-        {#each suites as s, i}
+        {#each suites as s, i (s.id)}
           <button
             type="button"
             class="suite-card"
@@ -397,7 +648,7 @@
 
       {#if !step.trigger || triggerFired}
         <ul class="qa-checklist">
-          {#each step.humanChecklist as item}
+          {#each step.humanChecklist as item, idx (idx)}
             <li>{item}</li>
           {/each}
         </ul>
@@ -421,7 +672,7 @@
   {/if}
 
   <div class="log">
-    {#each log as entry}
+    {#each log as entry, idx (idx)}
       <div class="entry">{entry}</div>
     {/each}
   </div>
@@ -486,12 +737,49 @@
     border-color: #93c5fd;
   }
 
+  button {
+    padding: 8px 16px;
+    font-family: monospace;
+    font-size: 13px;
+    color: #171717;
+    cursor: pointer;
+    background: #f5f5f5;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+  }
+
+  button:hover:not(:disabled) {
+    background: #e5e5e5;
+  }
+
+  button:disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+
   .target {
-    width: 48px;
-    height: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
     background: #dbeafe;
     border: 1px solid #93c5fd;
     border-radius: 8px;
+  }
+
+  .target button,
+  .target a {
+    font-family: monospace;
+    font-size: 12px;
+  }
+
+  .target a {
+    color: #2563eb;
+  }
+
+  .target span {
+    font-size: 11px;
+    color: #404040;
   }
 
   .inspector {
@@ -543,6 +831,24 @@
     font-size: 14px;
     font-weight: 700;
     color: #171717;
+  }
+
+  .axe-reminder {
+    padding: 10px 14px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #404040;
+    background: #fef9c3;
+    border: 1px solid #eab308;
+    border-radius: 8px;
+  }
+
+  .axe-reminder code {
+    padding: 2px 5px;
+    font-size: 11px;
+    background: #fefce8;
+    border-radius: 4px;
   }
 
   .suite-list {
@@ -621,26 +927,6 @@
   .qa-next,
   .qa-done-btn {
     align-self: flex-start;
-  }
-
-  button {
-    padding: 8px 16px;
-    font-family: monospace;
-    font-size: 13px;
-    color: #171717;
-    cursor: pointer;
-    background: #f5f5f5;
-    border: 1px solid #d4d4d4;
-    border-radius: 8px;
-  }
-
-  button:hover:not(:disabled) {
-    background: #e5e5e5;
-  }
-
-  button:disabled {
-    cursor: default;
-    opacity: 0.4;
   }
 
   .log {

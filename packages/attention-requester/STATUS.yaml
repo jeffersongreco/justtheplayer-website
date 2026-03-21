@@ -4,23 +4,23 @@
 # checklist_version: tracks which revision of §14 this was evaluated against
 
 checklist_version: "2026-03-17"
-last_updated: "2026-03-17"
+last_updated: "2026-03-21"
 
 conformance:
-  model:              complete      # §2 — 4 state vars, 4 derived, full lifecycle
-  controller:         complete      # §3 — dual $effect, WAAPI, interrupt strategies
+  model:              complete      # §2 — 5 state vars (4 $state + 2 $state.raw), 5 derived, full lifecycle
+  coordinator:        complete      # §3 — dual $effect, WAAPI, interrupt strategies, untrack comments added
   interaction:        n/a           # §4 — no hardware input layer
-  view:               complete      # §1 — renders state, captures intent
-  api_surface:        complete      # §5 — flat exports, bind:this, asChild
-  animations:         partial       # §6 — WAAPI + fill:none, but Animation.id not set
-  resilience:         complete      # §7 — auto-corrects position:relative, warns
-  performance:        partial       # §8 — compositor-friendly not audited, no benchmarks
+  view:               complete      # §1 — renders state, captures intent, presentation names
+  api_surface:        complete      # §5 — flat exports, bind:this, asChild with never exclusivity
+  animations:         complete      # §6 — WAAPI + fill:none, Animation.id set (ar-{name}), translate property, unions
+  resilience:         complete      # §7 — throw for missing target, console.error for request() before configure()
+  performance:        complete      # §8 — compositor-friendly (translate only), size-limit 6 kB, benchmarks present
   naming:             complete      # §9 — domain-prefixed, correct suffixes
 
-  tests:              partial       # §10 — 40 cases, 97% Model coverage, spec exhaustiveness not verified
-  logging:            partial       # §11 — 1 console.warn in Controller, no structured debug logs
-  dev_page:           partial       # §12 — log panel + controls, missing state inspector
-  guided_qa:          complete      # §12 — QA steps defined and functional
-  accessibility:      not_started   # §13 — prefers-reduced-motion not implemented, 5-step audit not done
-  size_limit:         complete      # §8 — 5.62 kB / 6 kB limit, wired to CI
-  benchmarks:         not_started   # §8 — bench file exists but not configured in CI
+  tests:              complete      # §10 — 50 cases across 3 files, organized by spec section, tags, benchmarks
+  logging:            complete      # §11 — DEV-guarded debug logs, console.error for misuse, [AR:Layer] prefix, perf marks
+  dev_page:           partial       # §12 — log panel + controls + state inspector + guided QA; missing a11y verification scenarios
+  guided_qa:          complete      # §12 — 2 QA suites, progressive disclosure, qaLog to console + panel
+  accessibility:      partial       # §13 — prefers-reduced-motion implemented, axe-core automated; dev page lacks a11y verification scenarios
+  size_limit:         complete      # §8 — 6 kB limit configured
+  benchmarks:         complete      # §8 — 4 benchmarks in AttentionRequesterModel.bench.ts
