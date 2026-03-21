@@ -123,11 +123,12 @@ Propriedades expostas pelo Model para as Views são definidas como `$derived` (s
 |---|---|
 | Leitura reativa no template ou `$effect` | ❌ Não — o Proxy é o mecanismo de reatividade |
 | Derivações com `$derived` | ❌ Não — o Proxy é o que torna a derivação reativa |
-| Passagem para biblioteca externa que não espera Proxy | ✅ Sim |
-| `structuredClone`, `JSON.stringify` em classes | ✅ Sim |
-| IndexedDB, Web Workers, serialização | ✅ Sim |
+| Estado declarado com `$state.raw` | ❌ Não — `$state.raw` armazena o objeto puro, sem Proxy |
+| Passagem para biblioteca externa que não espera Proxy | ✅ Sim (apenas para `$state`, não `$state.raw`) |
+| `structuredClone`, `JSON.stringify` em classes | ✅ Sim (apenas para `$state`, não `$state.raw`) |
+| IndexedDB, Web Workers, serialização | ✅ Sim (apenas para `$state`, não `$state.raw`) |
 | `console.log` para debug | ✅ Recomendado (ou usar `$inspect`) |
-| Comparação de identidade com `===` | ✅ Necessário |
+| Comparação de identidade com `===` | ✅ Necessário (apenas para `$state`, não `$state.raw`) |
 
 **Regra crítica — nunca usar snapshot dentro de derivações:**
 
@@ -140,6 +141,27 @@ let intent = $derived(animation.intent);
 ```
 
 **Regra prática:** Use `$state.snapshot()` sempre que precisar passar estado reativo para **fora** do contexto reativo do Svelte. **Não use** dentro de derivações, effects ou do template — nesses contextos o Proxy deve ser lido diretamente.
+
+### `$state.raw` para Objetos Imutáveis por Design
+
+Objetos que são **substituídos por inteiro** (nunca mutados internamente) devem usar `$state.raw` em vez de `$state`. `$state.raw` fornece reatividade de reassignment sem criar um Proxy profundo — eliminando overhead desnecessário para objetos grandes ou complexos que jamais serão mutados campo a campo.
+
+```ts
+// ❌ $state cria Proxy profundo — overhead sem benefício se o objeto nunca é mutado
+#animation = $state<ARAnimation | null>(null);
+
+// ✅ $state.raw — reativo no reassignment, sem Proxy
+#animation = $state.raw<ARAnimation | null>(null);
+```
+
+**Quando usar `$state.raw`:**
+- Objetos de configuração declarados pelo consumidor e passados ao Model (animações, keyframes, opções)
+- Dados imutáveis recebidos de APIs externas
+- Qualquer estado onde a atualização é sempre por **substituição completa**, nunca por mutação de propriedades internas
+
+**Quando NÃO usar:** estado que precisa de reatividade granular (mutação de propriedades individuais como `model.x = 10`). Nesses casos, `$state` com Proxy profundo é necessário.
+
+**Relação com `$state.snapshot()`:** `$state.raw` armazena o objeto puro — sem Proxy. Portanto, `$state.snapshot()` é **desnecessário** para valores declarados com `$state.raw`. Snapshot existe para extrair um POJO de um Proxy reativo; se não há Proxy, não há o que extrair.
 
 ### Delegação: Serviços e Utils
 
@@ -190,31 +212,26 @@ APIs imperativas expostas ao consumidor (ex: `request(animation)` via `bind:this
 
 ### Ciclo de Vida e Ownership Reativo
 
-Controllers são classes `.svelte.ts` que observam o estado do Model diretamente via `$effect` no seu construtor. São sempre instanciados dentro de um bloco `$effect` no `<script>` do componente:
+Controllers são classes `.svelte.ts` que observam o estado do Model diretamente via `$effect` no seu construtor. São sempre instanciados via `{@attach ...}` no template do componente:
 
 ```svelte
-let node = $state<HTMLElement | null>(null);
-
-$effect(() => {
-  if (!node) return;
-  const controller = new SomeController(node, model);
+<div {@attach (el) => {
+  const controller = new SomeController(el, model);
   return () => controller.destroy();
-});
-
-const action: Action = (n) => { node = n; return {}; };
+}}>...</div>
 ```
 
-Este padrão é universal — componentes autocontidos e componentes baseados em Context seguem a mesma estrutura. O bloco `$effect` garante ownership reativo: qualquer `$effect` criado internamente pelo Controller herda o escopo do componente e é limpo automaticamente no unmount.
+Este padrão é universal — componentes autocontidos e componentes baseados em Context seguem a mesma estrutura. O attachment é totalmente reativo: se `model` mudar, a função re-executa (destruindo o Controller anterior e criando um novo). O cleanup retornado é chamado automaticamente no unmount ou na re-execução.
+
+> **`{@attach ...}` sobre `use:action`:** A partir do Svelte 5.29, `{@attach ...}` é a API oficial para associar lógica a elementos DOM. Ao contrário de `use:action`, attachments são totalmente reativos — re-executam quando suas dependências mudam. O padrão anterior com `use:action` + `$state<HTMLElement | null>` + `$effect` para captura de node é substituído por uma única expressão `{@attach}` que unifica captura do elemento e ciclo de vida do Controller no mesmo lugar, eliminando o estado intermediário.
 
 O método `destroy()` do Controller trata apenas cleanup imperativo: animações WAAPI, `requestAnimationFrame`, `ResizeObserver`, timers. O cleanup reativo dos `$effect` internos é automático via ownership do Svelte.
-
-A Svelte action captura a referência ao `HTMLElement`. Ela **não** é dona do ciclo de vida do Controller.
 
 **Regra:** O componente que cria o Controller é responsável por garantir que nada vaze quando ele desmontar. Sem exceções.
 
 **Escape hatch:** Se um Controller precisar ser criado fora de um contexto reativo, ele usa `$effect.root` internamente e o `destroy()` é obrigatório. Esta é a exceção, não o padrão.
 
-O template `<script>` contém apenas: (1) `$effect` que roteia props para o Model, (2) `$effect` que cria e destrói o Controller, (3) a action para captura do node. Nenhum `$effect` no template roteia estado do Model para o Controller — o Controller trata disso internamente.
+O template `<script>` contém apenas: (1) `$effect` que roteia props para o Model. O ciclo de vida do Controller é declarado no template via `{@attach}`. Nenhum `$effect` no template roteia estado do Model para o Controller — o Controller trata disso internamente.
 
 ### Disciplina de Primitivos Reativos
 
@@ -294,6 +311,37 @@ O Controller observa as mudanças de estado resultantes no Model e aplica-as ao 
 
 Concerns de DOM que não são intenção do usuário (ex: promoção de GPU layer no hover, mudanças de cursor) são responsabilidade do próprio Controller. O Controller pode observar eventos DOM diretamente no seu elemento para esses fins, da mesma forma que observa `ResizeObserver`. Estes não são concerns da Interaction.
 
+### Integração Reativa com `createSubscriber`
+
+`createSubscriber` (de `svelte/reactivity`) é a API idiomática do Svelte para integrar fontes externas de eventos no grafo reativo. É o encaixe semântico perfeito para a camada Interaction — permite que getters de estado derivado de eventos externos (pointer, keyboard, `ResizeObserver`, `IntersectionObserver`, WebSocket) participem do sistema reativo **sem precisar de `$effect` explícito** para registrar/desregistrar listeners.
+
+```ts
+// DragInteraction.svelte.ts
+import { createSubscriber } from 'svelte/reactivity';
+
+class DragInteraction {
+  #isDragging = $state(false);
+
+  #subscribe = createSubscriber((update) => {
+    const onPointerDown = () => { this.#isDragging = true; update(); };
+    const onPointerUp = () => { this.#isDragging = false; update(); };
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  });
+
+  get isDragging() {
+    this.#subscribe(); // torna o getter reativo
+    return this.#isDragging;
+  }
+}
+```
+
+A integração com sistemas externos fica declarativa e o teardown é automático quando nenhum effect lê o getter. Interactions que hoje dependem de `$effect.root` ou `addEventListener` explícito para setup/teardown de listeners podem ser simplificadas com `createSubscriber`, tornando o código mais idiomático e a natureza plugável da Interaction mais evidente.
+
 ### Diferenciação: Controller vs. Interaction
 
 | | Controller | Interaction |
@@ -334,7 +382,7 @@ Em layouts onde até mesmo um `<div>` com `display: contents` quebra o design, `
 
 > **Regra de ouro:** *"Use `asChild` apenas quando precisar eliminar o wrapper do DOM."* Ambos os caminhos são **sempre oferecidos** — a API é consistente entre todos os Modifiers. Porém o design com `display: contents` como padrão faz com que `asChild` seja raramente necessário — é um escape hatch de último recurso, não uma escolha rotineira.
 
-**Restrição:** Quando o filho direto é um **componente Svelte** (não um elemento HTML nativo), `use:action` não pode ser aplicado a ele — actions só funcionam em elementos DOM. Nesse caso, o wrapper do Modifier é obrigatório e `asChild` não é viável.
+**Restrição:** Quando o filho direto é um **componente Svelte** (não um elemento HTML nativo), `{@attach}` não pode ser aplicado a ele — attachments só funcionam em elementos DOM. Nesse caso, o wrapper do Modifier é obrigatório e `asChild` não é viável.
 
 **Tipagem de exclusividade:** `children` e `asChild` não podem coexistir. A exclusividade é uma propriedade do tipo, não validação runtime:
 
@@ -372,6 +420,16 @@ O provedor de contexto (ex: `<MovableContext>`) não renderiza nenhuma tag HTML 
 - **Isolamento:** Permite ecossistemas totalmente isolados na mesma página (ex: painel esquerdo e painel direito que não interferem).
 - Atalhos de contexto (ex: `MovableContext.use()`) permitem que componentes independentes (como um HUD) leiam o estado sem cascata de props.
 
+> **`createContext` sobre `setContext`/`getContext` direto:** A implementação de contexto deve usar `createContext` do Svelte em vez de `setContext`/`getContext` com chave manual. `createContext` elimina a possibilidade de colisão de chaves e garante inferência de tipo sem cast.
+>
+> ```ts
+> // context.svelte.ts
+> import { createContext } from 'svelte';
+> export const [getMovableContext, setMovableContext] = createContext<MovableModel>();
+> ```
+>
+> O padrão de DX permanece o mesmo — `MovableContext.use()` continua sendo o atalho público. A diferença é que a infraestrutura por baixo usa `createContext` para type safety nativa e eliminação de chaves manuais.
+
 ### Design Declarativo como Contrato
 
 A escolha de transformar Context e Modifiers em **componentes `.svelte`** (em vez de funções puras em TypeScript) é intencional:
@@ -386,7 +444,7 @@ A escolha de transformar Context e Modifiers em **componentes `.svelte`** (em ve
 
 ### Animações são Dados, não Comportamento
 
-O componente é agnóstico de animações. Uma animação declara `name`, `duration`, `keyframes`, `loop`, `interval` e `onInterrupt` — nada mais. O componente cuida do *quando*; a animação cuida do *como*.
+O componente é agnóstico de animações. Uma animação declara `name`, `duration`, `keyframes`, `loop`, `interval` e `onInterrupt` — nada mais. O componente cuida do *quando*; a animação cuida do *como*. Como objetos de animação são imutáveis por design (declarados pelo consumidor e passados ao Model por substituição completa), devem ser armazenados com `$state.raw` (§2) para evitar o overhead de Proxy profundo.
 
 ### WAAPI sobre CSS Animations
 
@@ -437,6 +495,28 @@ O erro não é suprimido, mas transformado em DX. Um `console.warn` explica o pr
 ### Prioridade
 
 A **continuidade da experiência do usuário final** está acima da pureza técnica da configuração do desenvolvedor. O software não deve "crashar" por detalhes de CSS.
+
+### Contenção Estrutural com `<svelte:boundary>`
+
+`<svelte:boundary>` (Svelte 5.3+) é o mecanismo oficial de error boundary. Captura erros durante renderização e em efeitos, renderizando UI alternativa via snippet `failed` ou chamando `onerror` para logging.
+
+A filosofia Fail-Safe descrita acima opera *dentro* dos componentes (lógica defensiva, guards, auto-correção). `<svelte:boundary>` adiciona uma camada de contenção *em torno* dos componentes — se um Modifier, Controller ou Context lançar um erro inesperado em produção, o boundary impede que a árvore inteira desmonte. Isso **complementa**, não substitui, a lógica defensiva interna.
+
+**Diretriz:** Envolver os componentes Modifier/Context de cada package num `<svelte:boundary>` no nível da aplicação consumidora. O snippet `failed` pode renderizar o conteúdo filho sem os superpoderes do Modifier — **degradação graciosa real**:
+
+```svelte
+<svelte:boundary onerror={(error) => console.warn('[Movable]', error)}>
+  {#snippet failed()}
+    <!-- Conteúdo renderizado sem capacidades do Modifier -->
+    {@render children()}
+  {/snippet}
+  <MovableItem>
+    {@render children()}
+  </MovableItem>
+</svelte:boundary>
+```
+
+O package não impõe o boundary internamente — a decisão de *onde* colocar a fronteira de contenção é do consumidor, alinhada com a estratégia de degradação graciosa da aplicação.
 
 ---
 

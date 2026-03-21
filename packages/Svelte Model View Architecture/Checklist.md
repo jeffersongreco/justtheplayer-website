@@ -10,8 +10,9 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 ### Model (§2)
 - [ ] Toda lógica de negócio vive no Model — Controller tem zero tomada de decisão
 - [ ] Estado mutável usa `#field = $state()` (privado nativo JS, não convenção)
+- [ ] Estado imutável por design (substituído por inteiro, nunca mutado) usa `$state.raw` — sem overhead de Proxy
 - [ ] Estado público usa `readonly field = $derived(this.#field)`
-- [ ] Usa `$state.snapshot()` apenas ao passar estado para fora do contexto reativo (libs externas, serialização, `===`); nunca dentro de `$derived`, `$effect` ou template
+- [ ] Usa `$state.snapshot()` apenas ao passar estado `$state` para fora do contexto reativo (libs externas, serialização, `===`); nunca dentro de `$derived`, `$effect` ou template; desnecessário para `$state.raw`
 - [ ] Comportamentos qualitativamente diferentes usam union discriminada, não boolean
 - [ ] Sem singletons globais — instâncias injetadas via Context (multi-componente) ou internas (autocontido)
 - [ ] Lógica complexa ou externa extraída para Serviços (Controller, Interaction) ou Utils (funções puras)
@@ -24,7 +25,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Variáveis que disparam `$effect` declaradas com `$state`
 - [ ] Gerencia ciclo de vida: cleanup de observers e listeners na destruição
 - [ ] Comunicação Model→Controller é por observação de estado (`$effect`), nunca command-dispatch interno
-- [ ] Instanciado dentro de `$effect` no `<script>` do componente (ownership reativo garantido)
+- [ ] Instanciado via `{@attach}` no template — captura do elemento e ciclo de vida do Controller unificados numa única expressão (não `use:action` + `$state` + `$effect`)
 - [ ] Nenhum `$effect` no template roteia estado do Model para o Controller — o Controller observa o Model internamente
 - [ ] `destroy()` trata apenas cleanup imperativo (WAAPI, rAF, observers, timers); cleanup reativo é automático
 - [ ] Primitivos reativos justificados: todo `$effect` é side effect de DOM ou sync com sistema externo (nunca derivação de estado); `untrack()` tem comentário explicando por que o valor não é dependência; `$effect.root` tem `destroy()` chamado no método `destroy()` do objeto dono; efeitos aninhados não criam ciclos de leitura/escrita na mesma dependência
@@ -36,6 +37,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Plugável — pode ser substituída sem alterar Controller ou Model
 - [ ] Não sabe sobre CSS, coordenadas ou renderização
 - [ ] Toda "sujeira" imperativa (`addEventListener`, `rAF`, `getBoundingClientRect`) isolada aqui
+- [ ] Prefere `createSubscriber` para integrar eventos externos no grafo reativo — teardown automático quando nenhum effect lê o getter
 
 ### View (§1)
 - [ ] Zero lógica de negócio — apenas renderiza estado e captura intenção do usuário
@@ -51,12 +53,14 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] `asChild` disponível com tipagem union + `never` para exclusividade com `children` — usado apenas como escape hatch de layout, não para acesso a estado
 - [ ] Estado efêmero acessível via snippet em ambos os caminhos (`children` e `asChild`)
 - [ ] `display: contents` como padrão para Modifiers; `flex + max-content` apenas quando necessário (documentar motivo)
-- [ ] Restrição `asChild`: não viável quando filho direto é componente Svelte (actions exigem elemento DOM)
+- [ ] Restrição `asChild`: não viável quando filho direto é componente Svelte (attachments exigem elemento DOM)
 - [ ] Context (`[Domain]Context`) usado como fronteira lógica invisível (sem tag HTML) em ecossistemas multi-componente
+- [ ] Context implementado com `createContext` (não `setContext`/`getContext` com chave manual) — type safety nativa, sem colisão de chaves
 - [ ] Componentes `.svelte` delegam ciclo de vida automaticamente (cleanup de observers, listeners, Model)
 
 ### Animações (§6) — quando aplicável
 - [ ] Animações são objetos de dados (nome, duração, keyframes, loop, onInterrupt), não comportamento
+- [ ] Objetos de animação armazenados com `$state.raw` (imutáveis por design, substituídos por inteiro)
 - [ ] WAAPI preferida sobre CSS animations para componentes com estado
 - [ ] `fill: 'none'` obrigatório — sem estado residual
 - [ ] `will-change` não é gerenciado imperativamente pelo Controller — WAAPI promove camadas automaticamente; CSS estático apenas se houver problema de performance medido
@@ -67,6 +71,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Auto-corrige ambientes hostis (ex: `position: relative` ausente no Context)
 - [ ] Erros são `console.warn` educativo, nunca crash (`throw`)
 - [ ] Continuidade da UX do usuário final priorizada sobre pureza técnica
+- [ ] `<svelte:boundary>` usado no nível da aplicação consumidora para contenção estrutural — snippet `failed` renderiza conteúdo sem superpoderes do Modifier (degradação graciosa)
 
 ### Performance (§8) — quando aplicável
 - [ ] Sistema de coordenadas unificado (AABB) referenciado ao Context
