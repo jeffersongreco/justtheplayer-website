@@ -5,12 +5,12 @@
 <main>
   <h1>Movable</h1>
 
-  <Movable.Root>
-    {#snippet asChild()}
-      <div class="canvas">
+  <Movable.Context>
+    {#snippet asChild({ attach })}
+      <div {@attach attach} class="canvas">
         <Movable.Sensor accepts={["ghost"]}>
-          {#snippet asChild({ sensor, isOver })}
-            <div use:sensor class="sensor" class:active={isOver}>Sensor</div>
+          {#snippet asChild({ attach: attachSensor, isOver })}
+            <div {@attach attachSensor} class="sensor" class:active={isOver}>Sensor</div>
           {/snippet}
         </Movable.Sensor>
 
@@ -32,7 +32,7 @@
         </Movable.Item>
       </div>
     {/snippet}
-  </Movable.Root>
+  </Movable.Context>
 </main>
 
 <style>

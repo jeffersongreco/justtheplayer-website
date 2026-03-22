@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Action } from "svelte/action";
   import type { MovableItemProps } from "./Movable.types";
   import { MovableItemCoordinator } from "./MovableItemCoordinator.svelte";
   import { getMovableContext } from "./MovableModel.svelte";
@@ -9,14 +8,13 @@
     initialPosition = { x: "50%", y: "50%" },
     group = [],
     tabindex = 0,
-    class: className = "",
     children,
     asChild,
   }: MovableItemProps = $props();
 
   const model = getMovableContext();
 
-  const item: Action<HTMLElement> = (el) => {
+  function attach(el: HTMLElement) {
     const coordinator = new MovableItemCoordinator(
       el,
       model,
@@ -24,8 +22,8 @@
       initialPosition,
       group
     );
-    return { destroy: () => coordinator.destroy() };
-  };
+    return () => coordinator.destroy();
+  }
 
   let isMoving = $derived(model.activeItemID === id);
 
@@ -43,18 +41,20 @@
 </script>
 
 {#if asChild}
-  {@render asChild({ item, isMoving, isFocused })}
+  {@render asChild({ attach, isMoving, isFocused })}
 {:else}
   <div
-    use:item
-    class="movable {className}"
+    {@attach attach}
+    class="movable"
     data-dragging={isMoving}
     role="button"
     {tabindex}
     onfocus={handleFocus}
     onblur={handleBlur}
   >
-    {@render children?.({ isMoving, isFocused })}
+    {#if children}
+      {@render children({ isMoving, isFocused })}
+    {/if}
   </div>
 {/if}
 
