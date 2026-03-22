@@ -11,25 +11,51 @@ type SensorConfiguration = {
   accepts: MovableGroup;
 };
 
+export type DragOrigin = {
+  x: number;
+  y: number;
+  pointerX: number;
+  pointerY: number;
+};
+
+export type DragLimits = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+};
+
+export type ItemDimensions = {
+  width: number;
+  height: number;
+  pointerOffsetX: number;
+  pointerOffsetY: number;
+};
+
 export class MovableModel {
   #activeItemID = $state<string | null>(null);
   #activeItemGroup = $state<MovableGroup>([]);
   #activeSensorID = $state<string | null>(null);
-  #rootEl = $state<HTMLElement | null>(null);
+  #hasRoot = $state(false);
 
   readonly activeItemID = $derived(this.#activeItemID);
   readonly activeItemGroup = $derived(this.#activeItemGroup);
   readonly activeSensorID = $derived(this.#activeSensorID);
-  readonly rootEl = $derived(this.#rootEl);
+  readonly hasRoot = $derived(this.#hasRoot);
 
   /** Non-reactive position for rAF reads. Written by updatePosition, read by Coordinator. */
   activePosition = { x: 0, y: 0 };
-  /** Non-reactive pointer position for collision detection. */
-  pointerPos = { x: 0, y: 0 };
+  /** Non-reactive DOM reference for Coordinators. Not part of Model state. */
+  rootEl: HTMLElement | null = null;
 
-  #limits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-  #dragStart = { x: 0, y: 0, mouseX: 0, mouseY: 0 };
-  #dims = { w: 0, h: 0, offsetX: 0, offsetY: 0 };
+  #limits: DragLimits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+  #dragStart: DragOrigin = { x: 0, y: 0, pointerX: 0, pointerY: 0 };
+  #dims: ItemDimensions = {
+    width: 0,
+    height: 0,
+    pointerOffsetX: 0,
+    pointerOffsetY: 0,
+  };
   readonly #sensors = new Map<string, SensorConfiguration>();
 
   get sensorCount() {
@@ -40,8 +66,14 @@ export class MovableModel {
     return this.#activeSensorID === id;
   }
 
-  beginMove(e: PointerEvent, el: HTMLElement, id: string, group: MovableGroup) {
-    if (!this.#rootEl) {
+  beginMove(
+    id: string,
+    group: MovableGroup,
+    origin: DragOrigin,
+    limits: DragLimits,
+    dims: ItemDimensions
+  ) {
+    if (!this.#hasRoot) {
       return;
     }
 
@@ -52,41 +84,14 @@ export class MovableModel {
     this.#activeSensorID = null;
     this.#activeItemID = id;
     this.#activeItemGroup = group;
-
-    const elRect = el.getBoundingClientRect();
-    const rootRect = this.#rootEl.getBoundingClientRect();
-
-    this.#dims = {
-      w: elRect.width,
-      h: elRect.height,
-      offsetX: elRect.left - e.clientX,
-      offsetY: elRect.top - e.clientY,
-    };
-
-    const currentTransform = new WebKitCSSMatrix(
-      window.getComputedStyle(el).transform
-    );
-    const currentX = currentTransform.m41;
-    const currentY = currentTransform.m42;
-
-    this.#limits = {
-      minX: currentX - (elRect.left - rootRect.left),
-      maxX: currentX + (rootRect.right - elRect.right),
-      minY: currentY - (elRect.top - rootRect.top),
-      maxY: currentY + (rootRect.bottom - elRect.bottom),
-    };
-
-    this.#dragStart = {
-      x: currentX,
-      y: currentY,
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-    };
+    this.#dragStart = origin;
+    this.#limits = limits;
+    this.#dims = dims;
   }
 
-  updatePosition(e: PointerEvent) {
-    const deltaX = e.clientX - this.#dragStart.mouseX;
-    const deltaY = e.clientY - this.#dragStart.mouseY;
+  updatePosition(pointerX: number, pointerY: number) {
+    const deltaX = pointerX - this.#dragStart.pointerX;
+    const deltaY = pointerY - this.#dragStart.pointerY;
 
     const x = Geometry.clamp(
       this.#dragStart.x + deltaX,
@@ -100,13 +105,18 @@ export class MovableModel {
     );
 
     this.activePosition = { x, y };
-    this.pointerPos = { x: e.clientX, y: e.clientY };
 
     this.detectCollisions({
-      x: this.#dragStart.mouseX + (x - this.#dragStart.x) + this.#dims.offsetX,
-      y: this.#dragStart.mouseY + (y - this.#dragStart.y) + this.#dims.offsetY,
-      width: this.#dims.w,
-      height: this.#dims.h,
+      x:
+        this.#dragStart.pointerX +
+        (x - this.#dragStart.x) +
+        this.#dims.pointerOffsetX,
+      y:
+        this.#dragStart.pointerY +
+        (y - this.#dragStart.y) +
+        this.#dims.pointerOffsetY,
+      width: this.#dims.width,
+      height: this.#dims.height,
     });
 
     return { x, y };
@@ -155,6 +165,7 @@ export class MovableModel {
     if (DEV) {
       console.log(`[Movable:Model] registerRoot → ${el ? "element" : "null"}`);
     }
-    this.#rootEl = el;
+    this.rootEl = el;
+    this.#hasRoot = el !== null;
   }
 }

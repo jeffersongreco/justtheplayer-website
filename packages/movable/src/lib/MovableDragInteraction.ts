@@ -20,7 +20,7 @@ export function createMovableDragInteraction(
       e.preventDefault();
     }
 
-    const { x, y } = model.updatePosition(e);
+    const { x, y } = model.updatePosition(e.clientX, e.clientY);
 
     controller.moveTo(x, y);
   };
@@ -30,13 +30,48 @@ export function createMovableDragInteraction(
       return;
     }
 
+    const rootEl = model.rootEl;
+    if (!rootEl) {
+      return;
+    }
+
     controller.markAsUserMoved();
     controller.promoteLayer();
 
     node.setPointerCapture(e.pointerId);
     node.style.cursor = "grabbing";
 
-    model.beginMove(e, node, id, group ?? "default");
+    const elRect = node.getBoundingClientRect();
+    const rootRect = rootEl.getBoundingClientRect();
+
+    const currentTransform = new WebKitCSSMatrix(
+      window.getComputedStyle(node).transform
+    );
+    const currentX = currentTransform.m41;
+    const currentY = currentTransform.m42;
+
+    model.beginMove(
+      id,
+      group ?? [],
+      {
+        x: currentX,
+        y: currentY,
+        pointerX: e.clientX,
+        pointerY: e.clientY,
+      },
+      {
+        minX: currentX - (elRect.left - rootRect.left),
+        maxX: currentX + (rootRect.right - elRect.right),
+        minY: currentY - (elRect.top - rootRect.top),
+        maxY: currentY + (rootRect.bottom - elRect.bottom),
+      },
+      {
+        width: elRect.width,
+        height: elRect.height,
+        pointerOffsetX: elRect.left - e.clientX,
+        pointerOffsetY: elRect.top - e.clientY,
+      }
+    );
 
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onEnd);

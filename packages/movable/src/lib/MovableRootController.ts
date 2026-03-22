@@ -1,17 +1,17 @@
 import type { MovableModel } from "./MovableModel.svelte";
 
 export function createMovableRootController(
-  node: HTMLElement,
+  el: HTMLElement,
   model: MovableModel
 ) {
-  model.registerRoot(node);
+  model.registerRoot(el);
 
-  const style = window.getComputedStyle(node);
+  const style = window.getComputedStyle(el);
   if (style.position === "static" || style.position === "" || !style.position) {
     console.warn(
       `[Movable] Root element has "position: static". Auto-fixing to "relative" to ensure coordinate system integrity.`
     );
-    node.style.position = "relative";
+    el.style.position = "relative";
   }
 
   return {
