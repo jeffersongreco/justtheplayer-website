@@ -307,9 +307,15 @@ Isso é legítimo, mas tem custo oculto: se o pai tem dependências de granulari
 
 A Interaction é puramente um **tradutor de hardware**. Ela não sabe sobre coordenadas CSS, porcentagens ou redimensionamento de janela. Ela só sabe que "o mouse desceu", "o mouse moveu" ou "o dedo levantou".
 
-**Responsabilidade:** Capturar a intenção física do usuário e traduzi-la em **comandos** para o Model. Ela diz ao Model: *"O usuário quer mover para a direita"*.
+**Responsabilidade:** Capturar a intenção física do usuário e traduzi-la em **informações** para o Model. Ela fornece ao Model os dados que ele precisa para atualizar seu estado interno.
 
 **Natureza:** Plugável e substituível. Hoje existe uma `DragInteraction` (Mouse/Touch). Amanhã pode-se plugar uma `KeyboardInteraction` (setas do teclado) no **mesmo** Model, sem alterar uma linha da lógica de posicionamento ou renderização.
+
+### Relacionamento entre os Três Módulos
+
+> A Interaction traduz input de hardware em informações no formato que o Model espera (o protocolo da Interaction). O Model recebe essas informações e atualiza seu estado interno conforme suas regras de negócio. O Coordinator observa o estado do Model e aplica as mudanças ao DOM. Nenhum módulo fala diretamente com os outros dois — o Model é a única ponte entre Interaction e Coordinator.
+
+O ponto crítico: a Interaction fornece **informações** (não comandos), o Model **atualiza estado** (não a Interaction), e o Coordinator **observa** (não recebe). O fluxo não é de chamadas — é de dados.
 
 ### Barreira Sanitária
 
@@ -318,9 +324,25 @@ Em vez de misturar lógica imperativa (DOM) com declarativa (Model), a Interacti
 - A **View** permanece semanticamente limpa
 - Toda a "sujeira" de `addEventListener`, `requestAnimationFrame` e `getBoundingClientRect` vive e morre isolada na Interaction
 
+### Assinaturas Agnósticas de Método
+
+O Model nunca deve ter parâmetros que identifiquem a fonte de input (coordenadas de ponteiro, teclas pressionadas, etc.). Se um método do Model recebe `pointerX` ou `keyCode`, ele está acoplado ao hardware — o que contradiz o papel da Interaction como barreira sanitária.
+
+A Interaction é responsável por transformar dados de hardware em dados agnósticos (posições absolutas, deltas, flags) antes de passá-los ao Model. O Model recebe apenas o *resultado semântico* dessa transformação, nunca o input bruto.
+
+```ts
+// ❌ Acoplado ao hardware — o Model sabe que existe um ponteiro
+model.updatePosition(event.clientX, event.clientY)
+
+// ✅ Agnóstico — a Interaction já transformou os dados brutos
+model.changed({ x: 320, y: 180 })
+```
+
+> **Nota:** os nomes de métodos acima são pseudo-código ilustrativo — não refletem a API de nenhum pacote específico.
+
 ### Fluxo de Dados
 
-A Interaction comunica-se exclusivamente com o Model. Traduz eventos de hardware (pointer, keyboard, touch) em chamadas de método no Model (`model.beginMove()`, `model.updatePosition()`, `model.endMove()`). Nunca mantém referência ao Coordinator e nunca chama métodos do Coordinator.
+A Interaction comunica-se exclusivamente com o Model. Traduz eventos de hardware (pointer, keyboard, touch) em chamadas de método no Model — por exemplo, sinalizando início, atualização e fim de uma interação. Nunca mantém referência ao Coordinator e nunca chama métodos do Coordinator.
 
 O Coordinator observa as mudanças de estado resultantes no Model e aplica-as ao DOM. O fluxo de dados é sempre: **Interaction → Model → Coordinator**.
 
@@ -331,26 +353,26 @@ Concerns de DOM que não são intenção do usuário (ex: promoção de GPU laye
 `createSubscriber` (de `svelte/reactivity`) é a API idiomática do Svelte para integrar fontes externas de eventos no grafo reativo. É o encaixe semântico perfeito para a camada Interaction — permite que getters de estado derivado de eventos externos (pointer, keyboard, `ResizeObserver`, `IntersectionObserver`, WebSocket) participem do sistema reativo **sem precisar de `$effect` explícito** para registrar/desregistrar listeners.
 
 ```ts
-// DragInteraction.svelte.ts
+// Pseudo-código ilustrativo — demonstra o padrão, não a implementação real.
 import { createSubscriber } from 'svelte/reactivity';
 
-class DragInteraction {
-  #isDragging = $state(false);
+class SomeInteraction {
+  #isActive = $state(false);
 
   #subscribe = createSubscriber((update) => {
-    const onPointerDown = () => { this.#isDragging = true; update(); };
-    const onPointerUp = () => { this.#isDragging = false; update(); };
-    window.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointerup', onPointerUp);
+    const onStart = () => { this.#isActive = true; update(); };
+    const onEnd = () => { this.#isActive = false; update(); };
+    window.addEventListener('pointerdown', onStart);
+    window.addEventListener('pointerup', onEnd);
     return () => {
-      window.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointerdown', onStart);
+      window.removeEventListener('pointerup', onEnd);
     };
   });
 
-  get isDragging() {
+  get isActive() {
     this.#subscribe(); // torna o getter reativo
-    return this.#isDragging;
+    return this.#isActive;
   }
 }
 ```
@@ -371,15 +393,17 @@ A integração com sistemas externos fica declarativa e o teardown é automátic
 Quando a Interaction é plugável, o contrato tipado deve ser **definido pelo consumidor da interface — não pelo fornecedor**. O Model declara o que ele precisa; as implementações se conformam a isso.
 
 ```ts
-// ✅ O contrato vive no módulo Movable — definido pelo que MovableModel precisa
+// Pseudo-código ilustrativo — não reflete a API real de nenhum pacote.
+// O contrato vive no módulo do pacote — definido pelo que o Model precisa.
+// O Model define e implementa esta interface; as Interactions a recebem como parâmetro.
 interface MovableInteraction {
-  began(point: Point): void
-  changed(point: Point): void
-  ended(): void
+  began(point: Point): void   // Interaction chama → Model executa
+  changed(point: Point): void // Interaction chama → Model executa
+  ended(): void               // Interaction chama → Model executa
 }
 ```
 
-`DragInteraction` e `KeyboardInteraction` implementam `MovableInteraction` — mas a interface não sabe disso, nem precisa. Cada pacote define sua própria interface de Interaction, mínima e local ao módulo que a consome. Não existe um tipo global `Interaction` compartilhado entre pacotes — isso criaria acoplamento desnecessário e forçaria interfaces mais genéricas do que o necessário.
+`DragInteraction` e `KeyboardInteraction` **conformam-se a** `MovableInteraction` — recebem o protocolo como parâmetro e chamam seus métodos para comunicar informações ao Model. O Model é quem *implementa* (provê) a interface; as Interactions são quem a *consomem*. A interface não sabe que essas classes existem, nem precisa. Cada pacote define sua própria interface de Interaction, mínima e local ao módulo que a consome. Não existe um tipo global `Interaction` compartilhado entre pacotes — isso criaria acoplamento desnecessário e forçaria interfaces mais genéricas do que o necessário.
 
 **Analogia Swift:** protocols são definidos pelo *consumidor* — `protocol MovableInteraction` vive no módulo `Movable`, não no módulo `DragInteraction`. A conformação é retroativa: `DragInteraction` pode ser escrita sem saber que `MovableModel` existe.
 
@@ -466,9 +490,9 @@ O provedor de contexto (ex: `<MovableContext>`) não renderiza nenhuma tag HTML 
 > **`createContext` sobre `setContext`/`getContext` direto:** A implementação de contexto deve usar `createContext` do Svelte em vez de `setContext`/`getContext` com chave manual. `createContext` elimina a possibilidade de colisão de chaves e garante inferência de tipo sem cast.
 >
 > ```ts
-> // context.svelte.ts
+> // context.svelte.ts — pseudo-código ilustrativo
 > import { createContext } from 'svelte';
-> export const [getMovableContext, setMovableContext] = createContext<MovableModel>();
+> export const [getDomainContext, setDomainContext] = createContext<DomainModel>();
 > ```
 >
 > O padrão de DX permanece o mesmo — `MovableContext.use()` continua sendo o atalho público. A diferença é que a infraestrutura por baixo usa `createContext` para type safety nativa e eliminação de chaves manuais.
