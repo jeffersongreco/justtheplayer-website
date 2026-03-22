@@ -7,7 +7,7 @@ checklist_version: "2026-03-17"
 last_updated: "2026-03-21"
 
 conformance:
-  model:              complete      # §2 — 5 state vars (4 $state + 2 $state.raw), 5 derived, full lifecycle
+  model:              complete      # §2 — 6 state vars (4 $state + 2 $state.raw), 5 derived, full lifecycle
   coordinator:        complete      # §3 — dual $effect, WAAPI, interrupt strategies, untrack comments added
   interaction:        n/a           # §4 — no hardware input layer
   view:               complete      # §1 — renders state, captures intent, presentation names

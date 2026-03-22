@@ -672,7 +672,7 @@
   {/if}
 
   <div class="log">
-    {#each log as entry, idx (idx)}
+    {#each log as entry (entry)}
       <div class="entry">{entry}</div>
     {/each}
   </div>
@@ -755,6 +755,11 @@
   button:disabled {
     cursor: default;
     opacity: 0.4;
+  }
+
+  button:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
   }
 
   .target {
