@@ -8,6 +8,49 @@ export interface MovableRect {
   y: number;
 }
 
+// ---------------------------------------------------------------------------
+// MovableInteraction Protocol
+// ---------------------------------------------------------------------------
+// Defined by the consumer (Model). Interactions conform to this protocol
+// to communicate in the language the Model expects.
+
+export type MovePosition = { x: number; y: number };
+
+export type MoveLimits = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+};
+
+/** Element rect with viewport base coordinates at translate(0,0). */
+export type ItemRect = {
+  width: number;
+  height: number;
+  baseLeft: number;
+  baseTop: number;
+};
+
+/**
+ * The Model's interaction surface. Interactions are hardware translators
+ * that transform raw user input into calls to this protocol.
+ * The Model implements it; interactions receive it.
+ */
+export interface MovableInteraction {
+  readonly activeItemID: string | null;
+  activePosition: MovePosition;
+  began(
+    id: string,
+    group: MovableGroup,
+    position: MovePosition,
+    limits: MoveLimits,
+    rect: ItemRect
+  ): void;
+  changed(x: number, y: number): MovePosition;
+  ended(): void;
+  readonly rootEl: HTMLElement | null;
+}
+
 type PixelValue = number | `${number}px`;
 type PercentageValue = `${number}%`;
 export type PositionValue = PixelValue | PercentageValue;
@@ -34,6 +77,7 @@ interface MovableItemConfiguration {
   group?: MovableGroup;
   id?: string;
   initialPosition?: MovableItemPosition;
+  stepSize?: number;
   tabindex?: number;
 }
 
