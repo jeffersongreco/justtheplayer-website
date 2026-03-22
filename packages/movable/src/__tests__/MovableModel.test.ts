@@ -98,6 +98,12 @@ describe("S2 — Drag Lifecycle", () => {
     expect(model.activeItemGroup).toEqual(["ghost"]);
   });
 
+  it("beginMove initializes activePosition to origin", () => {
+    const model = withRoot(new MovableModel());
+    model.beginMove("item-1", [], origin({ x: 42, y: 99 }), lim(), dim());
+    expect(model.activePosition).toEqual({ x: 42, y: 99 });
+  });
+
   it("beginMove clears activeSensorID", () => {
     const model = withRoot(new MovableModel());
     sensor(model, "sensor-1");
