@@ -16,6 +16,7 @@ export class MovableItemCoordinator {
   #hasUserMoved = false;
   #rafId: number | null = null;
   #prevSensorId: string | null = null;
+  #prevIsActive = false;
   readonly #resizeObserver: ResizeObserver;
   readonly #interactions: { destroy(): void }[];
 
@@ -112,7 +113,15 @@ export class MovableItemCoordinator {
       const isActive = model.activeItemID === id;
       const liveRegion = model.liveRegionEl;
 
-      if (isActive && liveRegion && sensorId !== this.#prevSensorId) {
+      // Skip on the initial grab frame so the "Grabbed…" announcement is not overwritten
+      const justActivated = isActive && !this.#prevIsActive;
+
+      if (
+        isActive &&
+        !justActivated &&
+        liveRegion &&
+        sensorId !== this.#prevSensorId
+      ) {
         if (sensorId !== null) {
           liveRegion.textContent = "Over drop zone.";
         } else if (this.#prevSensorId !== null) {
@@ -120,6 +129,7 @@ export class MovableItemCoordinator {
         }
       }
       this.#prevSensorId = sensorId;
+      this.#prevIsActive = isActive;
     });
 
     // Interactions talk only to Model via the protocol — Coordinator is agnostic
