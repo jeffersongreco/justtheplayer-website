@@ -1,25 +1,8 @@
 import { DEV } from "esm-env";
 import { Geometry } from "./Geometry";
 import type { MovableGroup, MovableItemPosition } from "./Movable.types";
-import { createMovableDragInteraction } from "./MovableDragInteraction";
+import { MovableDragInteraction } from "./MovableDragInteraction.svelte";
 import type { MovableModel } from "./MovableModel.svelte";
-
-/**
- * Bridge API for DragInteraction to communicate with this Coordinator.
- * Will be simplified when Interaction is refactored to talk only to Model.
- */
-export interface MovableItemInteractionAPI {
-  demoteLayer(): void;
-  group: MovableGroup;
-  id: string;
-  markAsUserMoved(): void;
-  model: MovableModel;
-  moveTo(x: number, y: number): void;
-  node: HTMLElement;
-  promoteLayer(): void;
-  readonly x: number;
-  readonly y: number;
-}
 
 export class MovableItemCoordinator {
   readonly #el: HTMLElement;
@@ -32,7 +15,7 @@ export class MovableItemCoordinator {
   #hasUserMoved = false;
   #rafId: number | null = null;
   readonly #resizeObserver: ResizeObserver;
-  readonly #dragInteraction: { destroy(): void };
+  readonly #dragInteraction: MovableDragInteraction;
 
   constructor(
     el: HTMLElement,
@@ -53,6 +36,10 @@ export class MovableItemCoordinator {
       zIndex: "999",
       isolation: "isolate",
       willChange: "auto",
+      touchAction: "none",
+      userSelect: "none",
+      webkitUserSelect: "none",
+      cursor: "grab",
     });
 
     // ResizeObserver for initial position + smart anchor
@@ -78,10 +65,11 @@ export class MovableItemCoordinator {
       });
     }
 
-    // $effect observes model.activeItemID → manages rAF and visual state
+    // $effect observes model.activeItemID → manages rAF, cursor, will-change
     $effect(() => {
       const isActive = model.activeItemID === id;
       if (isActive) {
+        this.#hasUserMoved = true;
         el.style.willChange = "transform";
         el.style.cursor = "grabbing";
         this.#startRafLoop();
@@ -100,35 +88,8 @@ export class MovableItemCoordinator {
       }
     });
 
-    // Bridge API for old DragInteraction (will be removed in Interaction refactor)
-    const coordinator = this;
-    this.#dragInteraction = createMovableDragInteraction({
-      node: el,
-      model,
-      id,
-      group,
-      get x() {
-        return coordinator.#currentX;
-      },
-      get y() {
-        return coordinator.#currentY;
-      },
-      markAsUserMoved() {
-        coordinator.#hasUserMoved = true;
-      },
-      // No-op: $effect manages rAF via model.activeItemID observation
-      promoteLayer() {
-        /* managed by $effect */
-      },
-      // No-op: $effect manages rAF via model.activeItemID observation
-      demoteLayer() {
-        /* managed by $effect */
-      },
-      // No-op: rAF reads model.activePosition directly
-      moveTo() {
-        /* managed by rAF */
-      },
-    });
+    // Interaction talks only to Model — no Coordinator references
+    this.#dragInteraction = new MovableDragInteraction(el, model, id, group);
 
     if (DEV) {
       console.log(`[Movable:ItemCoordinator] mount → id="${id}"`);
