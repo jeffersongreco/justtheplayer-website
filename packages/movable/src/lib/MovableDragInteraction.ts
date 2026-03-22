@@ -1,7 +1,7 @@
-import type { MovableItemControllerInteractionAPI } from "./MovableItemController";
+import type { MovableItemInteractionAPI } from "./MovableItemCoordinator.svelte";
 
 export function createMovableDragInteraction(
-  controller: MovableItemControllerInteractionAPI
+  controller: MovableItemInteractionAPI
 ) {
   const { node, model, id, group } = controller;
 
