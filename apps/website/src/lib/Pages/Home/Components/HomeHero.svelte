@@ -28,9 +28,9 @@
   });
 </script>
 
-<Movable.Root>
-  {#snippet asChild({ root, model })}
-    <div use:root class="hero z-stack">
+<Movable.Context>
+  {#snippet asChild({ attach, model })}
+    <div {@attach attach} class="hero z-stack">
       <!-- Vídeo -->
       <div
         class="noise"
@@ -60,7 +60,7 @@
       </Movable.Item>
     </div>
   {/snippet}
-</Movable.Root>
+</Movable.Context>
 
 <style>
   .hero {
