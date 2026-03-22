@@ -33,6 +33,10 @@ export class MovableModel implements MovableInteraction {
   activePosition: MovePosition = { x: 0, y: 0 };
   /** Non-reactive DOM reference for Coordinators. Not part of Model state. */
   rootEl: HTMLElement | null = null;
+  /** Non-reactive DOM reference for a11y live region. Set by ContextCoordinator. */
+  liveRegionEl: HTMLElement | null = null;
+  /** Stable ID for keyboard instructions element. Set by ContextCoordinator. */
+  instructionsId: string | null = null;
 
   #limits: MoveLimits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
   #itemRect: ItemRect = { width: 0, height: 0, baseLeft: 0, baseTop: 0 };
