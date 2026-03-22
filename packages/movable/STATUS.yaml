@@ -3,24 +3,24 @@
 # Values: complete | partial | not_started | n/a
 # checklist_version: tracks which revision of §14 this was evaluated against
 
-checklist_version: "2026-03-17"
-last_updated: "2026-03-17"
+checklist_version: "2026-03-22"
+last_updated: "2026-03-22"
 
 conformance:
-  model:              partial       # §2 — exists, not audited against latest rules
-  controller:         partial       # §3 — exists, not audited
-  interaction:        partial       # §4 — exists (drag handling), not audited
-  view:               partial       # §1 — exists, not audited
-  api_surface:        partial       # §5 — exports exist, not audited against conventions
+  model:              complete      # §2 — pure state, #private $state, readonly $derived, zero DOM, createContext
+  coordinator:        complete      # §3 — ContextCoordinator + ItemCoordinator, $effect observes Model, {@attach}
+  interaction:        complete      # §4 — DragInteraction talks only to Model, all imperative DOM isolated
+  view:               complete      # §1 — zero business logic, {@attach}, children/asChild with never exclusivity
+  api_surface:        complete      # §5 — flat Movable.{Context,Item,Sensor}, createContext, attach functions
   animations:         n/a           # §6 — no animations in this package
-  resilience:         partial       # §7 — not audited
-  performance:        partial       # §8 — coordinate system exists, no benchmarks
-  naming:             partial       # §9 — not audited
+  resilience:         complete      # §7 — position: static auto-fix, structural validation, safe no-ops
+  performance:        complete      # §8 — rAF loop, non-reactive activePosition, Geometry utilities
+  naming:             complete      # §9 — domain-prefixed files, .svelte.ts suffixes, capability-based names
 
-  tests:              not_started   # §10 — no test files, no behavioral spec
-  logging:            not_started   # §11 — no structured logging
-  dev_page:           not_started   # §12 — no dev page, no dev script
-  guided_qa:          not_started   # §12 — no QA steps
-  accessibility:      not_started   # §13 — keyboard alternative, ARIA, reduced-motion all pending
-  size_limit:         complete      # §8 — 9.07 kB / 10 kB limit, wired to CI
-  benchmarks:         not_started   # §8 — not configured
+  tests:              complete      # §10 — behavioral spec, 64 automated tests (Geometry + Model), no UI tests
+  logging:            complete      # §11 — DEV-guarded console.log, console.warn for misuse, [Package:Layer] prefix
+  dev_page:           complete      # §12 — index.html + vite.config.ts + src/dev/, dev:movable alias
+  guided_qa:          complete      # §12 — 3 suites: Drag Lifecycle, Sensor Interaction, Smart Anchor
+  accessibility:      partial       # §13 — audit document exists, keyboard alternative + ARIA not yet implemented
+  size_limit:         complete      # §8 — wired to CI
+  benchmarks:         complete      # §8 — vitest bench, 4 Model benchmarks
