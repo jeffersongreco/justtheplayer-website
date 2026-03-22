@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type {
-  DragLimits,
-  DragOrigin,
-  ItemDimensions,
-} from "../lib/MovableModel.svelte";
+import type { ItemRect, MoveLimits, MovePosition } from "../lib/Movable.types";
 import { MovableModel } from "../lib/MovableModel.svelte";
 
 // ---------------------------------------------------------------------------
@@ -13,20 +9,20 @@ import { MovableModel } from "../lib/MovableModel.svelte";
 const SENSOR_RECT = { x: 50, y: 50, width: 100, height: 100 };
 const STUB_ROOT = {} as HTMLElement;
 
-function origin(overrides?: Partial<DragOrigin>): DragOrigin {
-  return { x: 100, y: 100, pointerX: 200, pointerY: 200, ...overrides };
+function pos(overrides?: Partial<MovePosition>): MovePosition {
+  return { x: 100, y: 100, ...overrides };
 }
 
-function lim(overrides?: Partial<DragLimits>): DragLimits {
+function lim(overrides?: Partial<MoveLimits>): MoveLimits {
   return { minX: 0, maxX: 500, minY: 0, maxY: 400, ...overrides };
 }
 
-function dim(overrides?: Partial<ItemDimensions>): ItemDimensions {
+function rect(overrides?: Partial<ItemRect>): ItemRect {
   return {
     width: 50,
     height: 50,
-    pointerOffsetX: -10,
-    pointerOffsetY: -10,
+    baseLeft: 10,
+    baseTop: 10,
     ...overrides,
   };
 }
@@ -38,7 +34,7 @@ function withRoot(model: MovableModel) {
 
 function beginDrag(model: MovableModel, id = "item-1", group: string[] = []) {
   withRoot(model);
-  model.beginMove(id, group, origin(), lim(), dim());
+  model.began(id, group, pos(), lim(), rect());
 }
 
 function sensor(model: MovableModel, id: string, accepts: string[] = []) {
@@ -86,62 +82,68 @@ describe("S1 — Idle State", () => {
 // ===========================================================================
 
 describe("S2 — Drag Lifecycle", () => {
-  it("beginMove sets activeItemID", () => {
+  it("began sets activeItemID", () => {
     const model = new MovableModel();
     beginDrag(model, "my-item");
     expect(model.activeItemID).toBe("my-item");
   });
 
-  it("beginMove sets activeItemGroup", () => {
+  it("began sets activeItemGroup", () => {
     const model = withRoot(new MovableModel());
-    model.beginMove("item-1", ["ghost"], origin(), lim(), dim());
+    model.began("item-1", ["ghost"], pos(), lim(), rect());
     expect(model.activeItemGroup).toEqual(["ghost"]);
   });
 
-  it("beginMove initializes activePosition to origin", () => {
+  it("began initializes activePosition to position", () => {
     const model = withRoot(new MovableModel());
-    model.beginMove("item-1", [], origin({ x: 42, y: 99 }), lim(), dim());
+    model.began("item-1", [], pos({ x: 42, y: 99 }), lim(), rect());
     expect(model.activePosition).toEqual({ x: 42, y: 99 });
   });
 
-  it("beginMove clears activeSensorID", () => {
+  it("began clears activeSensorID", () => {
     const model = withRoot(new MovableModel());
     sensor(model, "sensor-1");
-    model.beginMove("item-1", [], origin(), lim(), dim());
+    model.began("item-1", [], pos(), lim(), rect());
     expect(model.activeSensorID).toBeNull();
   });
 
-  it("beginMove is no-op without root", () => {
+  it("began is no-op without root", () => {
     const model = new MovableModel();
-    model.beginMove("item-1", [], origin(), lim(), dim());
+    model.began("item-1", [], pos(), lim(), rect());
     expect(model.activeItemID).toBeNull();
   });
 
-  it("updatePosition returns clamped coordinates", () => {
+  it("changed returns clamped coordinates", () => {
     const model = new MovableModel();
     beginDrag(model);
-    const pos = model.updatePosition(220, 220);
-    expect(pos.x).toBe(120);
-    expect(pos.y).toBe(120);
+    const result = model.changed(120, 120);
+    expect(result).toEqual({ x: 120, y: 120 });
   });
 
-  it("updatePosition writes to activePosition", () => {
+  it("changed clamps to limits", () => {
     const model = new MovableModel();
     beginDrag(model);
-    model.updatePosition(250, 250);
+    const result = model.changed(9999, -9999);
+    expect(result).toEqual({ x: 500, y: 0 });
+  });
+
+  it("changed writes to activePosition", () => {
+    const model = new MovableModel();
+    beginDrag(model);
+    model.changed(150, 150);
     expect(model.activePosition).toEqual({ x: 150, y: 150 });
   });
 
-  it("endMove clears activeItemID", () => {
+  it("ended clears activeItemID", () => {
     const model = new MovableModel();
     beginDrag(model);
-    model.endMove();
+    model.ended();
     expect(model.activeItemID).toBeNull();
   });
 
-  it("endMove when idle is safe (no-op)", () => {
+  it("ended when idle is safe (no-op)", () => {
     const model = new MovableModel();
-    expect(() => model.endMove()).not.toThrow();
+    expect(() => model.ended()).not.toThrow();
     expect(model.activeItemID).toBeNull();
   });
 });
@@ -159,42 +161,30 @@ describe("S2 — Drag Lifecycle", () => {
 describe("S4 — Boundary Clamping", () => {
   it("clamps position to minX", () => {
     const model = withRoot(new MovableModel());
-    model.beginMove("item-1", [], origin({ x: 50 }), lim({ minX: 50 }), dim());
-    const pos = model.updatePosition(0, 200);
-    expect(pos.x).toBe(50);
+    model.began("item-1", [], pos(), lim({ minX: 50 }), rect());
+    const result = model.changed(-10, 100);
+    expect(result.x).toBe(50);
   });
 
   it("clamps position to maxX", () => {
     const model = withRoot(new MovableModel());
-    model.beginMove(
-      "item-1",
-      [],
-      origin({ x: 400 }),
-      lim({ maxX: 400 }),
-      dim()
-    );
-    const pos = model.updatePosition(9999, 200);
-    expect(pos.x).toBe(400);
+    model.began("item-1", [], pos(), lim({ maxX: 400 }), rect());
+    const result = model.changed(9999, 100);
+    expect(result.x).toBe(400);
   });
 
   it("clamps position to minY", () => {
     const model = withRoot(new MovableModel());
-    model.beginMove("item-1", [], origin({ y: 0 }), lim({ minY: 0 }), dim());
-    const pos = model.updatePosition(200, -9999);
-    expect(pos.y).toBe(0);
+    model.began("item-1", [], pos(), lim({ minY: 20 }), rect());
+    const result = model.changed(100, -9999);
+    expect(result.y).toBe(20);
   });
 
   it("clamps position to maxY", () => {
     const model = withRoot(new MovableModel());
-    model.beginMove(
-      "item-1",
-      [],
-      origin({ y: 300 }),
-      lim({ maxY: 300 }),
-      dim()
-    );
-    const pos = model.updatePosition(200, 9999);
-    expect(pos.y).toBe(300);
+    model.began("item-1", [], pos(), lim({ maxY: 300 }), rect());
+    const result = model.changed(100, 9999);
+    expect(result.y).toBe(300);
   });
 });
 
@@ -229,7 +219,7 @@ describe("S5 — Collision Detection", () => {
   it("respects group filtering — matching group", () => {
     const model = withRoot(new MovableModel());
     sensor(model, "sensor-1", ["ghost"]);
-    model.beginMove("item-1", ["ghost"], origin(), lim(), dim());
+    model.began("item-1", ["ghost"], pos(), lim(), rect());
     model.detectCollisions({ x: 60, y: 60, width: 20, height: 20 });
     expect(model.activeSensorID).toBe("sensor-1");
   });
@@ -237,7 +227,7 @@ describe("S5 — Collision Detection", () => {
   it("respects group filtering — non-matching group", () => {
     const model = withRoot(new MovableModel());
     sensor(model, "sensor-1", ["ghost"]);
-    model.beginMove("item-1", ["solid"], origin(), lim(), dim());
+    model.began("item-1", ["solid"], pos(), lim(), rect());
     model.detectCollisions({ x: 60, y: 60, width: 20, height: 20 });
     expect(model.activeSensorID).toBeNull();
   });
@@ -245,7 +235,7 @@ describe("S5 — Collision Detection", () => {
   it("empty accepts matches any group", () => {
     const model = withRoot(new MovableModel());
     sensor(model, "sensor-1");
-    model.beginMove("item-1", ["anything"], origin(), lim(), dim());
+    model.began("item-1", ["anything"], pos(), lim(), rect());
     model.detectCollisions({ x: 60, y: 60, width: 20, height: 20 });
     expect(model.activeSensorID).toBe("sensor-1");
   });
@@ -256,6 +246,41 @@ describe("S5 — Collision Detection", () => {
     sensor(model, "sensor-2");
     model.detectCollisions({ x: 70, y: 70, width: 20, height: 20 });
     expect(model.activeSensorID).toBe("sensor-1");
+  });
+
+  it("changed triggers collision detection via itemRect", () => {
+    const model = withRoot(new MovableModel());
+    // Sensor at x:50, y:50, width:100, height:100
+    sensor(model, "sensor-1");
+    // Item with baseLeft:10, baseTop:10, width:50, height:50
+    // When changed(50, 50): collision rect = { x: 10+50=60, y: 10+50=60, w:50, h:50 }
+    // This overlaps the sensor at {50,50,100,100}
+    model.began(
+      "item-1",
+      [],
+      pos(),
+      lim(),
+      rect({ baseLeft: 10, baseTop: 10 })
+    );
+    model.changed(50, 50);
+    expect(model.activeSensorID).toBe("sensor-1");
+  });
+
+  it("changed clears collision when moving away from sensor", () => {
+    const model = withRoot(new MovableModel());
+    sensor(model, "sensor-1");
+    model.began(
+      "item-1",
+      [],
+      pos(),
+      lim(),
+      rect({ baseLeft: 10, baseTop: 10 })
+    );
+    model.changed(50, 50);
+    expect(model.activeSensorID).toBe("sensor-1");
+    // Move far away: collision rect = { x: 10+400=410, y: 10+400=410, w:50, h:50 }
+    model.changed(400, 400);
+    expect(model.activeSensorID).toBeNull();
   });
 });
 
@@ -305,17 +330,17 @@ describe("S6 — Sensor Registration", () => {
 describe("S8 — Multi-Item Isolation", () => {
   it("only one item can be active at a time", () => {
     const model = withRoot(new MovableModel());
-    model.beginMove("item-1", [], origin(), lim(), dim());
+    model.began("item-1", [], pos(), lim(), rect());
     expect(model.activeItemID).toBe("item-1");
-    model.beginMove("item-2", [], origin(), lim(), dim());
+    model.began("item-2", [], pos(), lim(), rect());
     expect(model.activeItemID).toBe("item-2");
   });
 
-  it("endMove does not affect other items' potential", () => {
+  it("ended does not affect other items' potential", () => {
     const model = withRoot(new MovableModel());
-    model.beginMove("item-1", [], origin(), lim(), dim());
-    model.endMove();
-    model.beginMove("item-2", [], origin(), lim(), dim());
+    model.began("item-1", [], pos(), lim(), rect());
+    model.ended();
+    model.began("item-2", [], pos(), lim(), rect());
     expect(model.activeItemID).toBe("item-2");
   });
 });
@@ -325,9 +350,9 @@ describe("S8 — Multi-Item Isolation", () => {
 // ===========================================================================
 
 describe("S9 — Edge Cases", () => {
-  it("beginMove without root is no-op", () => {
+  it("began without root is no-op", () => {
     const model = new MovableModel();
-    model.beginMove("item-1", [], origin(), lim(), dim());
+    model.began("item-1", [], pos(), lim(), rect());
     expect(model.activeItemID).toBeNull();
   });
 
@@ -347,12 +372,11 @@ describe("S9 — Edge Cases", () => {
     expect(model.hasRoot).toBe(true);
   });
 
-  it("updatePosition during drag returns clamped position", () => {
+  it("changed during drag returns clamped position", () => {
     const model = new MovableModel();
     beginDrag(model);
-    const pos = model.updatePosition(200, 200);
-    expect(pos.x).toBe(100);
-    expect(pos.y).toBe(100);
+    const result = model.changed(100, 100);
+    expect(result).toEqual({ x: 100, y: 100 });
   });
 
   it("collision detection with no sensors returns null", () => {

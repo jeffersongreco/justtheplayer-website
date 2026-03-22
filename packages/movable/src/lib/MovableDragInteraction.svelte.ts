@@ -1,25 +1,30 @@
-import type { MovableGroup } from "./Movable.types";
-import type { MovableModel } from "./MovableModel.svelte";
+import type { MovableGroup, MovableInteraction } from "./Movable.types";
 
 /**
- * Translates pointer hardware events into Model commands.
- * Talks only to Model — never references Coordinator or CSS.
- * All imperative DOM work (events, pointer capture, measurements) lives here.
+ * Translates pointer hardware events into protocol calls.
+ * Owns all pointer-specific math (delta computation, pointer capture).
+ * Talks only to the MovableInteraction protocol — never references
+ * Coordinator or CSS.
  */
 export class MovableDragInteraction {
   readonly #el: HTMLElement;
-  readonly #model: MovableModel;
+  readonly #protocol: MovableInteraction;
   readonly #id: string;
   readonly #group: MovableGroup;
 
+  #startPointerX = 0;
+  #startPointerY = 0;
+  #startX = 0;
+  #startY = 0;
+
   constructor(
     el: HTMLElement,
-    model: MovableModel,
+    protocol: MovableInteraction,
     id: string,
     group: MovableGroup
   ) {
     this.#el = el;
-    this.#model = model;
+    this.#protocol = protocol;
     this.#id = id;
     this.#group = group;
 
@@ -31,7 +36,7 @@ export class MovableDragInteraction {
       return;
     }
 
-    const rootEl = this.#model.rootEl;
+    const rootEl = this.#protocol.rootEl;
     if (!rootEl) {
       return;
     }
@@ -47,15 +52,16 @@ export class MovableDragInteraction {
     const currentX = currentTransform.m41;
     const currentY = currentTransform.m42;
 
-    this.#model.beginMove(
+    // Track pointer start for delta computation (pointer math stays here)
+    this.#startPointerX = e.clientX;
+    this.#startPointerY = e.clientY;
+    this.#startX = currentX;
+    this.#startY = currentY;
+
+    this.#protocol.began(
       this.#id,
       this.#group ?? [],
-      {
-        x: currentX,
-        y: currentY,
-        pointerX: e.clientX,
-        pointerY: e.clientY,
-      },
+      { x: currentX, y: currentY },
       {
         minX: currentX - (elRect.left - rootRect.left),
         maxX: currentX + (rootRect.right - elRect.right),
@@ -65,8 +71,8 @@ export class MovableDragInteraction {
       {
         width: elRect.width,
         height: elRect.height,
-        pointerOffsetX: elRect.left - e.clientX,
-        pointerOffsetY: elRect.top - e.clientY,
+        baseLeft: elRect.left - currentX,
+        baseTop: elRect.top - currentY,
       }
     );
 
@@ -76,18 +82,22 @@ export class MovableDragInteraction {
   };
 
   readonly #onMove = (e: PointerEvent) => {
-    if (this.#model.activeItemID !== this.#id) {
+    if (this.#protocol.activeItemID !== this.#id) {
       return;
     }
     if (e.cancelable) {
       e.preventDefault();
     }
 
-    this.#model.updatePosition(e.clientX, e.clientY);
+    // Pointer delta computation lives in the Interaction, not the Model
+    const x = this.#startX + (e.clientX - this.#startPointerX);
+    const y = this.#startY + (e.clientY - this.#startPointerY);
+
+    this.#protocol.changed(x, y);
   };
 
   readonly #onEnd = (e: PointerEvent) => {
-    this.#model.endMove();
+    this.#protocol.ended();
     this.#el.releasePointerCapture(e.pointerId);
 
     window.removeEventListener("pointermove", this.#onMove);
