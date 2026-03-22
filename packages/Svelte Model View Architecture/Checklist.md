@@ -8,7 +8,7 @@
 Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todos os itens se aplicam a todos os pacotes — marque **N/A** quando o item não for relevante (ex: Interaction não existe em componentes sem input de hardware).
 
 ### Model (§2)
-- [ ] Toda lógica de negócio vive no Model — Coordinator tem zero tomada de decisão
+- [ ] Toda lógica de negócio vive no Model — Coordinator tem zero tomada de decisão. Model não tem dependências de DOM.
 - [ ] Estado mutável usa `#field = $state()` (privado nativo JS, não convenção)
 - [ ] Estado imutável por design (substituído por inteiro, nunca mutado) usa `$state.raw` — sem overhead de Proxy
 - [ ] Estado público usa `readonly field = $derived(this.#field)`
@@ -54,7 +54,8 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Parâmetros que variam entre chamadas pertencem à chamada imperativa; fixos por instância podem ser props
 - [ ] `asChild` disponível com tipagem union + `never` para exclusividade com `children` — usado apenas como escape hatch de layout, não para acesso a estado
 - [ ] Estado efêmero acessível via snippet em ambos os caminhos (`children` e `asChild`)
-- [ ] `display: contents` como padrão para Modifiers; `flex + max-content` apenas quando necessário (documentar motivo)
+- [ ] Modifier comportamental (afeta apenas o elemento host, sem envolver filhos) implementado como função `{@attach}`, não como componente — zero overhead de lifecycle
+- [ ] `display: contents` como padrão para Modifiers estruturais; `flex + max-content` apenas quando necessário (documentar motivo)
 - [ ] Restrição `asChild`: não viável quando filho direto é componente Svelte (attachments exigem elemento DOM)
 - [ ] Context (`[Domain]Context`) usado como fronteira lógica invisível (sem tag HTML) em ecossistemas multi-componente
 - [ ] Context implementado com `createContext` (não `setContext`/`getContext` com chave manual) — type safety nativa, sem colisão de chaves
@@ -67,6 +68,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] `fill: 'none'` obrigatório — sem estado residual
 - [ ] `will-change` não é gerenciado imperativamente pelo Coordinator — WAAPI promove camadas automaticamente; CSS estático apenas se houver problema de performance medido
 - [ ] Propriedade CSS `translate` usada em keyframes (não `transform`) para evitar clash com posicionamento
+- [ ] `keyframes` pode ser declarado como `(el: HTMLElement) => Keyframe[]` quando a animação precisa do estado do elemento no momento do disparo (posição atual, dimensões)
 - [ ] Contratos tipados como unions discriminadas (ex: loop vs one-shot)
 
 ### Resiliência (§7)
@@ -97,10 +99,11 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Pure functions extraídas de Coordinators/Interactions com testes automatizados próprios
 - [ ] Zero testes automatizados de UI — verificação visual via dev page
 - [ ] Testes classificados com tags: `unit` (lógica isolada), `integration` (múltiplas camadas), `benchmark` (vitest bench), `slow` (timers reais)
+- [ ] Workflow de entrega em ordem: testes automatizados passam → Guided QA (todos os steps) → CodeRabbit review → findings corrigidos → PR aberto
 - [ ] Code review via CodeRabbit (`/coderabbit:review`) executado no terminal antes de abrir o PR
 
 ### Logging (§11)
-- [ ] Logs de debug permanentes no código, guardados por `DEV` do `esm-env`
+- [ ] Logs de debug usam `console.debug`, guardados por `DEV` do `esm-env` (eliminados em produção pelo bundler)
 - [ ] `console.warn` para uso incorreto da API e auto-correções (sempre presente)
 - [ ] `console.error` para falhas inesperadas (sempre presente)
 - [ ] Prefixo `[Package:Layer]` em todos os logs
@@ -118,7 +121,8 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Steps definidos como array de `QAStep` com todos os campos obrigatórios
 - [ ] Cada step tem título numerado, instrução em linguagem simples, `expectedLogs` e `humanChecklist`
 - [ ] Disclosure progressiva: controls de steps futuros não acessíveis antes do "Next →"
-- [ ] `qaLog(step, event)` emite para `console.log` E para o log panel com prefixo `[Package][step:N]`
+- [ ] `qaLog(step, event)` definido em `App.svelte` (não no package — o package não sabe que está sendo testado); emite para `console.log` E para o log panel com prefixo `[Package][step:N]`
+- [ ] `trigger` sem `triggerLabel`: dispara automaticamente na entrada do step (sem botão); `trigger` + `triggerLabel`: exibe botão habilitado apenas no step atual; "Next →" aparece apenas após o trigger disparar (ou imediatamente se não houver trigger)
 - [ ] `humanChecklist` contém apenas itens não capturáveis por logs (qualidade visual, subjetivo)
 - [ ] Modo livre e Guided QA coexistem via toggle na mesma dev page
 
@@ -127,7 +131,9 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Nenhuma animação pisca > 3Hz
 - [ ] Animação não bloqueia interação
 - [ ] Alternativa completa via teclado para interações de drag/mouse (quando aplicável)
+- [ ] Para packages de drag: a11y via teclado é feature arquitetural — Model deve ter os estados (`grabbed`) e métodos (`moveByStep(direction)`) desde o Behavioral Spec, não adicionados depois
 - [ ] ARIA roles e attributes para drag (quando aplicável)
+- [ ] Focus visible durante drag via teclado (quando aplicável)
 - [ ] Anúncio de estado via `aria-live` (quando aplicável)
 - [ ] Processo de 5 steps executado: Svelte warnings → axe-core → keyboard-only → VoiceOver → reduced-motion
 
