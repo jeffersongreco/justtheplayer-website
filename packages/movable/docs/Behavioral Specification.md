@@ -176,7 +176,31 @@ The system uses two positioning strategies depending on whether the user has int
 - Each draggable element is focusable via keyboard navigation.
 - The element exposes whether it has keyboard focus (focus-visible state).
 - Focus outlines are suppressed by default (visual styling is left to the consumer).
-- Full keyboard-driven drag (arrow keys, grab/release) is not yet implemented — see Accessibility Audit.
+
+### 12.1 Keyboard Grab
+
+- Pressing Enter or Space on a focused draggable element begins a keyboard move ("grab").
+- Pressing Enter, Space, or Escape while grabbed ends the keyboard move ("release").
+- Grabbing an element via keyboard activates the same state as a pointer drag: the element becomes the active item, and all visual indicators (cursor, will-change, ARIA) update accordingly.
+
+### 12.2 Keyboard Movement
+
+- While grabbed, Arrow keys move the element in discrete steps (default 10px, configurable via `stepSize` prop).
+- Each arrow key press moves in one axis only: Left/Right for horizontal, Up/Down for vertical.
+- Position is clamped to the bounded area's limits on each step (same as pointer drag).
+- Collision detection runs on each step (same as pointer drag).
+- Visual updates are batched to the next animation frame (same as pointer drag).
+
+### 12.3 Interaction Isolation
+
+- Keyboard and pointer interactions share the same active-item state on the Model.
+- The single-active-drag invariant holds across input methods: grabbing via keyboard while another item is pointer-dragged (or vice versa) replaces the active item.
+- Arrow keys without a prior grab do not move the element — normal browser scroll behavior is preserved.
+
+### 12.4 ARIA
+
+- Each draggable element has `aria-roledescription="draggable"`.
+- The `aria-grabbed` attribute reflects whether the element is currently being moved (either via pointer or keyboard).
 
 ---
 
