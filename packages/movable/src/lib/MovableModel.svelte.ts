@@ -1,8 +1,10 @@
-import { getContext, setContext } from "svelte";
+import { DEV } from "esm-env";
+import { createContext } from "svelte";
 import { Geometry } from "./Geometry";
-import type { MovableGroup, MovableRect } from "./types";
+import type { MovableGroup, MovableRect } from "./Movable.types";
 
-const CONTEXT_KEY = Symbol("MOVABLE_MODEL");
+export const [getMovableContext, setMovableContext] =
+  createContext<MovableModel>();
 
 type SensorConfiguration = {
   rect: MovableRect;
@@ -10,74 +12,68 @@ type SensorConfiguration = {
 };
 
 export class MovableModel {
-  static provide(): MovableModel {
-    const model = new MovableModel();
-    setContext(CONTEXT_KEY, model);
-    return model;
-  }
+  #activeItemID = $state<string | null>(null);
+  #activeItemGroup = $state<MovableGroup>([]);
+  #activeSensorID = $state<string | null>(null);
+  #rootEl = $state<HTMLElement | null>(null);
 
-  static get(): MovableModel {
-    const model = getContext<MovableModel>(CONTEXT_KEY);
-    if (!model) {
-      throw new Error("Movable components must be inside a <Movable.Root>.");
-    }
-    return model;
-  }
+  readonly activeItemID = $derived(this.#activeItemID);
+  readonly activeItemGroup = $derived(this.#activeItemGroup);
+  readonly activeSensorID = $derived(this.#activeSensorID);
+  readonly rootEl = $derived(this.#rootEl);
 
-  activeItemID = $state<string | null>(null);
-  activeItemGroup = $state<MovableGroup>([]);
-  activeSensorID = $state<string | null>(null);
-  rootNode = $state<HTMLElement | null>(null);
-  pointerPos = $state({ x: 0, y: 0 });
+  /** Non-reactive position for rAF reads. Written by updatePosition, read by Coordinator. */
+  activePosition = { x: 0, y: 0 };
+  /** Non-reactive pointer position for collision detection. */
+  pointerPos = { x: 0, y: 0 };
 
   #limits = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
   #dragStart = { x: 0, y: 0, mouseX: 0, mouseY: 0 };
   #dims = { w: 0, h: 0, offsetX: 0, offsetY: 0 };
   readonly #sensors = new Map<string, SensorConfiguration>();
 
-  get targetCount() {
+  get sensorCount() {
     return this.#sensors.size;
   }
 
   isOverSensor(id: string): boolean {
-    return this.activeSensorID === id;
+    return this.#activeSensorID === id;
   }
 
-  beginMove(
-    e: PointerEvent,
-    node: HTMLElement,
-    id: string,
-    group: MovableGroup
-  ) {
-    if (!this.rootNode) {
+  beginMove(e: PointerEvent, el: HTMLElement, id: string, group: MovableGroup) {
+    if (!this.#rootEl) {
       return;
     }
 
-    this.activeSensorID = null;
-    this.activeItemID = id;
-    this.activeItemGroup = group;
+    if (DEV) {
+      console.log(`[Movable:Model] beginMove → item="${id}"`);
+    }
 
-    const nodeRect = node.getBoundingClientRect();
-    const rootRect = this.rootNode.getBoundingClientRect();
+    this.#activeSensorID = null;
+    this.#activeItemID = id;
+    this.#activeItemGroup = group;
+
+    const elRect = el.getBoundingClientRect();
+    const rootRect = this.#rootEl.getBoundingClientRect();
 
     this.#dims = {
-      w: nodeRect.width,
-      h: nodeRect.height,
-      offsetX: nodeRect.left - e.clientX,
-      offsetY: nodeRect.top - e.clientY,
+      w: elRect.width,
+      h: elRect.height,
+      offsetX: elRect.left - e.clientX,
+      offsetY: elRect.top - e.clientY,
     };
 
     const currentTransform = new WebKitCSSMatrix(
-      window.getComputedStyle(node).transform
+      window.getComputedStyle(el).transform
     );
     const currentX = currentTransform.m41;
     const currentY = currentTransform.m42;
 
     this.#limits = {
-      minX: currentX - (nodeRect.left - rootRect.left),
-      maxX: currentX + (rootRect.right - nodeRect.right),
-      minY: currentY - (nodeRect.top - rootRect.top),
-      maxY: currentY + (rootRect.bottom - nodeRect.bottom),
+      minX: currentX - (elRect.left - rootRect.left),
+      maxX: currentX + (rootRect.right - elRect.right),
+      minY: currentY - (elRect.top - rootRect.top),
+      maxY: currentY + (rootRect.bottom - elRect.bottom),
     };
 
     this.#dragStart = {
@@ -103,6 +99,7 @@ export class MovableModel {
       this.#limits.maxY
     );
 
+    this.activePosition = { x, y };
     this.pointerPos = { x: e.clientX, y: e.clientY };
 
     this.detectCollisions({
@@ -116,7 +113,10 @@ export class MovableModel {
   }
 
   endMove() {
-    this.activeItemID = null;
+    if (DEV && this.#activeItemID) {
+      console.log(`[Movable:Model] endMove → item="${this.#activeItemID}"`);
+    }
+    this.#activeItemID = null;
   }
 
   detectCollisions(rect: MovableRect) {
@@ -126,26 +126,35 @@ export class MovableModel {
       if (
         Geometry.intersects(rect, config.rect) &&
         (config.accepts.length === 0 ||
-          this.activeItemGroup.some((g) => config.accepts.includes(g)))
+          this.#activeItemGroup.some((g) => config.accepts.includes(g)))
       ) {
         hitId = id;
         break;
       }
     }
-    if (this.activeSensorID !== hitId) {
-      this.activeSensorID = hitId;
+    if (this.#activeSensorID !== hitId) {
+      this.#activeSensorID = hitId;
     }
   }
 
   registerSensor(id: string, rect: MovableRect, accepts: MovableGroup) {
+    if (DEV) {
+      console.log(`[Movable:Model] registerSensor → "${id}"`);
+    }
     this.#sensors.set(id, { rect, accepts });
   }
 
   unregisterSensor(id: string) {
+    if (DEV) {
+      console.log(`[Movable:Model] unregisterSensor → "${id}"`);
+    }
     this.#sensors.delete(id);
   }
 
-  registerRoot(node: HTMLElement | null) {
-    this.rootNode = node;
+  registerRoot(el: HTMLElement | null) {
+    if (DEV) {
+      console.log(`[Movable:Model] registerRoot → ${el ? "element" : "null"}`);
+    }
+    this.#rootEl = el;
   }
 }

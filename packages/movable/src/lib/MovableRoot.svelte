@@ -1,12 +1,13 @@
 <script lang="ts">
   import type { Action } from "svelte/action";
-  import { MovableModel } from "./MovableModel.svelte";
+  import type { MovableRootProps } from "./Movable.types";
+  import { MovableModel, setMovableContext } from "./MovableModel.svelte";
   import { createMovableRootController } from "./MovableRootController";
-  import type { MovableRootProps } from "./types";
 
   let { asChild }: MovableRootProps = $props();
 
-  const model = MovableModel.provide();
+  const model = new MovableModel();
+  setMovableContext(model);
 
   const root: Action<HTMLElement> = (node) => {
     const controller = createMovableRootController(node, model);
