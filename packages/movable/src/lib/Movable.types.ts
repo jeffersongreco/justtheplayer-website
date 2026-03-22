@@ -22,11 +22,22 @@ export type MovableContainerDimension = number;
 
 export type MovableGroup = string[];
 
+export interface MovableContextState {
+  attach: (el: HTMLElement) => () => void;
+  model: MovableModel;
+}
+
+export type MovableContextProps =
+  | { asChild: Snippet<[MovableContextState]>; children?: never }
+  | { asChild?: never; children?: Snippet<[{ model: MovableModel }]> };
+
+/** @deprecated Use MovableContextState */
 export interface MovableRootState {
   model: MovableModel;
   root: Action<HTMLElement>;
 }
 
+/** @deprecated Use MovableContextProps */
 export interface MovableRootProps {
   asChild: Snippet<[MovableRootState]>;
 }
