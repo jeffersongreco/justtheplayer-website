@@ -82,6 +82,7 @@ export class MovableModel {
     }
 
     this.#activeSensorID = null;
+    this.activePosition = { x: origin.x, y: origin.y };
     this.#activeItemID = id;
     this.#activeItemGroup = group;
     this.#dragStart = origin;
