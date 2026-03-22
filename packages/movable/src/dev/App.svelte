@@ -182,7 +182,7 @@
             "With the blue item focused, press Enter. Verify the item enters grabbed state.",
           expectedLogs: [],
           humanChecklist: [
-            "data-dragging attribute becomes 'true'",
+            "data-moving attribute becomes 'true'",
             "Cursor changes to grabbing",
             "aria-grabbed attribute becomes 'true'",
             "Item visual indicates grabbed state (shadow, opacity)",
@@ -221,7 +221,7 @@
             "Item stays at its last keyboard-moved position",
             "Cursor returns to grab",
             "aria-grabbed returns to 'false'",
-            "data-dragging returns to 'false'",
+            "data-moving returns to 'false'",
           ],
         },
         {
@@ -500,16 +500,21 @@
 
   .ghost {
     font-size: 80px;
-    animation: float 3s ease-in-out infinite;
   }
 
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px) rotate(5deg);
+  @media (prefers-reduced-motion: no-preference) {
+    .ghost {
+      animation: float 3s ease-in-out infinite;
     }
-    50% {
-      transform: translateY(-30px) rotate(-5deg);
+
+    @keyframes float {
+      0%,
+      100% {
+        transform: translateY(0px) rotate(5deg);
+      }
+      50% {
+        transform: translateY(-30px) rotate(-5deg);
+      }
     }
   }
 

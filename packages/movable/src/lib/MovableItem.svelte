@@ -48,7 +48,7 @@
   <div
     {@attach attach}
     class="movable"
-    data-dragging={isMoving}
+    data-moving={isMoving}
     role="button"
     {tabindex}
     onfocus={handleFocus}
@@ -72,7 +72,7 @@
     outline: none;
   }
 
-  .movable[data-dragging="true"] :global(*) {
+  .movable[data-moving="true"] :global(*) {
     animation-play-state: paused !important;
   }
 </style>

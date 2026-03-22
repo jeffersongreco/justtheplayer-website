@@ -12,19 +12,22 @@ export class MovableKeyboardInteraction {
   readonly #id: string;
   readonly #group: MovableGroup;
   readonly #stepSize: number;
+  readonly #onPositionChanged?: (x: number, y: number) => void;
 
   constructor(
     el: HTMLElement,
     protocol: MovableInteraction,
     id: string,
     group: MovableGroup,
-    stepSize = 10
+    stepSize = 10,
+    onPositionChanged?: (x: number, y: number) => void
   ) {
     this.#el = el;
     this.#protocol = protocol;
     this.#id = id;
     this.#group = group;
     this.#stepSize = stepSize;
+    this.#onPositionChanged = onPositionChanged;
 
     el.addEventListener("keydown", this.#onKeyDown);
   }
@@ -44,6 +47,12 @@ export class MovableKeyboardInteraction {
 
     if (e.key === "Escape" && isGrabbed) {
       e.preventDefault();
+      this.#protocol.ended();
+      return;
+    }
+
+    if (e.key === "Tab" && isGrabbed) {
+      // Release grab but allow Tab to navigate naturally — no preventDefault
       this.#protocol.ended();
       return;
     }
@@ -76,7 +85,8 @@ export class MovableKeyboardInteraction {
     e.preventDefault();
 
     const { x, y } = this.#protocol.activePosition;
-    this.#protocol.changed(x + dx, y + dy);
+    const newPos = this.#protocol.changed(x + dx, y + dy);
+    this.#onPositionChanged?.(newPos.x, newPos.y);
   };
 
   #beginKeyboardMove() {

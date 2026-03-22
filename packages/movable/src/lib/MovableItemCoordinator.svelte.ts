@@ -15,6 +15,7 @@ export class MovableItemCoordinator {
   #currentY = 0;
   #hasUserMoved = false;
   #rafId: number | null = null;
+  #prevSensorId: string | null = null;
   readonly #resizeObserver: ResizeObserver;
   readonly #interactions: { destroy(): void }[];
 
@@ -46,7 +47,10 @@ export class MovableItemCoordinator {
 
     // ARIA attributes for drag state
     el.setAttribute("aria-roledescription", "draggable");
-    el.setAttribute("aria-grabbed", "false");
+    el.setAttribute("aria-pressed", "false");
+    if (model.instructionsId) {
+      el.setAttribute("aria-describedby", model.instructionsId);
+    }
 
     // ResizeObserver for initial position + smart anchor
     this.#resizeObserver = new ResizeObserver(() => {
@@ -78,12 +82,12 @@ export class MovableItemCoordinator {
         this.#hasUserMoved = true;
         el.style.willChange = "transform";
         el.style.cursor = "grabbing";
-        el.setAttribute("aria-grabbed", "true");
+        el.setAttribute("aria-pressed", "true");
         this.#startRafLoop();
       } else {
         el.style.willChange = "auto";
         el.style.cursor = "grab";
-        el.setAttribute("aria-grabbed", "false");
+        el.setAttribute("aria-pressed", "false");
         // Sync final position before stopping rAF
         if (this.#rafId) {
           const { x, y } = model.activePosition;
@@ -94,12 +98,38 @@ export class MovableItemCoordinator {
         }
         this.#stopRafLoop();
       }
+      const liveRegion = model.liveRegionEl;
+      if (liveRegion) {
+        liveRegion.textContent = isActive
+          ? "Grabbed. Use arrow keys to move. Press Escape or Tab to release."
+          : "Released.";
+      }
+    });
+
+    // $effect observes model.activeSensorID → announces proximity to screen readers
+    $effect(() => {
+      const sensorId = model.activeSensorID;
+      const isActive = model.activeItemID === id;
+      const liveRegion = model.liveRegionEl;
+
+      if (isActive && liveRegion && sensorId !== this.#prevSensorId) {
+        if (sensorId !== null) {
+          liveRegion.textContent = "Over drop zone.";
+        } else if (this.#prevSensorId !== null) {
+          liveRegion.textContent = "Left drop zone.";
+        }
+      }
+      this.#prevSensorId = sensorId;
     });
 
     // Interactions talk only to Model via the protocol — Coordinator is agnostic
     this.#interactions = [
       new MovableDragInteraction(el, model, id, group),
-      new MovableKeyboardInteraction(el, model, id, group, stepSize),
+      new MovableKeyboardInteraction(el, model, id, group, stepSize, (x, y) => {
+        if (model.liveRegionEl) {
+          model.liveRegionEl.textContent = `Position: ${Math.round(x)}, ${Math.round(y)}`;
+        }
+      }),
     ];
 
     if (DEV) {
