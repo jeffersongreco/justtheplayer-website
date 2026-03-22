@@ -158,6 +158,86 @@
         },
       ],
     },
+    {
+      id: "keyboard-interaction",
+      title: "Keyboard Interaction",
+      description:
+        "Tests keyboard-driven movement: focus, grab/release, arrow key steps, and boundary clamping.",
+      steps: [
+        {
+          title: "Step 1 of 6: Focus via Tab",
+          instruction:
+            "Press Tab until the blue item receives focus. Verify the focus ring appears.",
+          trigger: () => qaLog(1, "state: idle, awaiting focus"),
+          expectedLogs: ["[Movable][step:1] state: idle, awaiting focus"],
+          humanChecklist: [
+            "Blue item receives focus via Tab",
+            "Focus ring (outline) is visible on the item",
+            "No visual change to position — item stays still",
+          ],
+        },
+        {
+          title: "Step 2 of 6: Grab with Enter",
+          instruction:
+            "With the blue item focused, press Enter. Verify the item enters grabbed state.",
+          expectedLogs: [],
+          humanChecklist: [
+            "data-dragging attribute becomes 'true'",
+            "Cursor changes to grabbing",
+            "aria-grabbed attribute becomes 'true'",
+            "Item visual indicates grabbed state (shadow, opacity)",
+          ],
+        },
+        {
+          title: "Step 3 of 6: Arrow key movement",
+          instruction:
+            "Press Arrow keys (Up, Down, Left, Right) repeatedly. Verify the item moves in 10px steps.",
+          expectedLogs: [],
+          humanChecklist: [
+            "ArrowRight moves item right ~10px per press",
+            "ArrowLeft moves item left ~10px per press",
+            "ArrowDown moves item down ~10px per press",
+            "ArrowUp moves item up ~10px per press",
+            "Movement is smooth with no jank",
+          ],
+        },
+        {
+          title: "Step 4 of 6: Boundary clamping via keyboard",
+          instruction:
+            "Keep pressing an Arrow key until the item reaches the canvas edge.",
+          expectedLogs: [],
+          humanChecklist: [
+            "Item stops at canvas edge — does not escape bounds",
+            "Subsequent presses in the same direction have no effect",
+            "Movement in other directions still works",
+          ],
+        },
+        {
+          title: "Step 5 of 6: Release with Escape",
+          instruction:
+            "Press Escape to release the item. Verify it returns to idle state.",
+          expectedLogs: [],
+          humanChecklist: [
+            "Item stays at its last keyboard-moved position",
+            "Cursor returns to grab",
+            "aria-grabbed returns to 'false'",
+            "data-dragging returns to 'false'",
+          ],
+        },
+        {
+          title: "Step 6 of 6: Grab with Space, release with Space",
+          instruction:
+            "Press Space to grab, move with arrows, then press Space again to release.",
+          expectedLogs: [],
+          humanChecklist: [
+            "Space toggles grab on (same as Enter)",
+            "Arrow keys move while grabbed",
+            "Space toggles grab off (same as Enter/Escape)",
+            "Pointer drag still works after keyboard release",
+          ],
+        },
+      ],
+    },
   ];
 
   const suite = $derived(
