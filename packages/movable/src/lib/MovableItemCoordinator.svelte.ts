@@ -2,6 +2,7 @@ import { DEV } from "esm-env";
 import { Geometry } from "./Geometry";
 import type { MovableGroup, MovableItemPosition } from "./Movable.types";
 import { MovableDragInteraction } from "./MovableDragInteraction.svelte";
+import { MovableKeyboardInteraction } from "./MovableKeyboardInteraction.svelte";
 import type { MovableModel } from "./MovableModel.svelte";
 
 export class MovableItemCoordinator {
@@ -15,14 +16,15 @@ export class MovableItemCoordinator {
   #hasUserMoved = false;
   #rafId: number | null = null;
   readonly #resizeObserver: ResizeObserver;
-  readonly #dragInteraction: MovableDragInteraction;
+  readonly #interactions: { destroy(): void }[];
 
   constructor(
     el: HTMLElement,
     model: MovableModel,
     id: string,
     initialPosition: MovableItemPosition,
-    group: MovableGroup
+    group: MovableGroup,
+    stepSize?: number
   ) {
     this.#el = el;
     this.#model = model;
@@ -41,6 +43,10 @@ export class MovableItemCoordinator {
       webkitUserSelect: "none",
       cursor: "grab",
     });
+
+    // ARIA attributes for drag state
+    el.setAttribute("aria-roledescription", "draggable");
+    el.setAttribute("aria-grabbed", "false");
 
     // ResizeObserver for initial position + smart anchor
     this.#resizeObserver = new ResizeObserver(() => {
@@ -65,17 +71,19 @@ export class MovableItemCoordinator {
       });
     }
 
-    // $effect observes model.activeItemID → manages rAF, cursor, will-change
+    // $effect observes model.activeItemID → manages rAF, cursor, will-change, ARIA
     $effect(() => {
       const isActive = model.activeItemID === id;
       if (isActive) {
         this.#hasUserMoved = true;
         el.style.willChange = "transform";
         el.style.cursor = "grabbing";
+        el.setAttribute("aria-grabbed", "true");
         this.#startRafLoop();
       } else {
         el.style.willChange = "auto";
         el.style.cursor = "grab";
+        el.setAttribute("aria-grabbed", "false");
         // Sync final position before stopping rAF
         if (this.#rafId) {
           const { x, y } = model.activePosition;
@@ -88,8 +96,11 @@ export class MovableItemCoordinator {
       }
     });
 
-    // Interaction talks only to Model — no Coordinator references
-    this.#dragInteraction = new MovableDragInteraction(el, model, id, group);
+    // Interactions talk only to Model via the protocol — Coordinator is agnostic
+    this.#interactions = [
+      new MovableDragInteraction(el, model, id, group),
+      new MovableKeyboardInteraction(el, model, id, group, stepSize),
+    ];
 
     if (DEV) {
       console.log(`[Movable:ItemCoordinator] mount → id="${id}"`);
@@ -187,7 +198,9 @@ export class MovableItemCoordinator {
       console.log(`[Movable:ItemCoordinator] destroy → id="${this.#id}"`);
     }
     this.#resizeObserver.disconnect();
-    this.#dragInteraction.destroy();
+    for (const interaction of this.#interactions) {
+      interaction.destroy();
+    }
     this.#stopRafLoop();
   }
 }

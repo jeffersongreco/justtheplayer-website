@@ -7,6 +7,7 @@
     id = crypto.randomUUID(),
     initialPosition = { x: "50%", y: "50%" },
     group = [],
+    stepSize,
     tabindex = 0,
     children,
     asChild,
@@ -20,7 +21,8 @@
       model,
       id,
       initialPosition,
-      group
+      group,
+      stepSize
     );
     return () => coordinator.destroy();
   }
