@@ -15,6 +15,7 @@
     "dist"
   ],
   "scripts": {
+    "dev": "vite dev",
     "version": "bun run ../../scripts/generate-version.ts packages/movable",
     "build": "svelte-package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
@@ -22,7 +23,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "size": "size-limit"
+    "size": "size-limit",
+    "bench": "vitest bench"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
@@ -36,6 +38,7 @@
     "svelte": "^5.43.8",
     "svelte-check": "^4.3.4",
     "typescript": "^5.9.3",
+    "vite": "^8.0.0",
     "vitest": "^4.1.0"
   },
   "dependencies": {
