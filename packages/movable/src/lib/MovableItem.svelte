@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Action } from "svelte/action";
+  import type { MovableItemProps } from "./Movable.types";
   import { createMovableItemController } from "./MovableItemController";
-  import { MovableModel } from "./MovableModel.svelte";
-  import type { MovableItemProps } from "./types";
+  import { getMovableContext } from "./MovableModel.svelte";
 
   let {
     id = crypto.randomUUID(),
@@ -14,7 +14,7 @@
     asChild,
   }: MovableItemProps = $props();
 
-  const model = MovableModel.get();
+  const model = getMovableContext();
 
   const item: Action<HTMLElement> = (node) => {
     const controller = createMovableItemController(

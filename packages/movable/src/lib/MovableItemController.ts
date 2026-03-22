@@ -1,7 +1,7 @@
 import { Geometry } from "./Geometry";
+import type { MovableGroup, MovableItemPosition } from "./Movable.types";
 import { createMovableDragInteraction } from "./MovableDragInteraction";
 import type { MovableModel } from "./MovableModel.svelte";
-import type { MovableGroup, MovableItemPosition } from "./types";
 
 export interface MovableItemControllerInteractionAPI {
   demoteLayer(): void;
@@ -42,7 +42,7 @@ export function createMovableItemController(
   });
 
   const validateStructure = () => {
-    const root = model.rootNode;
+    const root = model.rootEl;
     if (!root) {
       return false;
     }
@@ -57,7 +57,7 @@ export function createMovableItemController(
   };
 
   const resolvePosition = () => {
-    const root = model.rootNode;
+    const root = model.rootEl;
     if (!root || (root.clientWidth === 0 && root.clientHeight === 0)) {
       return false;
     }
@@ -78,7 +78,7 @@ export function createMovableItemController(
   };
 
   const handleResize = () => {
-    const root = model.rootNode;
+    const root = model.rootEl;
     if (!root) {
       return;
     }
@@ -110,13 +110,13 @@ export function createMovableItemController(
     handleResize();
   });
 
-  if (model.rootNode) {
-    resizeObserver.observe(model.rootNode);
+  if (model.rootEl) {
+    resizeObserver.observe(model.rootEl);
     resolvePosition();
   } else {
     requestAnimationFrame(() => {
-      if (model.rootNode) {
-        resizeObserver.observe(model.rootNode);
+      if (model.rootEl) {
+        resizeObserver.observe(model.rootEl);
         resolvePosition();
       }
     });

@@ -37,5 +37,8 @@
     "svelte-check": "^4.3.4",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"
+  },
+  "dependencies": {
+    "esm-env": "^1.2.2"
   }
 }

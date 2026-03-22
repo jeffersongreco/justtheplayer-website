@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { getContext, type Snippet } from "svelte";
   import type { Action } from "svelte/action";
-  import { MovableModel } from "./MovableModel.svelte";
-  import type { MovableSensorProps } from "./types";
+  import type { MovableSensorProps } from "./Movable.types";
+  import { getMovableContext } from "./MovableModel.svelte";
 
   let {
     id = crypto.randomUUID(),
@@ -13,7 +12,7 @@
     asChild,
   }: MovableSensorProps = $props();
 
-  const model = MovableModel.get();
+  const model = getMovableContext();
 
   const sensor: Action<HTMLElement> = (node) => {
     model.registerSensor(id, node.getBoundingClientRect(), accepts);
