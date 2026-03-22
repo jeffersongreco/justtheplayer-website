@@ -88,7 +88,7 @@ export class MovableKeyboardInteraction {
     const elRect = this.#el.getBoundingClientRect();
     const rootRect = rootEl.getBoundingClientRect();
 
-    const currentTransform = new WebKitCSSMatrix(
+    const currentTransform = new DOMMatrix(
       window.getComputedStyle(this.#el).transform
     );
     const currentX = currentTransform.m41;

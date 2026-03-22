@@ -181,7 +181,7 @@ The system uses two positioning strategies depending on whether the user has int
 
 - Pressing Enter or Space on a focused draggable element begins a keyboard move ("grab").
 - Pressing Enter, Space, or Escape while grabbed ends the keyboard move ("release").
-- Grabbing an element via keyboard activates the same state as a pointer drag: the element becomes the active item, and all visual indicators (cursor, will-change, ARIA) update accordingly.
+- Grabbing an element via keyboard activates the same state as a pointer drag: the element becomes the active item, and all visual indicators (will-change, ARIA) update accordingly.
 
 ### 12.2 Keyboard Movement
 
@@ -194,7 +194,7 @@ The system uses two positioning strategies depending on whether the user has int
 ### 12.3 Interaction Isolation
 
 - Keyboard and pointer interactions share the same active-item state on the Model.
-- The single-active-drag invariant holds across input methods: grabbing via keyboard while another item is pointer-dragged (or vice versa) replaces the active item.
+- The single-active-drag invariant holds across input methods: beginning a grab (keyboard or pointer) on any item while a different item is being dragged ends the previous drag and makes the newly grabbed item active.
 - Arrow keys without a prior grab do not move the element — normal browser scroll behavior is preserved.
 
 ### 12.4 ARIA
