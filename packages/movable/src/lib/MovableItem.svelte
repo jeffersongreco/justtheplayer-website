@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Action } from "svelte/action";
   import type { MovableItemProps } from "./Movable.types";
-  import { createMovableItemController } from "./MovableItemController";
+  import { MovableItemCoordinator } from "./MovableItemCoordinator.svelte";
   import { getMovableContext } from "./MovableModel.svelte";
 
   let {
@@ -16,15 +16,15 @@
 
   const model = getMovableContext();
 
-  const item: Action<HTMLElement> = (node) => {
-    const controller = createMovableItemController(
-      node,
+  const item: Action<HTMLElement> = (el) => {
+    const coordinator = new MovableItemCoordinator(
+      el,
       model,
       id,
       initialPosition,
       group
     );
-    return { destroy: controller.destroy };
+    return { destroy: () => coordinator.destroy() };
   };
 
   let isMoving = $derived(model.activeItemID === id);
