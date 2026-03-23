@@ -39,7 +39,7 @@
 
   onMount(() => {
     const t = setTimeout(() => {
-      addLog("▶ request() em ambos");
+      addLog("▶ request() on both");
       attentionDiscard.request(animationDiscard);
       attentionResume.request(animationResume);
     }, 500);
@@ -68,7 +68,7 @@
   <div class="controls">
     <button
       onclick={() => {
-      addLog("▶ request() em ambos");
+      addLog("▶ request() on both");
       attentionDiscard.request(animationDiscard);
       attentionResume.request(animationResume);
     }}
@@ -87,7 +87,7 @@
 
     <button
       onclick={() => {
-      addLog("⏹ cancel() em ambos");
+      addLog("⏹ cancel() on both");
       attentionDiscard.cancel();
       attentionResume.cancel();
     }}
@@ -95,7 +95,7 @@
       cancel()
     </button>
 
-    <button onclick={() => (log = [])}>limpar log</button>
+    <button onclick={() => (log = [])}>clear log</button>
   </div>
 
   <div class="log">
