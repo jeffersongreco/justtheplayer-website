@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { ItemRect, MoveLimits, MovePosition } from "../lib/Movable.types";
+import type {
+  ItemRect,
+  MoveLimits,
+  MovePosition,
+} from "../lib/Movable.internal-types";
 import { MovableModel } from "../lib/MovableModel.svelte";
 
 // ---------------------------------------------------------------------------
@@ -100,11 +104,34 @@ describe("S2 — Drag Lifecycle", () => {
     expect(model.activePosition).toEqual({ x: 42, y: 99 });
   });
 
-  it("began clears activeSensorID", () => {
+  it("began clears stale activeSensorID when item does not overlap any sensor", () => {
+    const model = withRoot(new MovableModel());
+    // Register a sensor far from the item's initial position
+    model.registerSensor(
+      "sensor-far",
+      { x: 900, y: 900, width: 50, height: 50 },
+      []
+    );
+    // Force a stale activeSensorID via a previous drag + collision
+    model.began(
+      "item-0",
+      [],
+      pos({ x: 0, y: 0 }),
+      lim(),
+      rect({ baseLeft: 900, baseTop: 900 })
+    );
+    expect(model.activeSensorID).toBe("sensor-far");
+    model.ended();
+    // New drag starts at a position that does NOT overlap the sensor
+    model.began("item-1", [], pos(), lim(), rect());
+    expect(model.activeSensorID).toBeNull();
+  });
+
+  it("began detects sensor when item starts on top of one", () => {
     const model = withRoot(new MovableModel());
     sensor(model, "sensor-1");
     model.began("item-1", [], pos(), lim(), rect());
-    expect(model.activeSensorID).toBeNull();
+    expect(model.activeSensorID).toBe("sensor-1");
   });
 
   it("began is no-op without root", () => {

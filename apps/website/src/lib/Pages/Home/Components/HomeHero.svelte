@@ -29,13 +29,13 @@
 </script>
 
 <Movable.Context>
-  {#snippet asChild({ attach, model })}
+  {#snippet asChild({ attach, context })}
     <div {@attach attach} class="hero z-stack">
       <!-- Vídeo -->
       <div
         class="noise"
         class:isHeroSubtle
-        class:isCursorOutScreen={!model.isOverSensor("home-screen-sensor")}
+        class:isCursorOutScreen={!context.isOverSensor("home-screen-sensor")}
       >
         <video autoplay loop muted playsinline>
           <source src={noise} type="video/mp4">

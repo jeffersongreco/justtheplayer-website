@@ -1,4 +1,5 @@
-import type { MovableGroup, MovableInteraction } from "./Movable.types";
+import type { MovableInteraction } from "./Movable.internal-types";
+import type { MovableGroup } from "./Movable.types";
 
 /**
  * Translates keyboard events into protocol calls.

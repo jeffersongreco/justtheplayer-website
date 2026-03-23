@@ -3,12 +3,12 @@ import { createContext } from "svelte";
 import { Geometry } from "./Geometry";
 import type {
   ItemRect,
-  MovableGroup,
   MovableInteraction,
   MovableRect,
   MoveLimits,
   MovePosition,
-} from "./Movable.types";
+} from "./Movable.internal-types";
+import type { MovableGroup } from "./Movable.types";
 
 export const [getMovableContext, setMovableContext] =
   createContext<MovableModel>();
@@ -71,6 +71,14 @@ export class MovableModel implements MovableInteraction {
     this.#activeItemGroup = group;
     this.#limits = limits;
     this.#itemRect = rect;
+
+    // Run collision detection immediately so isOver is correct from the first frame
+    this.detectCollisions({
+      x: this.#itemRect.baseLeft + position.x,
+      y: this.#itemRect.baseTop + position.y,
+      width: this.#itemRect.width,
+      height: this.#itemRect.height,
+    });
   }
 
   changed(x: number, y: number): MovePosition {

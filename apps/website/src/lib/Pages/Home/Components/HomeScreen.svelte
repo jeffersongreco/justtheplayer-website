@@ -7,8 +7,8 @@
 </script>
 
 <Movable.Sensor id="home-screen-sensor">
-  {#snippet asChild({ sensor, isOver })}
-    <div use:sensor class="screen">
+  {#snippet asChild({ attach, isOver })}
+    <div use:attach class="screen">
       <div class="window">
         <img src={browserTop} alt="" class="browser-top">
         <img
