@@ -481,24 +481,22 @@
     <div class="stage" class:stage-active={activeStages.includes("discard")}>
       <span class="stage-label">discard</span>
       <div class="stage-area">
-        <div {@attach attentionDiscard.attach} style="display:contents">
-          <div class="target">
-            <button
-              type="button"
-              onclick={() => addLog("[a11y:discard] button clicked")}
-              onfocusin={() => addLog("[a11y:discard] focus → button")}
-            >
-              Click me
-            </button>
-            <a
-              href="#noop"
-              onclick={(e) => { e.preventDefault(); addLog("[a11y:discard] link clicked"); }}
-              onfocusin={() => addLog("[a11y:discard] focus → link")}
-            >
-              Sample link
-            </a>
-            <span>Content text</span>
-          </div>
+        <div {@attach attentionDiscard.attach} class="target">
+          <button
+            type="button"
+            onclick={() => addLog("[a11y:discard] button clicked")}
+            onfocusin={() => addLog("[a11y:discard] focus → button")}
+          >
+            Click me
+          </button>
+          <a
+            href="#noop"
+            onclick={(e) => { e.preventDefault(); addLog("[a11y:discard] link clicked"); }}
+            onfocusin={() => addLog("[a11y:discard] focus → link")}
+          >
+            Sample link
+          </a>
+          <span>Content text</span>
         </div>
       </div>
       <div class="inspector">
@@ -526,24 +524,22 @@
     <div class="stage" class:stage-active={activeStages.includes("resume")}>
       <span class="stage-label">resume</span>
       <div class="stage-area">
-        <div {@attach attentionResume.attach} style="display:contents">
-          <div class="target">
-            <button
-              type="button"
-              onclick={() => addLog("[a11y:resume] button clicked")}
-              onfocusin={() => addLog("[a11y:resume] focus → button")}
-            >
-              Click me
-            </button>
-            <a
-              href="#noop"
-              onclick={(e) => { e.preventDefault(); addLog("[a11y:resume] link clicked"); }}
-              onfocusin={() => addLog("[a11y:resume] focus → link")}
-            >
-              Sample link
-            </a>
-            <span>Content text</span>
-          </div>
+        <div {@attach attentionResume.attach} class="target">
+          <button
+            type="button"
+            onclick={() => addLog("[a11y:resume] button clicked")}
+            onfocusin={() => addLog("[a11y:resume] focus → button")}
+          >
+            Click me
+          </button>
+          <a
+            href="#noop"
+            onclick={(e) => { e.preventDefault(); addLog("[a11y:resume] link clicked"); }}
+            onfocusin={() => addLog("[a11y:resume] focus → link")}
+          >
+            Sample link
+          </a>
+          <span>Content text</span>
         </div>
       </div>
       <div class="inspector">
