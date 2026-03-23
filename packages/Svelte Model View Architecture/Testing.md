@@ -4,6 +4,16 @@
 
 ---
 
+### TDD: Red → Green → Refactor
+
+A prática de TDD segue o ciclo do Extreme Programming:
+
+1. **Red** — Escrever um teste que falha. O teste é derivado do Behavioral Spec e descreve um comportamento que ainda não existe na implementação.
+2. **Green** — Escrever o mínimo de código necessário para fazer o teste passar. Nada além do que o teste exige.
+3. **Refactor** — Com todos os testes verdes, refatorar o código para melhorar clareza, eliminar duplicação e respeitar os padrões da arquitetura — sem alterar comportamento.
+
+O ciclo se repete para cada comportamento descrito no Spec. O ritmo é granular: um teste por vez, não um bloco de testes seguido de um bloco de implementação. A disciplina de Green mínimo evita over-engineering; o passo de Refactor garante que o código não acumula débito técnico entre ciclos.
+
 ### Spec de Comportamento Exaustivo
 
 O Behavioral Spec é a fundação de tudo — tanto os testes automatizados quanto a implementação do Model são derivados dele. **O Spec deve ser exaustivo:** todo estado, transição, edge case e invariante deve estar descrito antes da implementação. Um Spec com gaps produz Models com gaps e testes que não cobrem o que deveriam.

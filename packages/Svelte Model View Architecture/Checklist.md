@@ -1,7 +1,7 @@
 # Checklist de Conformidade (§14)
 
 > Parte da [Svelte Model View Architecture](Architecture.md).
-> Referencia também: [Testing](Testing.md) · [Logging](Logging.md) · [Dev Pages](Dev%20Pages.md) · [Accessibility](Accessibility.md)
+> Referencia também: [Testing](Testing.md) · [Logging](Logging.md) · [Dev Pages](Dev%20Pages.md) · [Accessibility](Accessibility.md) · [Interfaces](Interfaces.md)
 
 ---
 
@@ -93,6 +93,8 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Nomes baseados em capacidade/domínio, não em APIs legadas da web
 
 ### Testes (§10)
+- [ ] Ciclo TDD Red → Green → Refactor seguido: teste que falha primeiro, implementação mínima para passar, refatoração com testes verdes
+- [ ] Ritmo granular: um teste por vez, não blocos de testes seguidos de blocos de implementação
 - [ ] Behavioral Spec exaustivo: todo estado, transição, edge case e invariante descrito antes da implementação
 - [ ] Testes automatizados do Model organizados por seção do Spec (ex: `§2.1`, `§2.3`)
 - [ ] Um arquivo de teste por Model
@@ -136,6 +138,16 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Focus visible durante drag via teclado (quando aplicável)
 - [ ] Anúncio de estado via `aria-live` (quando aplicável)
 - [ ] Processo de 5 steps executado: Svelte warnings → axe-core → keyboard-only → VoiceOver → reduced-motion
+
+### Interfaces (§16)
+- [ ] `Interface.md` existe e é escrito antes da implementação
+- [ ] Descreve exclusivamente a perspectiva do consumidor — sem menção a Model, Coordinator, Interaction ou arquitetura interna
+- [ ] Estrutura obrigatória presente: Descrição, Superfície Pública, Índice por Comportamento, Seções de comportamento, Responsabilidades do consumidor
+- [ ] Índice organizado por comportamento/uso ("Disparando uma animação"), não por tipo técnico ("Methods")
+- [ ] Naming de props segue convenção de direcionalidade: adjetivo puro para entrada (`paused`), prefixo `is*` para estado de saída (`isAnimating`)
+- [ ] `index.ts` exporta somente o que aparece em `Interface.md` — nenhuma exportação implícita
+- [ ] JSDoc dos tipos públicos espelha a prosa de `Interface.md`
+- [ ] PRs que alteram API pública incluem atualização correspondente em `Interface.md`
 
 ### Performance (§8) — adições
 - [ ] Animações usam exclusivamente propriedades compositor-friendly (`translate`, `transform`, `opacity`, `scale`, `rotate`)
