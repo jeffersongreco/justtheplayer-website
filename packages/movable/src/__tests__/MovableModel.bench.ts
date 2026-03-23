@@ -1,5 +1,9 @@
 import { bench, describe } from "vitest";
-import type { ItemRect, MoveLimits, MovePosition } from "../lib/Movable.types";
+import type {
+  ItemRect,
+  MoveLimits,
+  MovePosition,
+} from "../lib/Movable.internal-types";
 import { MovableModel } from "../lib/MovableModel.svelte";
 
 const STUB_ROOT = {} as HTMLElement;

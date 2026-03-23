@@ -1,8 +1,8 @@
 import type {
   MovableContainerDimension,
   MovableRect,
-  PositionValue,
-} from "./Movable.types";
+} from "./Movable.internal-types";
+import type { PositionValue } from "./Movable.types";
 
 export const Geometry = {
   clamp(value: number, min: number, max: number): number {
