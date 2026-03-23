@@ -1,5 +1,3 @@
-import type { Snippet } from "svelte";
-
 /**
  * Strategy applied when an animation is paused.
  *
@@ -75,11 +73,15 @@ export interface ARAnimationOneShot extends ARAnimationConfig {
 export type AttentionRequesterAnimation = ARAnimationLoop | ARAnimationOneShot;
 
 /**
- * Public handle obtained via `bind:this` on `<AttentionRequester>`.
+ * Handle returned by the `AttentionRequester()` factory.
  *
- * Provides imperative methods to trigger and cancel animations.
+ * Provides imperative methods to trigger and cancel animations,
+ * a reactive `attach` action for `{@attach}`, and reactive state.
  */
 export interface AttentionRequester {
+  /** Svelte attach action — apply with `{@attach attention.attach}` on the target element. */
+  readonly attach: (el: HTMLElement) => () => void;
+
   /**
    * Gracefully cancels the active animation.
    *
@@ -87,6 +89,18 @@ export interface AttentionRequester {
    * Calling `cancel()` when idle is a safe no-op.
    */
   cancel: () => void;
+
+  /** `true` while an animation cycle is active, including while paused. */
+  readonly isAnimating: boolean;
+
+  /**
+   * When `true`, freezes the animation visually. On `false`, resumes according to
+   * the animation's {@link ARAnimationConfig.onInterrupt | onInterrupt} strategy.
+   *
+   * Pausing when idle is a safe no-op.
+   * @default false
+   */
+  paused: boolean;
 
   /**
    * Triggers an attention-request animation on the target element.
@@ -106,47 +120,3 @@ export interface AttentionRequester {
     reducedMotionAnimation?: AttentionRequesterAnimation
   ) => void;
 }
-
-/**
- * Props accepted by the `<AttentionRequester>` component.
- *
- * Rendering uses one of two mutually exclusive patterns:
- *
- * - **`children` mode** — the component wraps content in `<div style="display:contents">`
- *   and attaches the animation automatically.
- * - **`asChild` mode** — the consumer applies the `attach` action to the desired element;
- *   no wrapper is created.
- */
-export type AttentionRequesterProps = {
-  /**
-   * When `true`, freezes the animation visually. On `false`, resumes according to
-   * the animation's {@link ARAnimationConfig.onInterrupt | onInterrupt} strategy.
-   *
-   * Pausing when idle is a safe no-op.
-   * @default false
-   */
-  paused?: boolean;
-} & (
-  | {
-      /** Render slot — the component wraps content and attaches the animation automatically. */
-      children: Snippet<[{ isAnimating: boolean }]>;
-      asChild?: never;
-    }
-  | {
-      /**
-       * Delegation slot — the consumer applies the returned `attach` action to the
-       * target element. No wrapper node is created.
-       */
-      asChild: Snippet<
-        [
-          {
-            /** Svelte action to attach the animation to an element. Apply with `use:attach`. */
-            attach: (el: HTMLElement) => (() => void) | undefined;
-            /** `true` while an animation cycle is active, including while paused. */
-            isAnimating: boolean;
-          },
-        ]
-      >;
-      children?: never;
-    }
-);

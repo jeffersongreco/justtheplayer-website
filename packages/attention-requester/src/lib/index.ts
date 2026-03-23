@@ -6,5 +6,5 @@ export type {
   BounceDirection,
 } from "./Animations/helpers/bounce-helpers";
 export { PhysicsBounce } from "./Animations/PhysicsBounceAnimation";
+export { AttentionRequester } from "./AttentionRequester.svelte";
 export * from "./AttentionRequester.types";
-export { default as AttentionRequester } from "./AttentionRequesterModifier.svelte";

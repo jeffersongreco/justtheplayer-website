@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
-  import type { AttentionRequester as AttentionRequesterType } from "../lib";
   import { AttentionRequester, DoubleBounce, PhysicsBounce } from "../lib";
   import type { QAStep, QASuite } from "./qa-types.js";
 
-  let attentionDiscard: AttentionRequesterType;
-  let attentionResume: AttentionRequesterType;
+  const attentionDiscard = AttentionRequester();
+  const attentionResume = AttentionRequester();
 
   const animationDiscard = PhysicsBounce({
     direction: "up",
@@ -23,9 +22,15 @@
 
   let pausedDiscard = $state(false);
   let pausedResume = $state(false);
-  let discardAnimating = $state(false);
-  let resumeAnimating = $state(false);
   let reducedMotion = $state(false);
+
+  $effect(() => {
+    attentionDiscard.paused = pausedDiscard;
+  });
+  $effect(() => {
+    attentionResume.paused = pausedResume;
+  });
+
   let log = $state<string[]>([]);
 
   // Guided QA state
@@ -476,33 +481,31 @@
     <div class="stage" class:stage-active={activeStages.includes("discard")}>
       <span class="stage-label">discard</span>
       <div class="stage-area">
-        <AttentionRequester bind:this={attentionDiscard} paused={pausedDiscard}>
-          {#snippet children({ isAnimating })}
-            {(discardAnimating = isAnimating, '')}
-            <div class="target">
-              <button
-                type="button"
-                onclick={() => addLog("[a11y:discard] button clicked")}
-                onfocusin={() => addLog("[a11y:discard] focus → button")}
-              >
-                Click me
-              </button>
-              <a
-                href="#noop"
-                onclick={(e) => { e.preventDefault(); addLog("[a11y:discard] link clicked"); }}
-                onfocusin={() => addLog("[a11y:discard] focus → link")}
-              >
-                Sample link
-              </a>
-              <span>Content text</span>
-            </div>
-          {/snippet}
-        </AttentionRequester>
+        <div {@attach attentionDiscard.attach} style="display:contents">
+          <div class="target">
+            <button
+              type="button"
+              onclick={() => addLog("[a11y:discard] button clicked")}
+              onfocusin={() => addLog("[a11y:discard] focus → button")}
+            >
+              Click me
+            </button>
+            <a
+              href="#noop"
+              onclick={(e) => { e.preventDefault(); addLog("[a11y:discard] link clicked"); }}
+              onfocusin={() => addLog("[a11y:discard] focus → link")}
+            >
+              Sample link
+            </a>
+            <span>Content text</span>
+          </div>
+        </div>
       </div>
       <div class="inspector">
         <span class="inspector-title">discard — state</span>
         <div class="inspector-row">
-          <span>isAnimating</span><span class="val">{discardAnimating}</span>
+          <span>isAnimating</span
+          ><span class="val">{attentionDiscard.isAnimating}</span>
         </div>
         <div class="inspector-row">
           <span>isPaused</span><span class="val">{pausedDiscard}</span>
@@ -523,33 +526,31 @@
     <div class="stage" class:stage-active={activeStages.includes("resume")}>
       <span class="stage-label">resume</span>
       <div class="stage-area">
-        <AttentionRequester bind:this={attentionResume} paused={pausedResume}>
-          {#snippet children({ isAnimating })}
-            {(resumeAnimating = isAnimating, '')}
-            <div class="target">
-              <button
-                type="button"
-                onclick={() => addLog("[a11y:resume] button clicked")}
-                onfocusin={() => addLog("[a11y:resume] focus → button")}
-              >
-                Click me
-              </button>
-              <a
-                href="#noop"
-                onclick={(e) => { e.preventDefault(); addLog("[a11y:resume] link clicked"); }}
-                onfocusin={() => addLog("[a11y:resume] focus → link")}
-              >
-                Sample link
-              </a>
-              <span>Content text</span>
-            </div>
-          {/snippet}
-        </AttentionRequester>
+        <div {@attach attentionResume.attach} style="display:contents">
+          <div class="target">
+            <button
+              type="button"
+              onclick={() => addLog("[a11y:resume] button clicked")}
+              onfocusin={() => addLog("[a11y:resume] focus → button")}
+            >
+              Click me
+            </button>
+            <a
+              href="#noop"
+              onclick={(e) => { e.preventDefault(); addLog("[a11y:resume] link clicked"); }}
+              onfocusin={() => addLog("[a11y:resume] focus → link")}
+            >
+              Sample link
+            </a>
+            <span>Content text</span>
+          </div>
+        </div>
       </div>
       <div class="inspector">
         <span class="inspector-title">resume — state</span>
         <div class="inspector-row">
-          <span>isAnimating</span><span class="val">{resumeAnimating}</span>
+          <span>isAnimating</span
+          ><span class="val">{attentionResume.isAnimating}</span>
         </div>
         <div class="inspector-row">
           <span>isPaused</span><span class="val">{pausedResume}</span>
