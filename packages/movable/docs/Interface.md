@@ -151,7 +151,7 @@ O consumidor decide qual elemento é arrastável aplicando `attach`.
 ```svelte
 <Movable.Item id="cursor" initialPosition={{ x: "50%", y: "50%" }}>
   {#snippet asChild({ attach, isMoving, isFocused })}
-    <div use:attach class:dragging={isMoving}>Arraste-me</div>
+    <div {@attach attach} class:dragging={isMoving}>Arraste-me</div>
   {/snippet}
 </Movable.Item>
 ```
@@ -257,7 +257,7 @@ Modo `asChild` delega ao consumidor:
 ```svelte
 <Movable.Sensor id="drop-zone" accepts={["draggable"]} onDrop={handleDrop}>
   {#snippet asChild({ attach, isOver })}
-    <div use:attach class:highlight={isOver}>Solte aqui</div>
+    <div {@attach attach} class:highlight={isOver}>Solte aqui</div>
   {/snippet}
 </Movable.Sensor>
 ```
