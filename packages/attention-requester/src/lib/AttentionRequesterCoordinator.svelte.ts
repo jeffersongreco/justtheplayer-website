@@ -4,15 +4,14 @@ import type { InterruptResolution } from "./AttentionRequester.types";
 import type { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 
 export class AttentionRequesterCoordinator {
-  readonly #wrapper: HTMLElement;
+  readonly #el: HTMLElement;
   readonly #model: AttentionRequesterModel;
-  #el: HTMLElement | null = null;
   #anim: Animation | null = null;
   #interval: ReturnType<typeof setTimeout> | null = null;
   #destroyed = false;
 
   constructor(el: HTMLElement, model: AttentionRequesterModel) {
-    this.#wrapper = el;
+    this.#el = el;
     this.#model = model;
 
     $effect(() => {
@@ -37,19 +36,6 @@ export class AttentionRequesterCoordinator {
     });
   }
 
-  #resolveTarget(): HTMLElement {
-    if (!this.#el) {
-      const child = this.#wrapper.children[0] as HTMLElement | undefined;
-      if (!child) {
-        throw new Error(
-          "[AR:Coordinator] No target element found. Wrap a child element inside <AttentionRequester>."
-        );
-      }
-      this.#el = child;
-    }
-    return this.#el;
-  }
-
   #applyInterruptResolution(resolution: InterruptResolution) {
     if (DEV) {
       console.log(
@@ -64,7 +50,7 @@ export class AttentionRequesterCoordinator {
       }
 
       case "discard": {
-        const el = this.#resolveTarget();
+        const el = this.#el;
         const frozen = getComputedStyle(el).translate;
 
         el.style.translate = frozen === "none" ? "" : frozen;
@@ -100,7 +86,7 @@ export class AttentionRequesterCoordinator {
       performance.mark("ar:cycle-start");
     }
 
-    const el = this.#resolveTarget();
+    const el = this.#el;
 
     const keyframes =
       typeof config.keyframes === "function"
