@@ -53,7 +53,7 @@
       <!-- Cursor -->
       <Movable.Item initialPosition={{ x: "50%", y: "50%" }}>
         {#snippet children({isMoving})}
-          <div {@attach attention.attach} style="display:contents">
+          <div {@attach attention.attach}>
             <Cursor />
           </div>
         {/snippet}
