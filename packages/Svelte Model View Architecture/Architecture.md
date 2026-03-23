@@ -24,7 +24,7 @@ A motivação central é que um desenvolvedor Apple — ou que goste de desenvol
 
 - **Responsabilidade única é imperativo.** Cada unidade faz uma coisa. O Movable tem uma Interaction que lida com a observação de eventos do usuário — essa lógica não vive dentro do Coordinator.
 - **Tudo é plugável e agnóstico sempre que possível.** O Attention Requester é agnóstico de qual animação irá receber. O Coordinator do Movable é agnóstico de qual Interaction irá receber.
-- **TDD não é arquitetura, mas é pressuposto como prática a ser adotada junto com ela.** Testes clássicos (Detroit School), sem mocks desnecessários, testando comportamento real pela API pública.
+- **TDD não é arquitetura, mas é pressuposto como prática a ser adotada junto com ela.** A prática de TDD segue o ciclo **Red → Green → Refactor** do Extreme Programming: escrever um teste que falha (Red), escrever o mínimo de código para fazê-lo passar (Green), e refatorar mantendo todos os testes verdes (Refactor). Testes clássicos (Detroit School), sem mocks desnecessários, testando comportamento real pela API pública.
 
 ### Não é MVC
 
@@ -684,3 +684,5 @@ Nomes baseados no **domínio e capacidade** (ex: `Movable` — domínio do espa�
 | [Dev Pages](Dev%20Pages.md) | §12 | Estrutura de dev pages, conteúdo obrigatório, aliases, smoke test |
 | [Accessibility](Accessibility.md) | §13 | Requisitos por tipo de package, processo de verificação em 5 steps |
 | [Checklist](Checklist.md) | §14 | Checklist de conformidade unificado (auditoria single-pass) |
+| [Git Conventions](Git%20Conventions.md) | §15 | Convenções de commit, branch naming, CalVer |
+| [Interfaces](Interfaces.md) | §16 | Interface.md como contrato público do consumidor, estrutura obrigatória, naming |
