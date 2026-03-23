@@ -12,7 +12,7 @@
 
   let { isHeroSubtle }: { isHeroSubtle: boolean } = $props();
 
-  let attention: AttentionRequester;
+  const attention = AttentionRequester();
   const animation = PhysicsBounce({
     direction: "up",
     loop: true,
@@ -53,9 +53,9 @@
       <!-- Cursor -->
       <Movable.Item initialPosition={{ x: "50%", y: "50%" }}>
         {#snippet children({isMoving})}
-          <AttentionRequester bind:this={attention} paused={isMoving}>
+          <div {@attach attention.attach} style="display:contents">
             <Cursor />
-          </AttentionRequester>
+          </div>
         {/snippet}
       </Movable.Item>
     </div>

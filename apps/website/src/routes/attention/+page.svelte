@@ -1,6 +1,5 @@
 <!-- AttentionTest.svelte -->
 <script lang="ts">
-  import type { AttentionRequester as AttentionRequesterType } from "@headless-uai/attention-requester";
   import {
     AttentionRequester,
     DoubleBounce,
@@ -8,8 +7,8 @@
   } from "@headless-uai/attention-requester";
   import { onMount } from "svelte";
 
-  let attentionDiscard: AttentionRequesterType;
-  let attentionResume: AttentionRequesterType;
+  const attentionDiscard = AttentionRequester();
+  const attentionResume = AttentionRequester();
 
   const animationDiscard = PhysicsBounce({
     direction: "up",
@@ -33,6 +32,11 @@
     log = [`[${time}ms] ${msg}`, ...log].slice(0, 30);
   }
 
+  $effect(() => {
+    attentionDiscard.paused = paused;
+    attentionResume.paused = paused;
+  });
+
   onMount(() => {
     const t = setTimeout(() => {
       addLog("▶ request() em ambos");
@@ -49,18 +53,14 @@
     <div class="stage">
       <span class="stage-label">discard</span>
       <div class="stage-area">
-        <AttentionRequester bind:this={attentionDiscard} {paused}>
-          <div class="target"></div>
-        </AttentionRequester>
+        <div {@attach attentionDiscard.attach} class="target"></div>
       </div>
     </div>
 
     <div class="stage">
       <span class="stage-label">resume</span>
       <div class="stage-area">
-        <AttentionRequester bind:this={attentionResume} {paused}>
-          <div class="target"></div>
-        </AttentionRequester>
+        <div {@attach attentionResume.attach} class="target"></div>
       </div>
     </div>
   </div>
@@ -99,7 +99,7 @@
   </div>
 
   <div class="log">
-    {#each log as entry}
+    {#each log as entry, i (i)}
       <div class="entry">{entry}</div>
     {/each}
   </div>
