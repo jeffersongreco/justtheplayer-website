@@ -20,7 +20,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 
 ### Coordinator (§3)
 - [ ] Nunca toma decisões de negócio — apenas executa ordens do Model
-- [ ] Elemento-alvo resolvido de forma lazy (`wrapper.children[0]`), não na construção
+- [ ] Elemento-alvo recebido diretamente via `{@attach}` — sem resolução indireta via wrapper
 - [ ] `will-change` não é gerenciado imperativamente — WAAPI promove camadas automaticamente
 - [ ] Variáveis que disparam `$effect` declaradas com `$state`
 - [ ] Gerencia ciclo de vida: cleanup de observers e listeners na destruição
@@ -45,21 +45,19 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Zero lógica de negócio — apenas renderiza estado e captura intenção do usuário
 - [ ] Lógica de apresentação (mapear estado do Model para nomes visuais) é permitida e esperada
 - [ ] Usa nomes de apresentação locais, não nomes de domínio do Model
-- [ ] Estado efêmero passado via parâmetros de snippet
+- [ ] Regras de apresentação vivem no `<script>` (`$derived`, condicionais); template contém apenas markup estrutural e bindings reativos como ponte
+- [ ] Estado reativo do handle (factory) consumido no `<script>` via `$derived`, não diretamente em expressões no template
 
 ### API Surface (§5)
 - [ ] Exports usam flat named exports com padrão `[Domain][Role]` (ex: `MovableContext`, `MovableItem`)
-- [ ] API imperativa via `bind:this` com métodos exportados (não prop `ref`)
-- [ ] Tipo da instância exportado com o mesmo nome do componente
-- [ ] Parâmetros que variam entre chamadas pertencem à chamada imperativa; fixos por instância podem ser props
-- [ ] `asChild` disponível com tipagem union + `never` para exclusividade com `children` — usado apenas como escape hatch de layout, não para acesso a estado
-- [ ] Estado efêmero acessível via snippet em ambos os caminhos (`children` e `asChild`)
-- [ ] Modifier comportamental (afeta apenas o elemento host, sem envolver filhos) implementado como função `{@attach}`, não como componente — zero overhead de lifecycle
-- [ ] `display: contents` como padrão para Modifiers estruturais; `flex + max-content` apenas quando necessário (documentar motivo)
-- [ ] Restrição `asChild`: não viável quando filho direto é componente Svelte (attachments exigem elemento DOM)
-- [ ] Context (`[Domain]Context`) usado como fronteira lógica invisível (sem tag HTML) em ecossistemas multi-componente
+- [ ] Modifiers são sempre factory functions que retornam handle com `.attach` e estado reativo — nunca componentes wrapper
+- [ ] API imperativa via handle retornado pela factory (ex: `attention.request(animation)`) — sem `bind:this`
+- [ ] Parâmetros que variam entre chamadas pertencem a métodos do handle; fixos por instância podem ser parâmetros da factory
+- [ ] Estado reativo do handle (`isMoving`, `isAnimating`) consumido no `<script>` da View via `$derived`
+- [ ] Composição de múltiplos modifiers via múltiplos `{@attach}` no mesmo elemento, sem aninhamento
+- [ ] Context (`[Domain]Context`) usado como fronteira lógica invisível (sem tag HTML) em ecossistemas multi-componente — Context é componente `.svelte`, Modifier é factory
 - [ ] Context implementado com `createContext` (não `setContext`/`getContext` com chave manual) — type safety nativa, sem colisão de chaves
-- [ ] Componentes `.svelte` delegam ciclo de vida automaticamente (cleanup de observers, listeners, Model)
+- [ ] Componentes Context `.svelte` delegam ciclo de vida automaticamente (cleanup de observers, listeners, Model)
 
 ### Animações (§6) — quando aplicável
 - [ ] Animações são objetos de dados (nome, duração, keyframes, loop, onInterrupt), não comportamento
@@ -89,7 +87,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 
 ### Nomenclatura (§9)
 - [ ] Arquivos prefixados com nome do domínio do pacote
-- [ ] Sufixos seguem convenção: `Model.svelte.ts`, `Coordinator.svelte.ts`, `Modifier.svelte`, `[domain].types.ts`, `index.ts`
+- [ ] Sufixos seguem convenção: `Model.svelte.ts`, `Coordinator.svelte.ts`, `[Domain].svelte.ts` (factory), `[domain].types.ts`, `index.ts`
 - [ ] Nomes baseados em capacidade/domínio, não em APIs legadas da web
 
 ### Testes (§10)
