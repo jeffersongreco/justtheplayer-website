@@ -36,7 +36,7 @@
 </script>
 
 <div {@attach context.attach} class="hero z-stack">
-  <!-- Vídeo -->
+  <!-- Video -->
   <div
     class="noise"
     class:isHeroSubtle
@@ -52,7 +52,7 @@
       <HomeScreen />
     </IMac>
   </div>
-  <!-- Sombra inferior -->
+  <!-- Bottom shadow -->
   <div class="gradient" class:isHeroSubtle></div>
 
   <!-- Cursor -->

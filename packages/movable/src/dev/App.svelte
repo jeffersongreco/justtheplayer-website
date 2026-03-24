@@ -338,7 +338,12 @@
         Item
       </div>
 
-      <div {@attach item2.attach} {@attach ghostAttention.attach} class="ghost">
+      <div
+        {@attach item2.attach}
+        {@attach ghostAttention.attach}
+        class="ghost"
+        class:focused={item2.isFocused}
+      >
         👻
       </div>
     </div>
@@ -509,6 +514,11 @@
 
   .ghost {
     font-size: 80px;
+  }
+
+  .ghost.focused {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
   }
 
   button {
