@@ -5,6 +5,23 @@ import { MovableDragInteraction } from "./MovableDragInteraction.svelte";
 import { MovableKeyboardInteraction } from "./MovableKeyboardInteraction.svelte";
 import type { MovableModel } from "./MovableModel.svelte";
 
+/**
+ * ARIA announcement strings for the movable item. All optional — the modifier
+ * has no i18n mechanism, so consumers must supply localized strings.
+ *
+ * Note: the live region is not cleared automatically between transitions. If
+ * only some announcements are provided, the last announced text persists until
+ * another announcement overwrites it.
+ */
+export interface MovableItemAriaOptions {
+  ariaRoleDescription?: string;
+  grabbedAnnouncement?: string;
+  leftSensorAnnouncement?: string;
+  overSensorAnnouncement?: string;
+  positionAnnouncement?: (x: number, y: number) => string;
+  releasedAnnouncement?: string;
+}
+
 export class MovableItemCoordinator {
   readonly #el: HTMLElement;
   readonly #model: MovableModel;
@@ -32,7 +49,8 @@ export class MovableItemCoordinator {
     group: MovableGroup,
     stepSize?: number,
     tabindex = 0,
-    onFocusChange?: (focused: boolean) => void
+    onFocusChange?: (focused: boolean) => void,
+    aria?: MovableItemAriaOptions
   ) {
     this.#el = el;
     this.#model = model;
@@ -68,8 +86,11 @@ export class MovableItemCoordinator {
       outline: "none",
     });
 
-    // ARIA attributes for drag state
-    el.setAttribute("aria-roledescription", "draggable");
+    // ARIA attributes for drag state — no default strings, consumers supply
+    // localized text (the modifier has no i18n mechanism).
+    if (aria?.ariaRoleDescription) {
+      el.setAttribute("aria-roledescription", aria.ariaRoleDescription);
+    }
     el.setAttribute("aria-pressed", "false");
     if (model.instructionsId) {
       el.setAttribute("aria-describedby", model.instructionsId);
@@ -101,6 +122,7 @@ export class MovableItemCoordinator {
     // $effect observes model.activeItemID → manages rAF, cursor, will-change, ARIA
     $effect(() => {
       const isActive = model.activeItemID === id;
+      el.toggleAttribute("data-grabbing", isActive);
       if (isActive) {
         this.#hasUserMoved = true;
         el.style.willChange = "transform";
@@ -123,9 +145,12 @@ export class MovableItemCoordinator {
       }
       const liveRegion = model.liveRegionEl;
       if (liveRegion) {
-        liveRegion.textContent = isActive
-          ? "Grabbed. Use arrow keys to move. Press Escape or Tab to release."
-          : "Released.";
+        const announcement = isActive
+          ? aria?.grabbedAnnouncement
+          : aria?.releasedAnnouncement;
+        if (announcement) {
+          liveRegion.textContent = announcement;
+        }
       }
     });
 
@@ -144,10 +169,13 @@ export class MovableItemCoordinator {
         liveRegion &&
         sensorId !== this.#prevSensorId
       ) {
-        if (sensorId !== null) {
-          liveRegion.textContent = "Over drop zone.";
-        } else if (this.#prevSensorId !== null) {
-          liveRegion.textContent = "Left drop zone.";
+        if (sensorId !== null && aria?.overSensorAnnouncement) {
+          liveRegion.textContent = aria.overSensorAnnouncement;
+        } else if (
+          this.#prevSensorId !== null &&
+          aria?.leftSensorAnnouncement
+        ) {
+          liveRegion.textContent = aria.leftSensorAnnouncement;
         }
       }
       this.#prevSensorId = sensorId;
@@ -158,8 +186,11 @@ export class MovableItemCoordinator {
     this.#interactions = [
       new MovableDragInteraction(el, model, id, group),
       new MovableKeyboardInteraction(el, model, id, group, stepSize, (x, y) => {
-        if (model.liveRegionEl) {
-          model.liveRegionEl.textContent = `Position: ${Math.round(x)}, ${Math.round(y)}`;
+        if (model.liveRegionEl && aria?.positionAnnouncement) {
+          model.liveRegionEl.textContent = aria.positionAnnouncement(
+            Math.round(x),
+            Math.round(y)
+          );
         }
       }),
     ];
@@ -259,6 +290,7 @@ export class MovableItemCoordinator {
     if (DEV) {
       console.log(`[Movable:ItemCoordinator] destroy → id="${this.#id}"`);
     }
+    this.#el.removeAttribute("data-grabbing");
     this.#el.removeEventListener("focusin", this.#handleFocusIn);
     this.#el.removeEventListener("focusout", this.#handleFocusOut);
     this.#resizeObserver.disconnect();

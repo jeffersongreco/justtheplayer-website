@@ -34,6 +34,14 @@ export class AttentionRequesterCoordinator {
         );
       }
     });
+
+    $effect(() => {
+      el.toggleAttribute("data-ar-requesting", this.#model.isActive);
+      el.toggleAttribute(
+        "data-ar-paused",
+        this.#model.isActive && this.#model.isPaused
+      );
+    });
   }
 
   #applyInterruptResolution(resolution: InterruptResolution) {
@@ -135,5 +143,7 @@ export class AttentionRequesterCoordinator {
     if (this.#interval !== null) {
       clearTimeout(this.#interval);
     }
+    this.#el.removeAttribute("data-ar-requesting");
+    this.#el.removeAttribute("data-ar-paused");
   }
 }
