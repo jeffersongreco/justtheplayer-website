@@ -18,7 +18,7 @@ export class MovableContextCoordinator {
   readonly #liveRegionEl: HTMLElement;
   readonly #instructionsEl: HTMLElement;
 
-  constructor(el: HTMLElement, model: MovableModel) {
+  constructor(el: HTMLElement, model: MovableModel, instructionsText?: string) {
     this.#model = model;
 
     model.registerRoot(el);
@@ -39,8 +39,15 @@ export class MovableContextCoordinator {
     const instructionsId = `movable-kb-instructions-${crypto.randomUUID()}`;
     const instructionsEl = document.createElement("p");
     instructionsEl.id = instructionsId;
-    instructionsEl.textContent =
-      "Press Enter or Space to grab. Use arrow keys to move. Press Escape or Tab to release.";
+    // No default text — the modifier intentionally avoids hardcoded strings
+    // because it has no i18n mechanism. Consumers must supply localized strings.
+    if (instructionsText) {
+      instructionsEl.textContent = instructionsText;
+    } else if (DEV) {
+      console.warn(
+        "[Movable:Coordinator] No instructionsText provided. Screen readers will reference an empty element via aria-describedby. Supply localized instructions for accessibility."
+      );
+    }
     Object.assign(instructionsEl.style, srOnly);
     el.appendChild(instructionsEl);
     this.#instructionsEl = instructionsEl;

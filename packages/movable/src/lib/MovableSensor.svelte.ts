@@ -47,7 +47,15 @@ export function MovableSensor(
 
   function modifier(el: HTMLElement) {
     model.registerSensor(id, el.getBoundingClientRect(), accepts);
-    return () => model.unregisterSensor(id);
+
+    $effect(() => {
+      el.toggleAttribute("data-item-over", isOver);
+    });
+
+    return () => {
+      el.removeAttribute("data-item-over");
+      model.unregisterSensor(id);
+    };
   }
 
   return {

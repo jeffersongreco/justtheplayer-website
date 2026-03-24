@@ -1,4 +1,5 @@
 export * from "./Movable.types";
+export type { MovableContextOptions } from "./MovableContext.svelte";
 export { MovableContext } from "./MovableContext.svelte";
 export type { MovableItemOptions } from "./MovableItem.svelte";
 export { MovableItem } from "./MovableItem.svelte";
