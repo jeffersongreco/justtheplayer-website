@@ -6,6 +6,10 @@
 
 import type { MovableGroup } from "./Movable.types";
 
+/** @internal Symbol for extracting MovableModel from a public MovableContext handle. */
+export const MODEL: unique symbol = Symbol("MovableModel");
+export type MODEL = typeof MODEL;
+
 export interface MovableRect {
   height: number;
   width: number;

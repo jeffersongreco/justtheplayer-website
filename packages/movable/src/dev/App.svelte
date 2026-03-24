@@ -1,6 +1,10 @@
 <script lang="ts">
-  import { untrack } from "svelte";
-  import { Movable } from "../lib";
+  import {
+    AttentionRequester,
+    PhysicsBounce,
+  } from "@headless-uai/attention-requester";
+  import { onMount, untrack } from "svelte";
+  import { MovableContext, MovableItem, MovableSensor } from "../lib";
   import type { QAStep, QASuite } from "./qa-types.js";
 
   let log = $state<string[]>([]);
@@ -21,6 +25,29 @@
     addLog(msg);
     console.log(msg);
   }
+
+  const context = MovableContext();
+  const item1 = MovableItem({ initialPosition: { x: "10%", y: "10%" } });
+  const item2 = MovableItem({
+    initialPosition: { x: "80%", y: "80%" },
+    group: ["ghost"],
+  });
+  const sensor = MovableSensor({ accepts: ["ghost"] });
+
+  const ghostAttention = AttentionRequester();
+  const ghostAnimation = PhysicsBounce({
+    direction: "up",
+    loop: true,
+    onInterrupt: "discard",
+  });
+
+  $effect(() => {
+    ghostAttention.paused = item2.isMoving;
+  });
+
+  onMount(() => {
+    ghostAttention.request(ghostAnimation);
+  });
 
   const suites: QASuite[] = [
     {
@@ -297,40 +324,24 @@
   </div>
 
   <div class="stage">
-    <Movable.Context>
-      {#snippet asChild({ attach })}
-        <div {@attach attach} class="canvas">
-          <Movable.Sensor accepts={["ghost"]}>
-            {#snippet asChild({ attach: attachSensor, isOver })}
-              <div {@attach attachSensor} class="sensor" class:active={isOver}>
-                Sensor
-              </div>
-            {/snippet}
-          </Movable.Sensor>
+    <div {@attach context.attach} class="canvas">
+      <div {@attach sensor.attach} class="sensor" class:active={sensor.isOver}>
+        Sensor
+      </div>
 
-          <Movable.Item initialPosition={{ x: "10%", y: "10%" }}>
-            {#snippet children({ isMoving, isFocused })}
-              <div
-                class="item"
-                class:moving={isMoving}
-                class:focused={isFocused}
-              >
-                Item
-              </div>
-            {/snippet}
-          </Movable.Item>
+      <div
+        {@attach item1.attach}
+        class="item"
+        class:moving={item1.isMoving}
+        class:focused={item1.isFocused}
+      >
+        Item
+      </div>
 
-          <Movable.Item
-            initialPosition={{ x: "80%", y: "80%" }}
-            group={["ghost"]}
-          >
-            {#snippet children()}
-              <div class="ghost">👻</div>
-            {/snippet}
-          </Movable.Item>
-        </div>
-      {/snippet}
-    </Movable.Context>
+      <div {@attach item2.attach} {@attach ghostAttention.attach} class="ghost">
+        👻
+      </div>
+    </div>
   </div>
 
   {#if mode === "free"}
@@ -482,9 +493,7 @@
     color: #1e3a8a;
     background: #93c5fd;
     border-radius: 8px;
-    transition:
-      transform 0.1s,
-      box-shadow 0.1s;
+    transition: box-shadow 0.1s;
   }
 
   .item.focused {
@@ -500,22 +509,6 @@
 
   .ghost {
     font-size: 80px;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .ghost {
-      animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%,
-      100% {
-        transform: translateY(0px) rotate(5deg);
-      }
-      50% {
-        transform: translateY(-30px) rotate(-5deg);
-      }
-    }
   }
 
   button {

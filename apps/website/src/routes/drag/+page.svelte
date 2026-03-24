@@ -1,38 +1,26 @@
 <script lang="ts">
-  import { Movable } from "@headless-uai/movable";
+  import { MovableContext, MovableItem, MovableSensor } from "@headless-uai/movable";
+
+  const context = MovableContext();
+  const item1 = MovableItem({ initialPosition: { x: "10%", y: "10%" } });
+  const item2 = MovableItem({ initialPosition: { x: "80%", y: "80%" }, group: ["ghost"] });
+  const sensor = MovableSensor({ accepts: ["ghost"] });
 </script>
 
 <main>
   <h1>Movable</h1>
 
-  <Movable.Context>
-    {#snippet asChild({ attach })}
-      <div {@attach attach} class="canvas">
-        <Movable.Sensor accepts={["ghost"]}>
-          {#snippet asChild({ attach: attachSensor, isOver })}
-            <div {@attach attachSensor} class="sensor" class:active={isOver}>Sensor</div>
-          {/snippet}
-        </Movable.Sensor>
+  <div {@attach context.attach} class="canvas">
+    <div {@attach sensor.attach} class="sensor" class:active={sensor.isOver}>Sensor</div>
 
-        <Movable.Item initialPosition={{ x: "10%", y: "10%" }}>
-          {#snippet children({ isMoving, isFocused })}
-            <div class="item" class:moving={isMoving} class:focused={isFocused}>
-              Item
-            </div>
-          {/snippet}
-        </Movable.Item>
+    <div {@attach item1.attach} class="item" class:moving={item1.isMoving} class:focused={item1.isFocused}>
+      Item
+    </div>
 
-        <Movable.Item
-          initialPosition={{ x: "80%", y: "80%" }}
-          group={["ghost"]}
-        >
-          {#snippet children()}
-            <div class="ghost">👻</div>
-          {/snippet}
-        </Movable.Item>
-      </div>
-    {/snippet}
-  </Movable.Context>
+    <div {@attach item2.attach}>
+      <div class="ghost">👻</div>
+    </div>
+  </div>
 </main>
 
 <style>
@@ -89,9 +77,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition:
-      transform 0.1s,
-      box-shadow 0.1s;
+    transition: box-shadow 0.1s;
   }
 
   .item.focused {
