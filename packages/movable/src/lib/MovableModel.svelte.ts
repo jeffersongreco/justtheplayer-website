@@ -1,5 +1,4 @@
 import { DEV } from "esm-env";
-import { createContext } from "svelte";
 import { Geometry } from "./Geometry";
 import type {
   ItemRect,
@@ -9,9 +8,6 @@ import type {
   MovePosition,
 } from "./Movable.internal-types";
 import type { MovableGroup } from "./Movable.types";
-
-export const [getMovableContext, setMovableContext] =
-  createContext<MovableModel>();
 
 type SensorConfiguration = {
   rect: MovableRect;

@@ -20,18 +20,39 @@ export class MovableItemCoordinator {
   readonly #resizeObserver: ResizeObserver;
   readonly #interactions: { destroy(): void }[];
 
+  readonly #onFocusChange?: (focused: boolean) => void;
+  readonly #handleFocusIn: (e: FocusEvent) => void;
+  readonly #handleFocusOut: () => void;
+
   constructor(
     el: HTMLElement,
     model: MovableModel,
     id: string,
     initialPosition: MovableItemPosition,
     group: MovableGroup,
-    stepSize?: number
+    stepSize?: number,
+    tabindex = 0,
+    onFocusChange?: (focused: boolean) => void
   ) {
     this.#el = el;
     this.#model = model;
     this.#id = id;
     this.#initialPosition = initialPosition;
+    this.#onFocusChange = onFocusChange;
+
+    // Role and tabindex (previously set by the component wrapper)
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", String(tabindex));
+
+    // Focus tracking (migrated from MovableItem.svelte)
+    this.#handleFocusIn = (e: FocusEvent) => {
+      if (e.target instanceof HTMLElement) {
+        this.#onFocusChange?.(e.target.matches(":focus-visible"));
+      }
+    };
+    this.#handleFocusOut = () => this.#onFocusChange?.(false);
+    el.addEventListener("focusin", this.#handleFocusIn);
+    el.addEventListener("focusout", this.#handleFocusOut);
 
     Object.assign(el.style, {
       position: "absolute",
@@ -44,6 +65,7 @@ export class MovableItemCoordinator {
       userSelect: "none",
       webkitUserSelect: "none",
       cursor: "grab",
+      outline: "none",
     });
 
     // ARIA attributes for drag state
@@ -237,6 +259,8 @@ export class MovableItemCoordinator {
     if (DEV) {
       console.log(`[Movable:ItemCoordinator] destroy → id="${this.#id}"`);
     }
+    this.#el.removeEventListener("focusin", this.#handleFocusIn);
+    this.#el.removeEventListener("focusout", this.#handleFocusOut);
     this.#resizeObserver.disconnect();
     for (const interaction of this.#interactions) {
       interaction.destroy();

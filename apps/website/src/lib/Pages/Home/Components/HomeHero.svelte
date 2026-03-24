@@ -3,7 +3,7 @@
     AttentionRequester,
     PhysicsBounce,
   } from "@headless-uai/attention-requester";
-  import { Movable } from "@headless-uai/movable";
+  import { MovableContext, MovableItem } from "@headless-uai/movable";
   import { onMount } from "svelte";
   import Cursor from "./Cursor.svelte";
   import HomeScreen from "./HomeScreen.svelte";
@@ -19,6 +19,13 @@
     onInterrupt: "discard",
   });
 
+  const context = MovableContext();
+  const cursor = MovableItem({ initialPosition: { x: "50%", y: "50%" } });
+
+  $effect(() => {
+    attention.paused = cursor.isMoving;
+  });
+
   onMount(() => {
     const timeout = setTimeout(() => {
       attention.request(animation);
@@ -28,39 +35,31 @@
   });
 </script>
 
-<Movable.Context>
-  {#snippet asChild({ attach, context })}
-    <div {@attach attach} class="hero z-stack">
-      <!-- Vídeo -->
-      <div
-        class="noise"
-        class:isHeroSubtle
-        class:isCursorOutScreen={!context.isOverSensor("home-screen-sensor")}
-      >
-        <video autoplay loop muted playsinline>
-          <source src={noise} type="video/mp4">
-        </video>
-      </div>
-      <!-- iMac -->
-      <div class="imac" class:isHeroSubtle>
-        <IMac>
-          <HomeScreen />
-        </IMac>
-      </div>
-      <!-- Sombra inferior -->
-      <div class="gradient" class:isHeroSubtle></div>
+<div {@attach context.attach} class="hero z-stack">
+  <!-- Vídeo -->
+  <div
+    class="noise"
+    class:isHeroSubtle
+    class:isCursorOutScreen={!context.isOverSensor("home-screen-sensor")}
+  >
+    <video autoplay loop muted playsinline>
+      <source src={noise} type="video/mp4">
+    </video>
+  </div>
+  <!-- iMac -->
+  <div class="imac" class:isHeroSubtle>
+    <IMac>
+      <HomeScreen />
+    </IMac>
+  </div>
+  <!-- Sombra inferior -->
+  <div class="gradient" class:isHeroSubtle></div>
 
-      <!-- Cursor -->
-      <Movable.Item initialPosition={{ x: "50%", y: "50%" }}>
-        {#snippet children({isMoving})}
-          <div {@attach attention.attach}>
-            <Cursor />
-          </div>
-        {/snippet}
-      </Movable.Item>
-    </div>
-  {/snippet}
-</Movable.Context>
+  <!-- Cursor -->
+  <div {@attach cursor.attach} {@attach attention.attach}>
+    <Cursor />
+  </div>
+</div>
 
 <style>
   .hero {

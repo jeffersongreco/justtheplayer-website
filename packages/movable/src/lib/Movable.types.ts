@@ -1,4 +1,4 @@
-import type { Snippet } from "svelte";
+import type { MODEL } from "./Movable.internal-types";
 
 // ---------------------------------------------------------------------------
 // Position & Group
@@ -20,89 +20,35 @@ export type MovableItemPosition = {
 export type MovableGroup = string[];
 
 // ---------------------------------------------------------------------------
-// Context Query (consumer facade)
+// Handle interfaces (returned by factory functions)
 // ---------------------------------------------------------------------------
 
-/**
- * Read-only query object for the Movable context.
- * Exposed via `Movable.get()` and the Context snippet parameters.
- * Consumers use this to observe drag state from anywhere in the subtree.
- */
-export interface MovableContextQuery {
-  /** ID of the item currently being dragged, or null if no drag is active. */
+/** Handle returned by the `MovableContext()` factory. */
+export interface MovableContext {
+  /** ID of the item currently being dragged, or null. */
   readonly activeItemID: string | null;
+  /** Attach action — apply to the root element. Must have position: relative|absolute|fixed. */
+  readonly attach: (el: HTMLElement) => () => void;
   /** Checks whether the currently dragged item is over the sensor with the given ID. */
   isOverSensor(id: string): boolean;
+  /** @internal — access to the Model for child factories */
+  readonly [MODEL]: import("./MovableModel.svelte").MovableModel;
 }
 
-// ---------------------------------------------------------------------------
-// Context
-// ---------------------------------------------------------------------------
-
-/** State exposed by `Movable.Context` in `asChild` mode. */
-export interface MovableContextState {
-  attach: (el: HTMLElement) => () => void;
-  context: MovableContextQuery;
+/** Handle returned by the `MovableItem()` factory. */
+export interface MovableItem {
+  /** Attach action — apply to the draggable element. */
+  readonly attach: (el: HTMLElement) => () => void;
+  /** true when the element has :focus-visible. */
+  readonly isFocused: boolean;
+  /** true while this item is being dragged. */
+  readonly isMoving: boolean;
 }
 
-/** Props for `Movable.Context`. */
-export type MovableContextProps =
-  | { asChild: Snippet<[MovableContextState]>; children?: never }
-  | { asChild?: never; children?: Snippet<[{ context: MovableContextQuery }]> };
-
-// ---------------------------------------------------------------------------
-// Item
-// ---------------------------------------------------------------------------
-
-interface MovableItemConfiguration {
-  group?: MovableGroup;
-  id?: string;
-  initialPosition?: MovableItemPosition;
-  stepSize?: number;
-  tabindex?: number;
+/** Handle returned by the `MovableSensor()` factory. */
+export interface MovableSensor {
+  /** Attach action — apply to the drop zone element. */
+  readonly attach: (el: HTMLElement) => () => void;
+  /** true while the active item is over this sensor. */
+  readonly isOver: boolean;
 }
-
-/** State exposed by `Movable.Item` in snippet parameters. */
-export interface MovableItemState {
-  attach: (el: HTMLElement) => () => void;
-  isFocused: boolean;
-  isMoving: boolean;
-}
-
-/** Props for `Movable.Item`. */
-export type MovableItemProps =
-  | (MovableItemConfiguration & {
-      asChild: Snippet<[MovableItemState]>;
-      children?: never;
-    })
-  | (MovableItemConfiguration & {
-      asChild?: never;
-      children?: Snippet<[Omit<MovableItemState, "attach">]>;
-    });
-
-// ---------------------------------------------------------------------------
-// Sensor
-// ---------------------------------------------------------------------------
-
-interface MovableSensorConfiguration {
-  accepts?: MovableGroup;
-  id?: string;
-  onDrop?: () => void;
-}
-
-/** State exposed by `Movable.Sensor` in snippet parameters. */
-export interface MovableSensorState {
-  attach: (el: HTMLElement) => () => void;
-  isOver: boolean;
-}
-
-/** Props for `Movable.Sensor`. */
-export type MovableSensorProps =
-  | (MovableSensorConfiguration & {
-      asChild: Snippet<[MovableSensorState]>;
-      children?: never;
-    })
-  | (MovableSensorConfiguration & {
-      asChild?: never;
-      children?: Snippet<[Omit<MovableSensorState, "attach">]>;
-    });

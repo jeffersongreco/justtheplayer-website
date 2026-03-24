@@ -1,39 +1,37 @@
 <script lang="ts">
-  import { Movable } from "@headless-uai/movable";
+  import { MovableSensor } from "@headless-uai/movable";
   import browserTop from "./tmp/browser-top.png";
   import disparada from "./tmp/disparada.webm";
   import youtubeBottom from "./tmp/youtube-bottom.png";
   import youtubeTop from "./tmp/youtube-top.png";
+
+  const sensor = MovableSensor({ id: "home-screen-sensor" });
 </script>
 
-<Movable.Sensor id="home-screen-sensor">
-  {#snippet asChild({ attach, isOver })}
-    <div {@attach attach} class="screen">
-      <div class="window">
-        <img src={browserTop} alt="" class="browser-top">
-        <img
-          src={youtubeTop}
-          alt=""
-          class="youtube-top"
-          class:isCursorOutScreen={!isOver}
-        >
+<div {@attach sensor.attach} class="screen">
+  <div class="window">
+    <img src={browserTop} alt="" class="browser-top">
+    <img
+      src={youtubeTop}
+      alt=""
+      class="youtube-top"
+      class:isCursorOutScreen={!sensor.isOver}
+    >
 
-        <div class="player-tmp">
-          <video autoplay loop muted playsinline>
-            <source src={disparada} type="video/webm">
-          </video>
-        </div>
-
-        <img
-          src={youtubeBottom}
-          alt=""
-          class="youtube-bottom"
-          class:isCursorOutScreen={!isOver}
-        >
-      </div>
+    <div class="player-tmp">
+      <video autoplay loop muted playsinline>
+        <source src={disparada} type="video/webm">
+      </video>
     </div>
-  {/snippet}
-</Movable.Sensor>
+
+    <img
+      src={youtubeBottom}
+      alt=""
+      class="youtube-bottom"
+      class:isCursorOutScreen={!sensor.isOver}
+    >
+  </div>
+</div>
 
 <style>
   .screen {
