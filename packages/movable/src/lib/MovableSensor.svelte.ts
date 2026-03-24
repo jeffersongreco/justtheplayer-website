@@ -36,10 +36,13 @@ export function MovableSensor(
 
   const isOver = $derived(model.activeSensorID === id);
 
+  let wasActive = false;
   $effect(() => {
-    if (!model.activeItemID && isOver) {
+    const isActive = !!model.activeItemID;
+    if (wasActive && !isActive && isOver) {
       onDrop?.();
     }
+    wasActive = isActive;
   });
 
   function attach(el: HTMLElement) {
