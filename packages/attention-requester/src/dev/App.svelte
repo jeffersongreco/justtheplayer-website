@@ -481,7 +481,7 @@
     <div class="stage" class:stage-active={activeStages.includes("discard")}>
       <span class="stage-label">discard</span>
       <div class="stage-area">
-        <div {@attach attentionDiscard.attach} class="target">
+        <div {@attach attentionDiscard.modifier} class="target">
           <button
             type="button"
             onclick={() => addLog("[a11y:discard] button clicked")}
@@ -524,7 +524,7 @@
     <div class="stage" class:stage-active={activeStages.includes("resume")}>
       <span class="stage-label">resume</span>
       <div class="stage-area">
-        <div {@attach attentionResume.attach} class="target">
+        <div {@attach attentionResume.modifier} class="target">
           <button
             type="button"
             onclick={() => addLog("[a11y:resume] button clicked")}

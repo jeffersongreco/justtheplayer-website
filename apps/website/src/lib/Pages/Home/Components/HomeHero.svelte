@@ -35,7 +35,7 @@
   });
 </script>
 
-<div {@attach context.attach} class="hero z-stack">
+<div {@attach context.modifier} class="hero z-stack">
   <!-- Video -->
   <div
     class="noise"
@@ -56,7 +56,7 @@
   <div class="gradient" class:isHeroSubtle></div>
 
   <!-- Cursor -->
-  <div {@attach cursor.attach} {@attach attention.attach}>
+  <div {@attach cursor.modifier} {@attach attention.modifier}>
     <Cursor />
   </div>
 </div>

@@ -9,7 +9,7 @@ import { AttentionRequesterModel } from "./AttentionRequesterModel.svelte";
 /**
  * Creates an attention-requester instance.
  *
- * The returned handle exposes an `attach` action for `{@attach}`,
+ * The returned handle exposes a `modifier` attachment for `{@attach}`,
  * imperative `request()`/`cancel()` methods, and reactive `isAnimating`/`paused` state.
  *
  * Must be called within a reactive context (component `<script>` or `$effect.root`).
@@ -23,7 +23,7 @@ export function AttentionRequester(): AttentionRequesterHandle {
   $effect(() => model.setReducedMotion(reducedMotion.current));
   $effect(() => (paused ? model.pause() : model.resume()));
 
-  function attach(el: HTMLElement) {
+  function modifier(el: HTMLElement) {
     const coordinator = new AttentionRequesterCoordinator(el, model);
     return () => coordinator.destroy();
   }
@@ -41,7 +41,7 @@ export function AttentionRequester(): AttentionRequesterHandle {
   }
 
   return {
-    attach,
+    modifier,
     request,
     cancel,
     get isAnimating() {

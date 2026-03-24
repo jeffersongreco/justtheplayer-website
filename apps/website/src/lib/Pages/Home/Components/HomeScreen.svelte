@@ -8,7 +8,7 @@
   const sensor = MovableSensor({ id: "home-screen-sensor" });
 </script>
 
-<div {@attach sensor.attach} class="screen">
+<div {@attach sensor.modifier} class="screen">
   <div class="window">
     <img src={browserTop} alt="" class="browser-top">
     <img
