@@ -324,13 +324,17 @@
   </div>
 
   <div class="stage">
-    <div {@attach context.attach} class="canvas">
-      <div {@attach sensor.attach} class="sensor" class:active={sensor.isOver}>
+    <div {@attach context.modifier} class="canvas">
+      <div
+        {@attach sensor.modifier}
+        class="sensor"
+        class:active={sensor.isOver}
+      >
         Sensor
       </div>
 
       <div
-        {@attach item1.attach}
+        {@attach item1.modifier}
         class="item"
         class:moving={item1.isMoving}
         class:focused={item1.isFocused}
@@ -339,8 +343,8 @@
       </div>
 
       <div
-        {@attach item2.attach}
-        {@attach ghostAttention.attach}
+        {@attach item2.modifier}
+        {@attach ghostAttention.modifier}
         class="ghost"
         class:focused={item2.isFocused}
       >

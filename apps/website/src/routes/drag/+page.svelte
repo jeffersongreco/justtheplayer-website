@@ -10,14 +10,14 @@
 <main>
   <h1>Movable</h1>
 
-  <div {@attach context.attach} class="canvas">
-    <div {@attach sensor.attach} class="sensor" class:active={sensor.isOver}>Sensor</div>
+  <div {@attach context.modifier} class="canvas">
+    <div {@attach sensor.modifier} class="sensor" class:active={sensor.isOver}>Sensor</div>
 
-    <div {@attach item1.attach} class="item" class:moving={item1.isMoving} class:focused={item1.isFocused}>
+    <div {@attach item1.modifier} class="item" class:moving={item1.isMoving} class:focused={item1.isFocused}>
       Item
     </div>
 
-    <div {@attach item2.attach}>
+    <div {@attach item2.modifier}>
       <div class="ghost">👻</div>
     </div>
   </div>

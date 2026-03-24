@@ -47,7 +47,7 @@ export function MovableItem(
   const isMoving = $derived(model.activeItemID === id);
   let isFocused = $state(false);
 
-  function attach(el: HTMLElement) {
+  function modifier(el: HTMLElement) {
     const coordinator = new MovableItemCoordinator(
       el,
       model,
@@ -64,7 +64,7 @@ export function MovableItem(
   }
 
   return {
-    attach,
+    modifier,
     get isMoving() {
       return isMoving;
     },

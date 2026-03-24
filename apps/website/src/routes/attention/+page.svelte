@@ -53,14 +53,14 @@
     <div class="stage">
       <span class="stage-label">discard</span>
       <div class="stage-area">
-        <div {@attach attentionDiscard.attach} class="target"></div>
+        <div {@attach attentionDiscard.modifier} class="target"></div>
       </div>
     </div>
 
     <div class="stage">
       <span class="stage-label">resume</span>
       <div class="stage-area">
-        <div {@attach attentionResume.attach} class="target"></div>
+        <div {@attach attentionResume.modifier} class="target"></div>
       </div>
     </div>
   </div>

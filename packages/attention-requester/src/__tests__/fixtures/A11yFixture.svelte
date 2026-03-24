@@ -9,6 +9,6 @@
   const attention = AttentionRequester();
 </script>
 
-<div {@attach attention.attach}>
+<div {@attach attention.modifier}>
   <button type="button">Attention target</button>
 </div>

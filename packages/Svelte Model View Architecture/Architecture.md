@@ -91,7 +91,7 @@ O `class:isBouncingRight` não é uma regra — é um canal. A *decisão* de que
 
 **O que é estrutura (vive no template):**
 - Hierarquia de elementos: `<div>`, `<section>`, `<span>`
-- Bindings reativos que conectam script ao DOM: `class:isVisible`, `{@attach handle.attach}`
+- Bindings reativos que conectam script ao DOM: `class:isVisible`, `{@attach handle.modifier}`
 - Renderização condicional de **estrutura**: `{#if showPanel}` (quando a presença/ausência de um bloco de HTML é a decisão, não uma regra sobre um atributo)
 
 A distinção é sutil mas importante: o template decide **o quê** existe no DOM (estrutura), o script decide **como** cada elemento se apresenta (regras). O binding é o mensageiro entre os dois.
@@ -453,7 +453,7 @@ import { MovableContext, MovableItem, MovableSensor } from '$lib/Movable'
 
 ### Modifiers como Factories (View Modifiers)
 
-Modifiers são **sempre factory functions** — nunca componentes wrapper. A factory retorna um handle com `.attach` e propriedades reativas de estado. O consumidor aplica `{@attach handle.attach}` diretamente no seu elemento, sem nenhuma camada intermediária no DOM.
+Modifiers são **sempre factory functions** — nunca componentes wrapper. A factory retorna um handle com `.modifier` e propriedades reativas de estado. O consumidor aplica `{@attach handle.modifier}` diretamente no seu elemento, sem nenhuma camada intermediária no DOM.
 
 Este é o equivalente de um **View Modifier do SwiftUI** (como `.draggable()`): concede superpoderes ao elemento sem alterar a árvore de componentes.
 
@@ -462,7 +462,7 @@ Este é o equivalente de um **View Modifier do SwiftUI** (como `.draggable()`): 
   const item = MovableItem()
 </script>
 
-<div {@attach item.attach}>
+<div {@attach item.modifier}>
   Conteúdo movível
 </div>
 ```
@@ -473,7 +473,7 @@ Este é o equivalente de um **View Modifier do SwiftUI** (como `.draggable()`): 
 - **Composição natural** — múltiplos modifiers no mesmo elemento são aplicados com múltiplos `{@attach}`, sem aninhamento artificial:
 
 ```svelte
-<div {@attach item.attach} {@attach attention.attach}>
+<div {@attach item.modifier} {@attach attention.modifier}>
   Conteúdo com múltiplas capacidades
 </div>
 ```
@@ -491,7 +491,7 @@ A factory retorna um handle com métodos imperativos e estado reativo. O consumi
   }
 </script>
 
-<div {@attach attention.attach} onclick={onClick}>...</div>
+<div {@attach attention.modifier} onclick={onClick}>...</div>
 ```
 
 O handle é o único ponto de interação entre o consumidor e o Modifier. Ele expõe:
@@ -506,7 +506,7 @@ O estado reativo do handle é consumido no `<script>` da View como qualquer outr
   const isActive = $derived(item.isMoving)
 </script>
 
-<div {@attach item.attach} class:isActive>...</div>
+<div {@attach item.modifier} class:isActive>...</div>
 ```
 
 ### Context como Fronteiras Lógicas
@@ -629,7 +629,7 @@ A filosofia Fail-Safe descrita acima opera *dentro* dos componentes (lógica def
     <!-- Conteúdo renderizado sem capacidades do Modifier -->
     <div>Conteúdo sem superpoderes</div>
   {/snippet}
-  <div {@attach item.attach}>
+  <div {@attach item.modifier}>
     Conteúdo movível
   </div>
 </svelte:boundary>
@@ -698,7 +698,7 @@ Arquivos são prefixados com o nome do domínio do pacote para namespace safety 
 ```
 AttentionRequesterModel.svelte.ts       — Model (estado + lógica de negócio)
 AttentionRequesterCoordinator.svelte.ts — Coordinator (ciclo de vida DOM + execução)
-AttentionRequester.svelte.ts            — Factory function (cria handle com .attach e estado reativo)
+AttentionRequester.svelte.ts            — Factory function (cria handle com .modifier e estado reativo)
 AttentionRequester.types.ts             — Types e interfaces
 index.ts                                — API pública (exports)
 ```

@@ -79,9 +79,6 @@ export type AttentionRequesterAnimation = ARAnimationLoop | ARAnimationOneShot;
  * a reactive `attach` action for `{@attach}`, and reactive state.
  */
 export interface AttentionRequester {
-  /** Svelte attach action — apply with `{@attach attention.attach}` on the target element. */
-  readonly attach: (el: HTMLElement) => () => void;
-
   /**
    * Gracefully cancels the active animation.
    *
@@ -92,6 +89,9 @@ export interface AttentionRequester {
 
   /** `true` while an animation cycle is active, including while paused. */
   readonly isAnimating: boolean;
+
+  /** Svelte attachment — apply with `{@attach attention.modifier}` on the target element. */
+  readonly modifier: (el: HTMLElement) => () => void;
 
   /**
    * When `true`, freezes the animation visually. On `false`, resumes according to

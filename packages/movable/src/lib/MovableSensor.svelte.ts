@@ -45,13 +45,13 @@ export function MovableSensor(
     wasActive = isActive;
   });
 
-  function attach(el: HTMLElement) {
+  function modifier(el: HTMLElement) {
     model.registerSensor(id, el.getBoundingClientRect(), accepts);
     return () => model.unregisterSensor(id);
   }
 
   return {
-    attach,
+    modifier,
     get isOver() {
       return isOver;
     },

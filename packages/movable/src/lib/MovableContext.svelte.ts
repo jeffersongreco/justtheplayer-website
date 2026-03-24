@@ -11,13 +11,13 @@ export function MovableContext(): MovableContextHandle {
   const model = new MovableModel();
   setModel(model);
 
-  function attach(el: HTMLElement) {
+  function modifier(el: HTMLElement) {
     const coordinator = new MovableContextCoordinator(el, model);
     return () => coordinator.destroy();
   }
 
   return {
-    attach,
+    modifier,
     [MODEL]: model,
     isOverSensor: (id: string) => model.isOverSensor(id),
     get activeItemID() {

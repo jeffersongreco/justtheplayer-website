@@ -50,7 +50,7 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 
 ### API Surface (§5)
 - [ ] Exports usam flat named exports com padrão `[Domain][Role]` (ex: `MovableContext`, `MovableItem`)
-- [ ] Modifiers são sempre factory functions que retornam handle com `.attach` e estado reativo — nunca componentes wrapper
+- [ ] Modifiers são sempre factory functions que retornam handle com `.modifier` e estado reativo — nunca componentes wrapper
 - [ ] API imperativa via handle retornado pela factory (ex: `attention.request(animation)`) — sem `bind:this`
 - [ ] Parâmetros que variam entre chamadas pertencem a métodos do handle; fixos por instância podem ser parâmetros da factory
 - [ ] Estado reativo do handle (`isMoving`, `isAnimating`) consumido no `<script>` da View via `$derived`
