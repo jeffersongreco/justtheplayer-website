@@ -64,6 +64,38 @@ O Model expõe `step` e `isFinished`. A View decide que `step === 1` significa "
 
 A View consome o estado como somente-leitura e o interpreta para fins visuais. Ela não toma decisões que afetam o domínio.
 
+### Separação Script / Template
+
+Toda **regra de apresentação** — derivações, mapeamentos, condicionais — vive no `<script>`. O template contém apenas:
+1. **Markup estrutural** — a hierarquia de elementos HTML
+2. **Bindings reativos** — a ponte de comunicação entre script e template
+
+Os bindings não contêm regras; são canais que transportam decisões já tomadas no script para o markup. A regra vive no `$derived`; o binding apenas entrega o resultado:
+
+```svelte
+<script>
+  // A regra vive aqui — é lógica de apresentação no script
+  const isBouncingRight = $derived(model.step === 1)
+</script>
+
+<!-- O template só recebe o resultado via binding — sem regras -->
+<div class:isBouncingRight>...</div>
+```
+
+O `class:isBouncingRight` não é uma regra — é um canal. A *decisão* de que `step === 1` significa "quicando para a direita" já foi tomada no script. O template apenas reflete essa decisão no DOM.
+
+**O que é regra (vive no script):**
+- Derivações: `const isVisible = $derived(model.count > 0)`
+- Mapeamentos: `const variant = $derived(model.step === 1 ? 'bounce' : 'idle')`
+- Qualquer expressão condicional que interpreta o estado do Model
+
+**O que é estrutura (vive no template):**
+- Hierarquia de elementos: `<div>`, `<section>`, `<span>`
+- Bindings reativos que conectam script ao DOM: `class:isVisible`, `{@attach handle.attach}`
+- Renderização condicional de **estrutura**: `{#if showPanel}` (quando a presença/ausência de um bloco de HTML é a decisão, não uma regra sobre um atributo)
+
+A distinção é sutil mas importante: o template decide **o quê** existe no DOM (estrutura), o script decide **como** cada elemento se apresenta (regras). O binding é o mensageiro entre os dois.
+
 ---
 
 ## 2. Model e Estado
@@ -195,9 +227,9 @@ O Coordinator é o **dono da existência do elemento no espaço**. Ele é persis
 - Tomar decisões de negócio
 - Decidir comportamento com base em estado — ele recebe intenções tipadas do Model e faz `switch`
 
-### Resolução Lazy do Alvo
+### Resolução Direta do Alvo
 
-O wrapper do componente pode ser `display: contents` — sem caixa de layout. O Coordinator **não anima o wrapper**; anima `wrapper.children[0]`. A resolução é feita na **primeira operação**, não na construção, porque o slot pode não estar populado no momento em que o Coordinator é instanciado.
+O Coordinator recebe o elemento diretamente via `{@attach}` — não há wrapper intermediário. O elemento passado ao Coordinator é o próprio elemento-alvo, eliminando a necessidade de resolução indireta via `wrapper.children[0]`.
 
 ### Reatividade no Componente
 
@@ -232,7 +264,7 @@ O método `destroy()` do Coordinator trata apenas cleanup imperativo: animaçõe
 
 **Escape hatch:** Se um Coordinator precisar ser criado fora de um contexto reativo, ele usa `$effect.root` internamente e o `destroy()` é obrigatório. Esta é a exceção, não o padrão.
 
-O template `<script>` contém apenas: (1) `$effect` que roteia props para o Model. O ciclo de vida do Coordinator é declarado no template via `{@attach}`. Nenhum `$effect` no template roteia estado do Model para o Coordinator — o Coordinator trata disso internamente.
+O bloco `<script>` contém apenas: (1) instanciação do Model via factory, (2) regras de apresentação como `$derived`, e (3) `$effect` que roteia props para o Model. O ciclo de vida do Coordinator é declarado no template via `{@attach}`. Nenhum `$effect` no `<script>` roteia estado do Model para o Coordinator — o Coordinator trata disso internamente.
 
 ### Gerenciamento de Lifetime: `$effect` como Structured Concurrency
 
@@ -413,71 +445,69 @@ interface MovableInteraction {
 
 ### Flat Named Exports
 
-Famílias de componentes são exportadas como named exports individuais, seguindo o padrão `[Domain][Role]` (ex: `MovableContext`, `MovableItem`, `MovableSensor`). Cada componente tem um nome autocontido que comunica tanto o pacote quanto sua função.
+Famílias de componentes são exportadas como named exports individuais, seguindo o padrão `[Domain][Role]` (ex: `MovableContext`, `MovableItem`, `MovableSensor`). Cada export tem um nome autocontido que comunica tanto o pacote quanto sua função.
 
 ```ts
 import { MovableContext, MovableItem, MovableSensor } from '$lib/Movable'
 ```
 
-### Modifiers (View Modifiers)
+### Modifiers como Factories (View Modifiers)
 
-O Modifier fornecido pelo componente não é uma "caixa" — é o equivalente de um **View Modifier do SwiftUI** (como `.draggable()`) aplicado via sintaxe de componente. Ele concede superpoderes (física, captura, observação) à View filha sem aprisioná-la visualmente.
+Modifiers são **sempre factory functions** — nunca componentes wrapper. A factory retorna um handle com `.attach` e propriedades reativas de estado. O consumidor aplica `{@attach handle.attach}` diretamente no seu elemento, sem nenhuma camada intermediária no DOM.
 
-- **`display: contents` por padrão:** O Modifier é invisível no layout — não afeta CSS selectors nem a estrutura visual do filho. O desenvolvedor pode escrever CSS como se o Modifier não existisse. Modifiers que precisam de uma caixa de layout real (ex: ponto de ancoragem com `position: relative`, `overflow: hidden`) devem explicitamente optar por `display: flex; width: max-content` e documentar o motivo.
-- **Sintaxe vs. Realidade:** O fato de uma View ser escrita "dentro" do componente (ex: `<MovableItem> <MinhaView /> </MovableItem>`) é exigência sintática do Svelte/HTML. Na prática, não existe relação de aprisionamento — a View **absorve** as capacidades do Modifier.
-
-### Modifiers Comportamentais vs. Estruturais
-
-A distinção determina a implementação correta:
-
-| Tipo | Precisa de filhos? | Implementação | Custo |
-|---|---|---|---|
-| **Comportamental** — apenas afeta o elemento host | Não | `{@attach}` (action) | Zero — sem instância de componente |
-| **Estrutural** — envolve filhos ou provê Context | Sim | Componente `.svelte` com `display: contents` | Mínimo — lifecycle, sem custo de DOM |
-
-Modifiers comportamentais (que observam ou modificam apenas o elemento host sem precisar envolver filhos) devem ser implementados como funções `{@attach}`, não como componentes. Isso elimina completamente o overhead de lifecycle de componente — não existe instância, não existe mount/destroy separado. Modifiers estruturais — que precisam de slot/snippet para envolver filhos ou injetar Context — precisam ser componentes, com `display: contents` como padrão para minimizar impacto no layout.
-
-### Padrão Polimórfico (`asChild`): Abertura Progressiva
-
-O padrão `asChild` resolve o dilema fundamental da DX: **Velocidade vs. Controle**.
-
-**Caminho 1 — O Modifier Seguro (padrão):**
-Se o desenvolvedor apenas injetar conteúdo, o componente renderiza um invólucro padrão (um `<div>` com `display: contents`). Esse Modifier assume acessibilidade (`role`, `tabindex`), estilos vitais e física. Rota "Plug and Play" para 80% dos casos. Estados efêmeros (`isDragging`, `isMoving`) são acessíveis via parâmetros do snippet `children`.
-
-**Caminho 2 — Inversão de Controle (`asChild`):**
-Em layouts onde até mesmo um `<div>` com `display: contents` quebra o design, `asChild` permite que o componente "desista" de renderizar sua própria tag HTML e passe suas capacidades (ações e estados reativos) para a tag do usuário via snippet. Estados efêmeros são igualmente acessíveis neste caminho.
-
-> **Regra de ouro:** *"Use `asChild` apenas quando precisar eliminar o wrapper do DOM."* Ambos os caminhos são **sempre oferecidos** — a API é consistente entre todos os Modifiers. Porém o design com `display: contents` como padrão faz com que `asChild` seja raramente necessário — é um escape hatch de último recurso, não uma escolha rotineira.
-
-**Restrição:** Quando o filho direto é um **componente Svelte** (não um elemento HTML nativo), `{@attach}` não pode ser aplicado a ele — attachments só funcionam em elementos DOM. Nesse caso, o wrapper do Modifier é obrigatório e `asChild` não é viável.
-
-**Tipagem de exclusividade:** `children` e `asChild` não podem coexistir. A exclusividade é uma propriedade do tipo, não validação runtime:
-
-```ts
-type Props =
-  | { children: Snippet; asChild?: never }
-  | { asChild: Snippet<[...]>; children?: never }
-```
-
-### API Imperativa via `bind:this`
-
-Componentes exportam métodos diretamente e o pai acessa via `bind:this`. Segue a intuição de `element.animate()` e `input.focus()` — imperativo, direto, sem abstração inventada.
+Este é o equivalente de um **View Modifier do SwiftUI** (como `.draggable()`): concede superpoderes ao elemento sem alterar a árvore de componentes.
 
 ```svelte
-<AttentionRequester bind:this={requester} />
-
 <script>
-  requester.request(bounceAnimation)
+  const item = MovableItem()
 </script>
+
+<div {@attach item.attach}>
+  Conteúdo movível
+</div>
 ```
 
-O tipo da instância é exportado com o mesmo nome do componente (`AttentionRequester`).
+**Vantagens sobre wrappers:**
+- **Zero overhead de componente** — não existe instância de componente, mount/destroy separado, nem elemento intermediário no DOM
+- **Sem impacto no layout** — o elemento do consumidor é o próprio alvo; não há wrapper `display: contents` que possa interferir com CSS selectors, flexbox gaps, ou grid
+- **Composição natural** — múltiplos modifiers no mesmo elemento são aplicados com múltiplos `{@attach}`, sem aninhamento artificial:
 
-**Props vs. parâmetros da chamada imperativa:** A decisão é caso a caso. Configurações que **variam entre chamadas** pertencem à chamada imperativa (ex: `request(animation)` — o mesmo componente pode receber animações diferentes em chamadas sucessivas). Configurações que são **fixas para a instância** podem ser props normais.
+```svelte
+<div {@attach item.attach} {@attach attention.attach}>
+  Conteúdo com múltiplas capacidades
+</div>
+```
 
-### Injeção de Estado via Snippets
+### API Imperativa via Handle
 
-Estados efêmeros (`isDragging`, `isFocused`, `isOver`) são passados de volta para o usuário via parâmetros do snippet, eliminando a necessidade de variáveis de controle no `<script>`.
+A factory retorna um handle com métodos imperativos e estado reativo. O consumidor interage diretamente com o handle no `<script>` — sem necessidade de `bind:this`.
+
+```svelte
+<script>
+  const attention = AttentionRequester()
+
+  function onClick() {
+    attention.request(bounceAnimation)
+  }
+</script>
+
+<div {@attach attention.attach} onclick={onClick}>...</div>
+```
+
+O handle é o único ponto de interação entre o consumidor e o Modifier. Ele expõe:
+- **Métodos imperativos** para ações que variam entre chamadas (ex: `request(animation)`, `cancel()`)
+- **Estado reativo derivado** para a View consumir (ex: `attention.isAnimating`, `item.isMoving`)
+
+O estado reativo do handle é consumido no `<script>` da View como qualquer outro estado — via `$derived` para regras de apresentação, com bindings no template apenas como ponte:
+
+```svelte
+<script>
+  const item = MovableItem()
+  const isActive = $derived(item.isMoving)
+</script>
+
+<div {@attach item.attach} class:isActive>...</div>
+```
 
 ### Context como Fronteiras Lógicas
 
@@ -497,13 +527,19 @@ O provedor de contexto (ex: `<MovableContext>`) não renderiza nenhuma tag HTML 
 >
 > O padrão de DX permanece o mesmo — `MovableContext.use()` continua sendo o atalho público. A diferença é que a infraestrutura por baixo usa `createContext` para type safety nativa e eliminação de chaves manuais.
 
-### Design Declarativo como Contrato
+### Design Declarativo: Context como Componente, Modifier como Factory
 
-A escolha de transformar Context e Modifiers em **componentes `.svelte`** (em vez de funções puras em TypeScript) é intencional:
+**Context providers** são componentes `.svelte` — a escolha é intencional:
 
 - **Alinhamento mental:** A hierarquia visual no código reflete a hierarquia de comportamentos. O desenvolvedor vê imediatamente que "tudo dentro desta tag compartilha as mesmas regras físicas".
 - **Delegação de ciclo de vida:** O desenvolvedor não precisa se preocupar com `onMount`, `onDestroy` ou memory leaks. Quando o componente é removido da tela (por um `{#if}`, por exemplo), ele desconecta ResizeObservers, limpa instâncias do Model, remove event listeners e libera memória automaticamente.
-- **Componente como contrato:** Recebe intenções (ex: `initialPosition="50%"`) e devolve reatividade (ex: `isDragging`), encapsulando toda a manipulação direta do DOM.
+- **Componente como fronteira:** Demarca onde uma instância do Model passa a existir na árvore.
+
+**Modifiers** são factory functions — a escolha também é intencional:
+
+- **Zero overhead de componente:** Factories não criam instâncias de componente nem elementos no DOM. O ciclo de vida é gerido pelo `{@attach}` no elemento do consumidor.
+- **Composição sem aninhamento:** Múltiplos modifiers no mesmo elemento são aplicados lado a lado, sem wrappers aninhados que complicam CSS e debug.
+- **Estado acessível no script:** O handle retornado pela factory expõe estado reativo diretamente no `<script>`, onde as regras de apresentação vivem — alinhado com a separação script/template (§1).
 
 ---
 
@@ -591,11 +627,11 @@ A filosofia Fail-Safe descrita acima opera *dentro* dos componentes (lógica def
 <svelte:boundary onerror={(error) => console.warn('[Movable]', error)}>
   {#snippet failed()}
     <!-- Conteúdo renderizado sem capacidades do Modifier -->
-    {@render children()}
+    <div>Conteúdo sem superpoderes</div>
   {/snippet}
-  <MovableItem>
-    {@render children()}
-  </MovableItem>
+  <div {@attach item.attach}>
+    Conteúdo movível
+  </div>
 </svelte:boundary>
 ```
 
@@ -662,7 +698,7 @@ Arquivos são prefixados com o nome do domínio do pacote para namespace safety 
 ```
 AttentionRequesterModel.svelte.ts       — Model (estado + lógica de negócio)
 AttentionRequesterCoordinator.svelte.ts — Coordinator (ciclo de vida DOM + execução)
-AttentionRequesterModifier.svelte       — Modifier (View Modifier — concede capacidades ao filho)
+AttentionRequester.svelte.ts            — Factory function (cria handle com .attach e estado reativo)
 AttentionRequester.types.ts             — Types e interfaces
 index.ts                                — API pública (exports)
 ```
