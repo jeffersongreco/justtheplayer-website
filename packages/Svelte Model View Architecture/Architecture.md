@@ -699,9 +699,24 @@ Arquivos são prefixados com o nome do domínio do pacote para namespace safety 
 AttentionRequesterModel.svelte.ts       — Model (estado + lógica de negócio)
 AttentionRequesterCoordinator.svelte.ts — Coordinator (ciclo de vida DOM + execução)
 AttentionRequester.svelte.ts            — Factory function (cria handle com .modifier e estado reativo)
-AttentionRequester.types.ts             — Types e interfaces
+AttentionRequester.types.ts             — Tipos públicos do consumidor (exportados via index.ts)
+AttentionRequester.internal-types.ts    — Contratos internos: Model↔Coordinator, Model↔Interaction (não exportados)
 index.ts                                — API pública (exports)
 ```
+
+Os arquivos de tipos têm responsabilidades separadas: `[Domain].types.ts` contém apenas o que aparece em `Interface.md` e é exportado; `[Domain].internal-types.ts` contém os contratos inter-módulo (interfaces de Coordinator e Interaction) e nunca é exposto ao consumidor. Ver [Interfaces (§16)](Interfaces.md) para detalhes sobre os contratos inter-módulo.
+
+Os arquivos de teste seguem a mesma separação por módulo:
+
+```
+__tests__/[Domain]Model.test.ts               — Testes do Model (automatizados)
+__tests__/[Domain]Coordinator.test.ts         — Testes do Coordinator (JSDOM + Playwright)
+__tests__/[Domain][Type]Interaction.test.ts   — Testes de cada Interaction (por tipo)
+__tests__/[domain].utils.test.ts              — Testes de utils/helpers (automatizados)
+__tests__/[Domain]Model.bench.ts              — Benchmarks do Model (vitest bench)
+```
+
+Um arquivo de teste por módulo. Testes de Coordinator verificam efeitos DOM reais com JSDOM; Playwright para o que JSDOM não computa. Ver [Testing (§10)](Testing.md) para a estratégia completa.
 
 > **`index.ts` é a exceção:** O bundler resolve `index.ts` automaticamente ao importar um diretório. Renomear para `[domain].index.ts` quebraria essa resolução. O path já desambigua (`Movable/index.ts` vs `AttentionRequester/index.ts`).
 
@@ -721,4 +736,4 @@ Nomes baseados no **domínio e capacidade** (ex: `Movable` — domínio do espa�
 | [Accessibility](Accessibility.md) | §13 | Requisitos por tipo de package, processo de verificação em 5 steps |
 | [Checklist](Checklist.md) | §14 | Checklist de conformidade unificado (auditoria single-pass) |
 | [Git Conventions](Git%20Conventions.md) | §15 | Convenções de commit, branch naming, CalVer |
-| [Interfaces](Interfaces.md) | §16 | Interface.md como contrato público do consumidor, estrutura obrigatória, naming |
+| [Interfaces](Interfaces.md) | §16 | Interface.md (contrato do consumidor) + interfaces de módulo (Coordinator, Interaction, contratos inter-módulo definidos pelo Model) |

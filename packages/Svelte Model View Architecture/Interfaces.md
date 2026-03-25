@@ -1,7 +1,12 @@
-# Interfaces de Pacote (§16)
+# Interfaces (§16)
 
 > Parte da [Svelte Model View Architecture](Architecture.md).
 > Referencia também: [Testing](Testing.md) · [Checklist](Checklist.md)
+
+Este documento cobre dois níveis de interface:
+
+1. **Interface de pacote** — o contrato entre o pacote e quem o usa como bloco de UI. Vive em `Interface.md`. É o que um consumidor lê.
+2. **Interfaces de módulo** — os contratos entre os módulos internos do pacote (Model, Coordinator, Interaction). Vivem em tipos TypeScript e arquivos de tipos separados por módulo. São o que um contribuidor usa.
 
 ---
 
@@ -123,6 +128,92 @@ Essa convenção torna a direção do fluxo legível na assinatura do componente
 - Detalhes de implementação (como o estado é armazenado, como os eventos são capturados)
 - Terminologia de arquitetura MV
 - Instruções para contribuidores — isso vai em `Architecture.md`
+
+---
+
+---
+
+## Interfaces de Módulo
+
+### O Model define todos os contratos inter-módulo
+
+O Model não tem apenas sua própria interface pública — ele declara a interface de todos os módulos que o servem. Coordinator e Interaction não definem o que oferecem; eles implementam contra o que o Model declarou precisar. O Model é a fonte de verdade para todos os contratos internos do pacote.
+
+Isso significa que as interfaces inter-módulo vivem junto aos tipos do Model, em `[Domain].internal-types.ts` — não em arquivos dos módulos que as implementam.
+
+---
+
+### Interface do Coordinator
+
+O Coordinator é uma classe com métodos DOM explícitos e um `$effect` que os chama automaticamente quando o Model muda de estado. O `$effect` é o mecanismo de ativação — não é a interface. A interface são os métodos.
+
+```ts
+// Em [Domain].internal-types.ts
+export interface SomeCoordinator {
+  startAnimation(el: Element, animation: Animation): void
+  pauseAnimation(): void
+  resumeAnimation(): void
+  cancelAnimation(el: Element): void
+}
+```
+
+A implementação satisfaz essa interface e usa `$effect` para fazer o dispatch:
+
+```ts
+class SomeCoordinatorImpl implements SomeCoordinator {
+  constructor(private model: SomeModel, private el: Element) {
+    $effect(() => {
+      if (model.isAnimating) this.startAnimation(el, model.currentAnimation)
+      else this.cancelAnimation(el)
+    })
+  }
+
+  startAnimation(el: Element, animation: Animation) { /* ... */ }
+  cancelAnimation(el: Element) { /* ... */ }
+}
+```
+
+Ter a interface tipada significa que o Coordinator pode ser testado em isolamento: basta criar um `$state` stub com a forma do Model e observar os efeitos DOM.
+
+---
+
+### Interface da Interaction
+
+O contrato da Interaction é definido pelo Model, não pela Interaction. O Model declara o que ele expõe para ser chamado por Interactions — os métodos que representam as transições de estado que eventos de hardware podem provocar, mais qualquer estado que a Interaction precise ler para fazer seu trabalho:
+
+```ts
+// Em [Domain].internal-types.ts — definido pelo Model, consumido pelas Interactions
+export interface SomeDomainInteraction {
+  readonly activeItemID: string | null
+  began(id: string, position: Position): void
+  changed(x: number, y: number): void
+  ended(): void
+}
+```
+
+O Model implementa essa interface. As Interactions recebem um `SomeDomainInteraction` e chamam seus métodos — elas não definem o protocolo, elas o respeitam.
+
+O lado DOM da Interaction (escutar eventos do browser) é um contrato com terceiro: o browser garante que `pointerdown` dispara quando o usuário pressiona. Esse lado não tem interface testável — a única falha possível é de setup ("não estava ouvindo o evento"). O lado Model é o único contrato relevante para testes.
+
+---
+
+### Onde os contratos inter-módulo vivem
+
+| Tipo | Arquivo | Exportado? |
+|---|---|---|
+| Interface do consumidor de pacote | `Interface.md` + JSDoc em `[Domain].types.ts` | Sim — via `index.ts` |
+| Tipos públicos do consumidor | `[Domain].types.ts` | Sim — via `index.ts` |
+| Contratos entre Model, Coordinator e Interaction | `[Domain].internal-types.ts` | Não — uso interno apenas |
+
+`[Domain].internal-types.ts` nunca é exportado pelo `index.ts`. Consumidores de pacote não têm razão para importar contratos inter-módulo. Contribuidores importam diretamente do arquivo.
+
+---
+
+### Testes de Coordinator e Interaction como specs legíveis
+
+Coordinator e Interaction não têm Behavioral Spec formal. Seus testes bem escritos **são** lidos como specs. Um teste de Coordinator nomeia uma transição de estado e descreve o efeito DOM esperado; um teste de Interaction nomeia um evento e descreve a chamada de Model resultante. Qualquer contribuidor lendo os arquivos de teste entende o contrato do módulo sem precisar abrir a implementação.
+
+A diferença em relação ao Behavioral Spec do Model é de formalidade e sequência: o Spec do Model é escrito antes da implementação e serve como documento de design. Para Coordinator e Interaction, os testes cumprem os dois papéis — são spec e verificação ao mesmo tempo.
 
 ---
 

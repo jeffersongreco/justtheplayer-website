@@ -24,11 +24,22 @@ O Model é a fonte única da verdade; se os testes do Model passam mas o comport
 
 | Camada | Estratégia | Rationale |
 |---|---|---|
-| Model (estado puro) | Testes automatizados, um arquivo por Model | Lógica pura, sem dependências, rápido, preciso |
-| Coordinator (orquestrador DOM) | Checklist de verificação manual na dev page | DOM + framework dependent; mocks seriam frágeis e enganosos |
-| View (componente Svelte) | Checklist de verificação manual na dev page | Mesmo que Coordinator |
-| Integração Model ↔ Coordinator | Checklist de verificação manual na dev page | Precisa de runtime real; teste automatizado seria E2E |
+| Model (estado puro) | Testes automatizados — um arquivo por Model | Lógica pura, sem dependências, rápido, preciso |
+| Coordinator (orquestrador DOM) | Testes automatizados com JSDOM (classes, atributos, ARIA, focus, live regions, `getAnimations()`); Playwright para layout computado e timing preciso de WAAPI | Testável em isolamento via `$state` stub — não precisa do Model real, só da sua interface |
+| Interaction (hardware translator) | Testes automatizados — evento sintético + stub tipado pela interface do Model | Só o lado Model é contratual; o lado DOM é contrato com o browser |
+| View (componente Svelte) | Checklist visual na dev page | Qualidade subjetiva, rendering, animações reais |
+| Integração Model ↔ Coordinator | Playwright ou checklist visual na dev page | Pipeline completo; requer runtime real |
 | Utils / pure functions | Testes automatizados | 100% testável, sem side effects |
+
+O checklist manual na dev page fica reservado para julgamentos genuinamente subjetivos: "a animação parece natural?", "o bounce tem o peso certo?". Tudo que tem resposta binária (tem ou não tem, está certo ou errado) é automatizável.
+
+### Um arquivo de teste por módulo
+
+Cada módulo tem seu próprio arquivo de teste: `[Domain]Model.test.ts`, `[Domain]Coordinator.test.ts`, `[Domain][Type]Interaction.test.ts`, `[domain].utils.test.ts`. Isso mantém a rastreabilidade direta entre módulo e seus contratos verificados, e torna falhas de CI imediatamente localizáveis: se `MovableCoordinator.test.ts` falha, o problema está no Coordinator.
+
+### Testes de Coordinator e Interaction como specs legíveis
+
+Coordinator e Interaction não têm Behavioral Spec formal. Seus testes bem escritos servem como specs: cada teste nomeia uma transição de estado (Coordinator) ou um evento de hardware (Interaction) e descreve o resultado esperado. Lidos em sequência, os testes de um Coordinator descrevem completamente seu contrato reativo.
 
 ### Organização dos Testes por Seção do Spec
 

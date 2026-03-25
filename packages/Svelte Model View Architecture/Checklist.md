@@ -87,7 +87,9 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 
 ### Nomenclatura (§9)
 - [ ] Arquivos prefixados com nome do domínio do pacote
-- [ ] Sufixos seguem convenção: `Model.svelte.ts`, `Coordinator.svelte.ts`, `[Domain].svelte.ts` (factory), `[domain].types.ts`, `index.ts`
+- [ ] Sufixos de implementação seguem convenção: `Model.svelte.ts`, `Coordinator.svelte.ts`, `[Domain].svelte.ts` (factory), `index.ts`
+- [ ] Tipos separados por escopo: `[Domain].types.ts` (públicos, exportados), `[Domain].internal-types.ts` (contratos inter-módulo, não exportados)
+- [ ] Testes separados por módulo: `[Domain]Model.test.ts`, `[Domain]Coordinator.test.ts`, `[Domain][Type]Interaction.test.ts`, `[domain].utils.test.ts`
 - [ ] Nomes baseados em capacidade/domínio, não em APIs legadas da web
 
 ### Testes (§10)
@@ -95,9 +97,12 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Ritmo granular: um teste por vez, não blocos de testes seguidos de blocos de implementação
 - [ ] Behavioral Spec exaustivo: todo estado, transição, edge case e invariante descrito antes da implementação
 - [ ] Testes automatizados do Model organizados por seção do Spec (ex: `§2.1`, `§2.3`)
-- [ ] Um arquivo de teste por Model
+- [ ] Um arquivo de teste por módulo (Model, Coordinator, cada Interaction, utils)
+- [ ] Testes do Coordinator usam JSDOM com `$state` stub do Model — verificam classes, atributos, ARIA, focus, live regions, `getAnimations()` e presença de elementos
+- [ ] Testes da Interaction usam evento sintético + stub tipado pela interface do Model — verificam que o método correto é chamado com os argumentos corretos
+- [ ] Playwright para efeitos que JSDOM não computa (layout real, timing de WAAPI)
 - [ ] Pure functions extraídas de Coordinators/Interactions com testes automatizados próprios
-- [ ] Zero testes automatizados de UI — verificação visual via dev page
+- [ ] Checklist manual na dev page reservado para julgamentos subjetivos (qualidade visual, feel de animação)
 - [ ] Testes classificados com tags: `unit` (lógica isolada), `integration` (múltiplas camadas), `benchmark` (vitest bench), `slow` (timers reais)
 - [ ] Workflow de entrega em ordem: testes automatizados passam → Guided QA (todos os steps) → CodeRabbit review → findings corrigidos → PR aberto
 - [ ] Code review via CodeRabbit (`/coderabbit:review`) executado no terminal antes de abrir o PR
@@ -138,6 +143,8 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] Processo de 5 steps executado: Svelte warnings → axe-core → keyboard-only → VoiceOver → reduced-motion
 
 ### Interfaces (§16)
+
+#### Interface de pacote (consumidor)
 - [ ] `Interface.md` existe e é escrito antes da implementação
 - [ ] Descreve exclusivamente a perspectiva do consumidor — sem menção a Model, Coordinator, Interaction ou arquitetura interna
 - [ ] Estrutura obrigatória presente: Descrição, Superfície Pública, Índice por Comportamento, Seções de comportamento, Responsabilidades do consumidor
@@ -146,6 +153,13 @@ Use este checklist para avaliar se um pacote UI segue a arquitetura MV. Nem todo
 - [ ] `index.ts` exporta somente o que aparece em `Interface.md` — nenhuma exportação implícita
 - [ ] JSDoc dos tipos públicos espelha a prosa de `Interface.md`
 - [ ] PRs que alteram API pública incluem atualização correspondente em `Interface.md`
+
+#### Interfaces de módulo (contratos inter-módulo)
+- [ ] `[Domain].internal-types.ts` existe e contém os contratos inter-módulo
+- [ ] Interface do Coordinator declarada como `interface [Domain]Coordinator` com os métodos DOM explícitos
+- [ ] Interface da Interaction declarada pelo Model (`interface [Domain]Interaction`) com os métodos de transição que o Model expõe e as Interactions chamam
+- [ ] `[Domain].internal-types.ts` não é exportado pelo `index.ts`
+- [ ] O Model implementa a interface de Interaction (não a Interaction implementando a sua própria)
 
 ### Performance (§8) — adições
 - [ ] Animações usam exclusivamente propriedades compositor-friendly (`translate`, `transform`, `opacity`, `scale`, `rotate`)
