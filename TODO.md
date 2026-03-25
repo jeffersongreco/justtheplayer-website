@@ -19,4 +19,4 @@
 ### `packages/movable/`
 
 - [ ] Scroolar a tela durante o movimento se os limites estiverem além de área visível da página.
-- [ ] Melhorar a movimentação por teclado para ser suave e com movimento diagonal, como em games (se a implementação for simples - não é uma feature, é uma comformação de a11y).
+- [ ] Melhorar a movimentação por teclado para ser suave e com movimento diagonal, como em games. Velocidade linear, definir a velocidade ideal para o default.
