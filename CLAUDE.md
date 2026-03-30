@@ -45,7 +45,7 @@ Both are used together in `src/lib/Pages/Home/Components/HomeHero.svelte`.
 
 ### Architecture Reference
 
-Core principles, patterns, and conventions live in `packages/Svelte Model View Architecture/Architecture.md` (§0–§9). Operational concerns are in separate files: [Testing](packages/Svelte%20Model%20View%20Architecture/Testing.md) (§10), [Logging](packages/Svelte%20Model%20View%20Architecture/Logging.md) (§11), [Dev Pages](packages/Svelte%20Model%20View%20Architecture/Dev%20Pages.md) (§12), [Accessibility](packages/Svelte%20Model%20View%20Architecture/Accessibility.md) (§13), [Conformance Checklist](packages/Svelte%20Model%20View%20Architecture/Checklist.md) (§14), and [Git Conventions](packages/Svelte%20Model%20View%20Architecture/Git%20Conventions.md) (§15). Read Architecture.md before creating or modifying any MV package.
+Core principles, patterns, and conventions live in `packages/ssmv/Architecture.md` (§0–§9). Operational concerns are in separate files: [Testing](packages/ssmv/Testing.md) (§10), [Logging](packages/ssmv/Logging.md) (§11), [Dev Pages](packages/ssmv/Dev%20Pages.md) (§12), [Accessibility](packages/ssmv/Accessibility.md) (§13), [Conformance Checklist](packages/ssmv/Checklist.md) (§14), and [Git Conventions](packages/ssmv/Git%20Conventions.md) (§15). Read Architecture.md before creating or modifying any MV package.
 
 ## Testing
 
@@ -84,7 +84,7 @@ Core principles, patterns, and conventions live in `packages/Svelte Model View A
 
 - **Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `a11y`
 - **Scopes:** `attention-requester`, `movable`, `arch`, `ci` (new package → new scope, always `kebab-case`)
-- Full rules and examples in [Git Conventions](packages/Svelte%20Model%20View%20Architecture/Git%20Conventions.md) (§15)
+- Full rules and examples in [Git Conventions](packages/ssmv/Git%20Conventions.md) (§15)
 
 ### Branch Naming
 
