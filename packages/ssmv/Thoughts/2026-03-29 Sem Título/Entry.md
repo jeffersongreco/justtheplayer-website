@@ -1,0 +1,2 @@
+* Escrita da Design Tree de Princípios de arquitetura. A conversa está em `Conversa - Princípios de Engenharia.md` e o resultado em `3 - Princípios de Engenharia - Design Tree.md`.
+* Formalização da escolha por Svelte e a predileção em validar MV antes de considerar alternativas. E a validação de MV, que mostrou a compatibilidade. A conversa está em `Conversa - Raízes Estratégicas e Diagrama.md` e o resultado em `4 - Avaliação de MV - Design Tree.md`.
