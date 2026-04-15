@@ -27,20 +27,20 @@
     "bench": "vitest bench"
   },
   "peerDependencies": {
-    "svelte": "^5.0.0"
+    "svelte": "^5.55.4"
   },
   "devDependencies": {
     "@headless-uai/attention-requester": "workspace:*",
-    "@size-limit/file": "^12.0.1",
+    "@size-limit/file": "^12.1.0",
     "@sveltejs/package": "^2.3.7",
-    "@sveltejs/vite-plugin-svelte": "^6.2.1",
-    "@vitest/coverage-v8": "^4.1.0",
-    "size-limit": "^12.0.1",
-    "svelte": "^5.43.8",
-    "svelte-check": "^4.3.4",
-    "typescript": "^5.9.3",
-    "vite": "^8.0.0",
-    "vitest": "^4.1.0"
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@vitest/coverage-v8": "^4.1.4",
+    "size-limit": "^12.1.0",
+    "svelte": "^5.55.4",
+    "svelte-check": "^4.4.6",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
   },
   "dependencies": {
     "esm-env": "^1.2.2"
